@@ -172,6 +172,7 @@ export async function POST(req: NextRequest) {
             `Nhận: <b>+${actualAmount.toLocaleString('vi-VN')}đ</b> qua ${gatewayName}\n` +
             `Mã đơn: <code>${orderCode}</code>\n` +
             `Người mua: <b>${existingOrder.buyer_name || 'Ẩn danh'}</b>\n` +
+            (existingOrder.ref_code ? `Nguồn (Ref): <code>${existingOrder.ref_code}</code>\n` : '') +
             `Ghi chú: ${existingOrder.buyer_note || 'Không có'}\n\n` +
             `🐾 Mèo Dev đã no hơn và đang tiếp tục cày việc!`
           );
