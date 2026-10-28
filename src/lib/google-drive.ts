@@ -17,15 +17,17 @@ export interface GrantDriveAccessResult {
  * Lấy Folder ID tương ứng với từng gói Hóa học
  */
 export function getChemistryFolderId(productId: string): string {
+  const masterFolderId = '1eywUNBaOoa5SdA6JBRrzp-SyjdDOKWkS';
   switch (productId) {
     case 'CHEM-49':
-      return process.env.GDRIVE_FOLDER_8PLUS_ID || 'folder-8plus-demo';
+      return process.env.GDRIVE_FOLDER_8PLUS_ID || masterFolderId;
     case 'CHEM-89':
-      return process.env.GDRIVE_FOLDER_9PLUS_ID || 'folder-9plus-demo';
+      return process.env.GDRIVE_FOLDER_9PLUS_ID || masterFolderId;
     case 'CHEM-149':
-      return process.env.GDRIVE_FOLDER_ALLIN_ID || 'folder-allin-demo';
+    case 'CHEM-PACK':
+      return process.env.GDRIVE_FOLDER_ALLIN_ID || masterFolderId;
     default:
-      return 'folder-demo';
+      return masterFolderId;
   }
 }
 
