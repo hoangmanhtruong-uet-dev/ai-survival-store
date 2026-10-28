@@ -282,7 +282,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
               
               {/* Ảnh VietQR chuẩn Compact2 */}
               <div className="relative flex flex-col items-center justify-center bg-white p-3 rounded-2xl shadow-inner">
-                {isCreatingOrder ? (
+                {isCreatingOrder || !qrUrl ? (
                   <div className="h-60 flex flex-col items-center justify-center gap-2 text-zinc-600 text-xs font-mono">
                     <Loader2 className="w-6 h-6 animate-spin text-emerald-600" />
                     <span>Đang khởi tạo mã đơn...</span>

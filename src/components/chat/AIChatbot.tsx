@@ -203,14 +203,16 @@ export const AIChatbot: React.FC<AIChatbotProps> = ({ onSelectOrderForPayment })
                   </p>
 
                   {/* QR Image Preview */}
-                  <div className="flex items-center justify-center bg-white p-2 rounded-lg">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={m.tool_call_data.qr_url}
-                      alt="VietQR Code"
-                      className="w-36 h-36 object-contain"
-                    />
-                  </div>
+                  {m.tool_call_data.qr_url && (
+                    <div className="flex items-center justify-center bg-white p-2 rounded-lg">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={m.tool_call_data.qr_url}
+                        alt="VietQR Code"
+                        className="w-36 h-36 object-contain"
+                      />
+                    </div>
+                  )}
 
                   <button
                     onClick={() =>
