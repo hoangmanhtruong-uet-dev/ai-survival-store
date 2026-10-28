@@ -10,7 +10,7 @@ interface LiveTerminalProps {
 }
 
 export const LiveTerminal: React.FC<LiveTerminalProps> = ({ logs, viewerCount = 18 }) => {
-  const terminalEndRef = useRef<HTMLDivElement>(null);
+  const terminalContainerRef = useRef<HTMLDivElement>(null);
   const [filterType, setFilterType] = useState<string>('ALL');
 
   const [currentTime, setCurrentTime] = useState<string>('00:00:00');
@@ -24,8 +24,10 @@ export const LiveTerminal: React.FC<LiveTerminalProps> = ({ logs, viewerCount = 
   }, []);
 
   useEffect(() => {
-    // Tự động cuộn xuống dòng mới nhất
-    terminalEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // Chỉ cuộn nội bộ bên trong khung terminal, không làm cuộn màn hình trang web
+    if (terminalContainerRef.current) {
+      terminalContainerRef.current.scrollTop = terminalContainerRef.current.scrollHeight;
+    }
   }, [logs]);
 
   const filteredLogs = logs.filter((log) => {
@@ -113,7 +115,10 @@ export const LiveTerminal: React.FC<LiveTerminalProps> = ({ logs, viewerCount = 
       </div>
 
       {/* TERMINAL BODY */}
-      <div className="flex-1 p-3 overflow-y-auto space-y-1.5 max-h-[360px] md:max-h-[440px] scrollbar-thin scrollbar-thumb-zinc-800">
+      <div
+        ref={terminalContainerRef}
+        className="flex-1 p-3 overflow-y-auto space-y-1.5 max-h-[360px] md:max-h-[440px] scrollbar-thin scrollbar-thumb-zinc-800"
+      >
         {filteredLogs.map((log) => (
           <div key={log.id} className={`leading-relaxed transition-all ${getLogColor(log.type)}`}>
             <span className="text-zinc-600 select-none mr-1.5">[{formatTime(log.created_at)}]</span>
@@ -126,7 +131,6 @@ export const LiveTerminal: React.FC<LiveTerminalProps> = ({ logs, viewerCount = 
           <span>cat@server:~$</span>
           <span className="inline-block w-2 h-3.5 bg-emerald-400 animate-pulse ml-0.5" />
         </div>
-        <div ref={terminalEndRef} />
       </div>
 
       {/* FOOTER TINH TẾ */}

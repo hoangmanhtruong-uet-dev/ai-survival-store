@@ -21,7 +21,7 @@ export const AIChatbot: React.FC<AIChatbotProps> = ({ onSelectOrderForPayment })
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [guestId, setGuestId] = useState('8921');
-  const chatEndRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // Khởi tạo guestId ngẫu nhiên lưu trong localStorage
@@ -36,7 +36,10 @@ export const AIChatbot: React.FC<AIChatbotProps> = ({ onSelectOrderForPayment })
   }, []);
 
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // Chỉ cuộn nội bộ bên trong khung chat, không làm cuộn màn hình trang web
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
   }, [messages, isLoading]);
 
   const handleSend = async (textToSend?: string) => {
@@ -156,7 +159,10 @@ export const AIChatbot: React.FC<AIChatbotProps> = ({ onSelectOrderForPayment })
       </div>
 
       {/* MESSAGE LIST */}
-      <div className="flex-1 p-3 overflow-y-auto space-y-3 max-h-[360px] md:max-h-[440px] text-xs font-sans">
+      <div
+        ref={chatContainerRef}
+        className="flex-1 p-3 overflow-y-auto space-y-3 max-h-[360px] md:max-h-[440px] text-xs font-sans"
+      >
         {messages.map((m) => (
           <div
             key={m.id}
@@ -239,8 +245,6 @@ export const AIChatbot: React.FC<AIChatbotProps> = ({ onSelectOrderForPayment })
             <span>Mèo Dev đang gõ phím rep...</span>
           </div>
         )}
-
-        <div ref={chatEndRef} />
       </div>
 
       {/* INPUT FORM */}
