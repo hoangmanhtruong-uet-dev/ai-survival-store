@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     // 2. Xác thực chữ ký số PayOS
     let webhookData = null;
     if (isPayOSConfigured()) {
-      webhookData = verifyPayOSWebhook(payload);
+      webhookData = await verifyPayOSWebhook(payload);
       if (!webhookData && payload.data) {
         // Dự phòng payload khi test trên sandbox/dev
         webhookData = payload.data;

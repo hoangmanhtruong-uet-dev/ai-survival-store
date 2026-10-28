@@ -93,13 +93,13 @@ export async function createPayOSPaymentLink(
 /**
  * Xác thực dữ liệu Webhook gửi từ PayOS
  */
-export function verifyPayOSWebhook(webhookBody: unknown) {
+export async function verifyPayOSWebhook(webhookBody: unknown) {
   const payOS = getPayOSClient();
   if (!payOS) return null;
 
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return payOS.webhooks.verify(webhookBody as any);
+    return await payOS.webhooks.verify(webhookBody as any);
   } catch (error) {
     console.error('PayOS verify error:', error);
     return null;
