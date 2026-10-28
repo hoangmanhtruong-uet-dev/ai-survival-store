@@ -98,11 +98,12 @@ Chủ đề: Ngày thứ ${currentDayIndex}/60 cày 7 triệu tiền điện ch�
   const telegramMessage =
     `📝 <b>[MÈO DEV CONTENT BOT] BÀI ĐĂNG THREADS / FB HÔM NAY</b>\n` +
     `<i>(Ngày ${currentDayIndex}/60 • Doanh thu: ${currentAmount.toLocaleString('vi-VN')}đ / 7M)</i>\n\n` +
-    `━━━━━━━━━━━━━━━━━━━━\n` +
-    `${postContent}\n` +
-    `━━━━━━━━━━━━━━━━━━━━\n\n` +
-    (tiktokScript ? `🎬 <b>GỢI Ý KỊCH BẢN TIKTOK 30S:</b>\n<code>${tiktokScript.slice(0, 800)}</code>\n\n` : '') +
-    `👉 <i>Copy toàn bộ bài trên và đăng lên Threads / Facebook để hút traffic về web ngay đêm nay!</i>`;
+    `👇 <b>CHẠM VÀO ĐỂ COPY 1-CLICK:</b>\n` +
+    `<pre><code>${postContent.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>\n\n` +
+    (tiktokScript
+      ? `🎬 <b>KỊCH BẢN TIKTOK 30S (CHẠM ĐỂ COPY):</b>\n<pre><code>${tiktokScript.slice(0, 1500).replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>\n\n`
+      : '') +
+    `👉 <i>Chạm vào khung văn bản trên điện thoại để Copy và đăng ngay lên Threads / Facebook / TikTok hút khách về web!</i>`;
 
   const sent = await sendTelegramNotification(telegramMessage, { parseMode: 'HTML' });
   if (sent) {
