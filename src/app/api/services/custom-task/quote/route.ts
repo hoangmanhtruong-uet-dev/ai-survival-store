@@ -112,10 +112,11 @@ HÃY ĐỊNH GIÁ VÀ TRẢ LỜI KHÁCH:
     let qrUrl = generateVietQRUrl(estimatedPrice, orderCode);
     let checkoutUrl: string | undefined = undefined;
     let isPayOS = false;
+    let payOSRes: Awaited<ReturnType<typeof createPayOSPaymentLink>> = null;
 
     if (isPayOSConfigured()) {
       const origin = req.nextUrl.origin;
-      const payOSRes = await createPayOSPaymentLink({
+      payOSRes = await createPayOSPaymentLink({
         orderCodeStr: orderCode,
         amount: estimatedPrice,
         productName: `Cày Thuê: ${cleanTask.slice(0, 30)}`,
@@ -125,8 +126,8 @@ HÃY ĐỊNH GIÁ VÀ TRẢ LỜI KHÁCH:
       if (payOSRes) {
         checkoutUrl = payOSRes.checkoutUrl;
         isPayOS = true;
-        if (payOSRes.qrCode && payOSRes.qrCode.startsWith('http')) {
-          qrUrl = payOSRes.qrCode;
+        if (payOSRes.directQrUrl) {
+          qrUrl = payOSRes.directQrUrl;
         }
       }
     }
@@ -139,6 +140,11 @@ HÃY ĐỊNH GIÁ VÀ TRẢ LỜI KHÁCH:
       qrUrl,
       checkoutUrl,
       isPayOS,
+      payosAccount: isPayOS && payOSRes ? {
+        bankId: 'MBBank (PayOS)',
+        accountNo: payOSRes.accountNumber,
+        accountName: payOSRes.accountName,
+      } : undefined,
     });
   } catch (error) {
     return NextResponse.json({ success: false, error: (error as Error).message }, { status: 500 });

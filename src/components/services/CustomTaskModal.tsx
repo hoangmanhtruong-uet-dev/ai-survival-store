@@ -23,9 +23,15 @@ export const CustomTaskModal: React.FC<CustomTaskModalProps> = ({ isOpen, onClos
     orderCode: string;
     qrUrl: string;
     checkoutUrl?: string;
+    payosAccount?: {
+      bankId: string;
+      accountNo?: string;
+      accountName?: string;
+    };
   } | null>(null);
 
   const [copied, setCopied] = useState(false);
+  const [copiedAccount, setCopiedAccount] = useState(false);
 
   if (!isOpen) return null;
 
@@ -35,8 +41,8 @@ export const CustomTaskModal: React.FC<CustomTaskModalProps> = ({ isOpen, onClos
       setError('Vui lòng mô tả yêu cầu công việc rõ ràng hơn (ít nhất 5 ký tự)!');
       return;
     }
-    if (!buyerEmail.trim() || !buyerEmail.includes('@')) {
-      setError('Vui lòng nhập đúng địa chỉ Gmail để Mèo gửi code hoàn chỉnh về máy bạn!');
+    if (buyerEmail.trim() && !buyerEmail.includes('@')) {
+      setError('Nếu nhập Email liên hệ, vui lòng nhập đúng định dạng (VD: name@gmail.com)!');
       return;
     }
 
@@ -50,7 +56,7 @@ export const CustomTaskModal: React.FC<CustomTaskModalProps> = ({ isOpen, onClos
         body: JSON.stringify({
           taskDescription: taskDescription.trim(),
           buyerName: buyerName.trim() || 'Ân Nhân Giấu Tên',
-          buyerEmail: buyerEmail.trim().toLowerCase(),
+          buyerEmail: buyerEmail.trim().toLowerCase() || undefined,
         }),
       });
 
@@ -65,6 +71,7 @@ export const CustomTaskModal: React.FC<CustomTaskModalProps> = ({ isOpen, onClos
         orderCode: data.order?.order_code || 'MEO-TASK',
         qrUrl: data.qrUrl,
         checkoutUrl: data.checkoutUrl,
+        payosAccount: data.payosAccount,
       });
     } catch (err) {
       setError((err as Error).message);
@@ -105,7 +112,7 @@ export const CustomTaskModal: React.FC<CustomTaskModalProps> = ({ isOpen, onClos
               </span>
             </h2>
             <p className="text-xs text-zinc-400 font-mono">
-              Nhập bất kỳ task gì: code web, viết script, giải thuật toán... Mèo tự làm và tự gửi code về Gmail!
+              Nhập bất kỳ task gì: code web, viết script, giải thuật toán... Mèo tự cày và trả code trực tiếp trên Website qua mục Tra Cứu Đơn Hàng!
             </p>
           </div>
         </div>
@@ -144,14 +151,13 @@ export const CustomTaskModal: React.FC<CustomTaskModalProps> = ({ isOpen, onClos
               <div>
                 <label className="block text-xs font-mono text-zinc-300 mb-1 flex items-center gap-1">
                   <Mail className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Gmail nhận mã nguồn (*):</span>
+                  <span>Email liên hệ (Tùy chọn):</span>
                 </label>
                 <input
                   type="email"
-                  required
                   value={buyerEmail}
                   onChange={(e) => setBuyerEmail(e.target.value)}
-                  placeholder="name@gmail.com"
+                  placeholder="name@gmail.com (không bắt buộc)"
                   className="w-full p-2.5 rounded-xl bg-zinc-950 border border-zinc-700 text-xs text-zinc-200 placeholder-zinc-500 font-mono"
                 />
               </div>
@@ -220,28 +226,80 @@ export const CustomTaskModal: React.FC<CustomTaskModalProps> = ({ isOpen, onClos
                 <div className="text-zinc-400">
                   <span>Mã đơn hàng: </span>
                   <span className="font-bold text-amber-400 font-mono">{quoteResult.orderCode}</span>
-                  <button onClick={handleCopyCode} className="ml-2 inline-block text-zinc-500 hover:text-zinc-200">
+                  <button onClick={handleCopyCode} className="ml-2 inline-block text-zinc-500 hover:text-zinc-200" title="Sao chép mã đơn">
                     {copied ? <Check className="w-3.5 h-3.5 text-emerald-400 inline" /> : <Copy className="w-3.5 h-3.5 inline" />}
                   </button>
                 </div>
                 <div className="text-zinc-400">
                   Nội dung CK: <strong className="text-emerald-400">{quoteResult.orderCode}</strong>
                 </div>
-                <p className="text-[11px] text-zinc-400 leading-relaxed">
-                  👉 Sau khi quét mã thành công, <strong>Mèo Dev trên VPS</strong> sẽ tự động nhận lệnh, gõ code hoàn thiện và lưu file giải pháp cho bạn!
-                </p>
 
-                {quoteResult.checkoutUrl && (
-                  <a
-                    href={quoteResult.checkoutUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold text-xs transition"
-                  >
-                    <span>Mở cổng PayOS Checkout</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </a>
+                {quoteResult.payosAccount && quoteResult.payosAccount.accountNo && (
+                  <div className="p-2.5 rounded-lg bg-zinc-900 border border-emerald-500/30 text-[11px] space-y-1">
+                    <div className="text-emerald-400 font-bold flex items-center justify-between">
+                      <span>🏦 {quoteResult.payosAccount.bankId}</span>
+                      <span className="text-[10px] text-zinc-500 font-normal">Tài khoản ảo PayOS</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-zinc-400">STK: <strong className="text-zinc-100 font-mono text-xs">{quoteResult.payosAccount.accountNo}</strong></span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (quoteResult.payosAccount?.accountNo) {
+                            navigator.clipboard.writeText(quoteResult.payosAccount.accountNo);
+                            setCopiedAccount(true);
+                            setTimeout(() => setCopiedAccount(false), 2000);
+                          }
+                        }}
+                        className="px-2 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 text-[10px] text-zinc-300 flex items-center gap-1 transition cursor-pointer"
+                      >
+                        {copiedAccount ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                        <span>{copiedAccount ? 'Đã chép' : 'Sao chép STK'}</span>
+                      </button>
+                    </div>
+                    {quoteResult.payosAccount.accountName && (
+                      <div className="text-zinc-400 text-[10px]">
+                        Chủ TK: <span className="text-zinc-200">{quoteResult.payosAccount.accountName}</span>
+                      </div>
+                    )}
+                  </div>
                 )}
+
+                <div className="p-2.5 rounded-lg bg-emerald-950/30 border border-emerald-800/40 text-[11px] text-emerald-300/90 leading-relaxed space-y-1">
+                  <p>
+                    ⚡ <strong>Trả code 100% trên website:</strong> Sau khi quét mã CK thành công, <strong>Mèo Dev trên VPS</strong> sẽ nhận lệnh và code tự động trong 1-2 phút.
+                  </p>
+                  <p>
+                    👉 Bạn chỉ cần nhập mã đơn <strong className="text-amber-400">{quoteResult.orderCode}</strong> vào mục <strong>Tra Cứu Đơn Hàng</strong> trên web để xem toàn bộ source code, bấm Copy 1 chạm hoặc tải file <code>.md</code>!
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  {quoteResult.checkoutUrl && (
+                    <a
+                      href={quoteResult.checkoutUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold text-xs transition"
+                    >
+                      <span>Mở cổng PayOS</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </a>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose();
+                      const el = document.getElementById('tra-cuu-don');
+                      if (el) el.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-bold text-xs transition cursor-pointer"
+                  >
+                    <span>Đi tới mục Tra Cứu Đơn</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
             </div>
 

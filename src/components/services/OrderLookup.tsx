@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Search, Loader2, CheckCircle2, Clock, Download, ArrowRight, AlertCircle, Zap, Flame, Sparkles } from 'lucide-react';
+import { Search, Loader2, CheckCircle2, Clock, Download, ArrowRight, AlertCircle, Zap, Flame, Sparkles, Copy, Check } from 'lucide-react';
 import { Order } from '@/types';
 import { soundEngine } from '@/lib/audio';
 
@@ -24,6 +24,7 @@ export const OrderLookup: React.FC<OrderLookupProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [order, setOrder] = useState<Order | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [copiedSolution, setCopiedSolution] = useState(false);
 
   const handleLookup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,7 +52,7 @@ export const OrderLookup: React.FC<OrderLookupProps> = ({
   };
 
   return (
-    <section className="bg-zinc-900/80 border border-zinc-800 rounded-2xl p-4 md:p-5 shadow-xl font-sans">
+    <section id="tra-cuu-don" className="bg-zinc-900/80 border border-zinc-800 rounded-2xl p-4 md:p-5 shadow-xl font-sans scroll-mt-24">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-zinc-800 pb-3 mb-4">
         <div>
           <h3 className="font-mono text-sm md:text-base font-bold text-zinc-100 flex items-center gap-2">
@@ -186,12 +187,47 @@ export const OrderLookup: React.FC<OrderLookupProps> = ({
                 {(order.product_id === 'CUSTOM-TASK' || order.product?.type === 'CUSTOM_TASK') && (
                   <div className="w-full space-y-2">
                     {order.is_redeemed && (order.ai_result as Record<string, unknown>)?.solution_markdown ? (
-                      <div className="p-3 bg-zinc-900 border border-emerald-500/40 rounded-xl space-y-2">
-                        <div className="text-emerald-400 font-bold flex items-center gap-1.5">
-                          <CheckCircle2 className="w-4 h-4" />
-                          <span>Mèo Dev đã cày xong task của bạn:</span>
+                      <div className="p-3 bg-zinc-900 border border-emerald-500/40 rounded-xl space-y-2.5">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div className="text-emerald-400 font-bold flex items-center gap-1.5 text-xs">
+                            <CheckCircle2 className="w-4 h-4" />
+                            <span>Mèo Dev đã hoàn thành task của bạn:</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const solution = (order.ai_result as Record<string, unknown>)?.solution_markdown as string;
+                                navigator.clipboard.writeText(solution);
+                                setCopiedSolution(true);
+                                soundEngine.playKeyClick();
+                                setTimeout(() => setCopiedSolution(false), 2000);
+                              }}
+                              className="px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-[11px] font-mono text-zinc-200 flex items-center gap-1 transition cursor-pointer"
+                            >
+                              {copiedSolution ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                              <span>{copiedSolution ? 'Đã sao chép!' : 'Sao chép toàn bộ code'}</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const solution = (order.ai_result as Record<string, unknown>)?.solution_markdown as string;
+                                const blob = new Blob([solution], { type: 'text/markdown;charset=utf-8' });
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = url;
+                                a.download = `${order.order_code}-solution.md`;
+                                a.click();
+                                URL.revokeObjectURL(url);
+                              }}
+                              className="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-[11px] font-mono flex items-center gap-1 transition cursor-pointer"
+                            >
+                              <Download className="w-3 h-3" />
+                              <span>Tải file .md</span>
+                            </button>
+                          </div>
                         </div>
-                        <div className="max-h-60 overflow-y-auto p-2.5 bg-zinc-950 rounded border border-zinc-800 text-[11px] text-zinc-300 font-mono whitespace-pre-wrap">
+                        <div className="max-h-72 overflow-y-auto p-3 bg-zinc-950 rounded-lg border border-zinc-800 text-[11px] text-zinc-300 font-mono whitespace-pre-wrap leading-relaxed select-all">
                           {((order.ai_result as Record<string, unknown>)?.solution_markdown as string)}
                         </div>
                       </div>
