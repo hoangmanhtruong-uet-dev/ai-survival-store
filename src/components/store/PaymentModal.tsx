@@ -75,6 +75,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [isPolling, setIsPolling] = useState(false);
   const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
+  const [directQrUrl, setDirectQrUrl] = useState<string | null>(null);
+  const [payosAccount, setPayosAccount] = useState<{ bankId: string; accountNo: string; accountName?: string } | null>(null);
 
   // Xác định gói mặc định cho sản phẩm Hóa học
   const initialTier =
@@ -117,6 +119,12 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
             if (data.checkoutUrl) {
               setCheckoutUrl(data.checkoutUrl);
             }
+            if (data.qrUrl) {
+              setDirectQrUrl(data.qrUrl);
+            }
+            if (data.payosAccount) {
+              setPayosAccount(data.payosAccount);
+            }
           }
         } catch {
           // Ignore
@@ -142,6 +150,12 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
             setOrder(data.order);
             if (data.checkoutUrl) {
               setCheckoutUrl(data.checkoutUrl);
+            }
+            if (data.qrUrl) {
+              setDirectQrUrl(data.qrUrl);
+            }
+            if (data.payosAccount) {
+              setPayosAccount(data.payosAccount);
             }
           }
         } catch {
@@ -180,6 +194,12 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
         setOrder(data.order);
         if (data.checkoutUrl) {
           setCheckoutUrl(data.checkoutUrl);
+        }
+        if (data.qrUrl) {
+          setDirectQrUrl(data.qrUrl);
+        }
+        if (data.payosAccount) {
+          setPayosAccount(data.payosAccount);
         }
       }
     } catch (err) {
@@ -273,7 +293,9 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   const activeChemistryTier = CHEMISTRY_TIERS.find(
     (t) => t.id === (order?.product_id || selectedTierId)
   );
-  const qrUrl = order ? generateVietQRUrl(order.amount, order.order_code) : '';
+  const qrUrl = directQrUrl || (order ? generateVietQRUrl(order.amount, order.order_code) : '');
+  const activeBankId = payosAccount?.bankId || bankConfig.bankId;
+  const activeAccountNo = payosAccount?.accountNo || bankConfig.accountNo;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
@@ -666,16 +688,16 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                   {/* Ngân hàng & Số tài khoản */}
                   <div className="flex items-center justify-between py-1 border-b border-zinc-800/80">
                     <span className="text-zinc-400">Ngân hàng:</span>
-                    <span className="text-zinc-200 font-bold">{bankConfig.bankId}</span>
+                    <span className="text-zinc-200 font-bold">{activeBankId}</span>
                   </div>
 
                   <div className="flex items-center justify-between py-1 border-b border-zinc-800/80">
                     <span className="text-zinc-400">Số tài khoản:</span>
                     <button
-                      onClick={() => copyToClipboard(bankConfig.accountNo, 'stk')}
+                      onClick={() => copyToClipboard(activeAccountNo, 'stk')}
                       className="flex items-center gap-1.5 text-zinc-200 hover:text-emerald-400 transition"
                     >
-                      <span className="font-bold">{bankConfig.accountNo}</span>
+                      <span className="font-bold">{activeAccountNo}</span>
                       {copiedField === 'stk' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                     </button>
                   </div>

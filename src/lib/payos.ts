@@ -38,6 +38,10 @@ export interface PayOSLinkResult {
   qrCode?: string;
   orderCodeNum: number;
   paymentLinkId?: string;
+  accountNumber?: string;
+  accountName?: string;
+  bin?: string;
+  directQrUrl?: string;
 }
 
 /**
@@ -78,11 +82,29 @@ export async function createPayOSPaymentLink(
       returnUrl: `${baseUrl}/?success=true&order=${params.orderCodeStr}`,
     });
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const rawLink = paymentLink as any;
+    const bin = rawLink.bin || '970422';
+    const accountNumber = rawLink.accountNumber;
+    const accountName = rawLink.accountName || 'HOANG MANH TRUONG';
+
+    // Tạo link ảnh VietQR chuẩn hiển thị trực tiếp trỏ vào số tài khoản PayOS
+    let directQrUrl = '';
+    if (accountNumber) {
+      directQrUrl = `https://img.vietqr.io/image/${bin}-${accountNumber}-compact2.png?amount=${params.amount}&addInfo=${encodeURIComponent(description)}&accountName=${encodeURIComponent(accountName)}`;
+    } else if (rawLink.qrCode) {
+      directQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=350x350&data=${encodeURIComponent(rawLink.qrCode)}`;
+    }
+
     return {
       checkoutUrl: paymentLink.checkoutUrl,
       qrCode: paymentLink.qrCode,
       orderCodeNum,
       paymentLinkId: paymentLink.paymentLinkId,
+      accountNumber,
+      accountName,
+      bin,
+      directQrUrl,
     };
   } catch (error) {
     console.error('PayOS createPaymentLink error:', error);

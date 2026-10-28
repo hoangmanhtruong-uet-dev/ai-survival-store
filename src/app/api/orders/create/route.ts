@@ -66,11 +66,12 @@ export async function POST(req: NextRequest) {
     let qrUrl = generateVietQRUrl(order.amount, order.order_code);
     let checkoutUrl: string | undefined = undefined;
     let isPayOS = false;
+    let payOSRes: Awaited<ReturnType<typeof createPayOSPaymentLink>> = null;
 
     // Nếu cấu hình PayOS thì gọi PayOS API tạo Payment Link
     if (isPayOSConfigured()) {
       const origin = req.nextUrl.origin;
-      const payOSRes = await createPayOSPaymentLink({
+      payOSRes = await createPayOSPaymentLink({
         orderCodeStr: order.order_code,
         amount: order.amount,
         productName: order.product?.name || productId,
@@ -80,9 +81,8 @@ export async function POST(req: NextRequest) {
       if (payOSRes) {
         checkoutUrl = payOSRes.checkoutUrl;
         isPayOS = true;
-        // Nếu PayOS trả về qrCode (chuỗi VietQR) ta có thể dùng hoặc giữ ảnh VietQR
-        if (payOSRes.qrCode && payOSRes.qrCode.startsWith('http')) {
-          qrUrl = payOSRes.qrCode;
+        if (payOSRes.directQrUrl) {
+          qrUrl = payOSRes.directQrUrl;
         }
       }
     }
@@ -93,6 +93,11 @@ export async function POST(req: NextRequest) {
       qrUrl,
       checkoutUrl,
       isPayOS,
+      payosAccount: isPayOS && payOSRes ? {
+        bankId: 'MBBank (PayOS)',
+        accountNo: payOSRes.accountNumber,
+        accountName: payOSRes.accountName,
+      } : undefined,
     });
   } catch (error) {
     return NextResponse.json(
