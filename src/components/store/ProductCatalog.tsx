@@ -85,7 +85,7 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
         <div className="flex items-center gap-2 shrink-0">
           {onOpenChemistryTutor && (
             <button
-              onClick={() => onOpenChemistryTutor('CHM-FREE-TEST')}
+              onClick={() => onOpenChemistryTutor('')}
               className="px-3.5 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-semibold border border-zinc-700 transition flex items-center gap-1.5 cursor-pointer"
             >
               <span>🧪 Trợ Giảng AI</span>
@@ -191,17 +191,17 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
                   {isRoast && (
                     <>
                       <button
-                        onClick={() => onOpenRoastCV && onOpenRoastCV('RCV-FREE-TEST')}
-                        className="w-full py-2 px-3 rounded-xl font-bold font-mono text-xs flex items-center justify-center gap-1.5 bg-gradient-to-r from-orange-500 to-rose-500 hover:from-orange-400 hover:to-rose-400 text-white shadow-lg shadow-orange-950/40 transition"
+                        onClick={() => onSelectProduct(p)}
+                        className="w-full py-2 px-3 rounded-xl font-bold font-mono text-xs flex items-center justify-center gap-1.5 bg-gradient-to-r from-orange-500 to-rose-500 hover:from-orange-400 hover:to-rose-400 text-white shadow-lg shadow-orange-950/40 transition cursor-pointer"
                       >
                         <Flame className="w-3.5 h-3.5" />
-                        <span>🔥 Quét & Sấy CV Ngay</span>
+                        <span>🔥 Mua Gói Sấy CV (10.000đ)</span>
                       </button>
                       <button
-                        onClick={() => onSelectProduct(p)}
-                        className="w-full py-1 text-[11px] font-mono text-zinc-400 hover:text-emerald-400 transition text-center cursor-pointer"
+                        onClick={() => onOpenRoastCV && onOpenRoastCV('')}
+                        className="w-full py-1 text-[11px] font-mono text-zinc-400 hover:text-orange-400 transition text-center cursor-pointer"
                       >
-                        Quét QR 10k ủng hộ Mèo
+                        Đã có mã kích hoạt? Nhập mã
                       </button>
                     </>
                   )}
@@ -210,17 +210,17 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
                   {isTarot && (
                     <>
                       <button
-                        onClick={() => onOpenTarot && onOpenTarot('TRT-FREE-TEST')}
-                        className="w-full py-2 px-3 rounded-xl font-bold font-mono text-xs flex items-center justify-center gap-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-lg shadow-purple-950/40 transition"
+                        onClick={() => onSelectProduct(p)}
+                        className="w-full py-2 px-3 rounded-xl font-bold font-mono text-xs flex items-center justify-center gap-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-lg shadow-purple-950/40 transition cursor-pointer"
                       >
                         <Sparkles className="w-3.5 h-3.5" />
-                        <span>🔮 Bốc Quẻ Tarot Ngay</span>
+                        <span>🔮 Bói Quẻ Tarot (10.000đ)</span>
                       </button>
                       <button
-                        onClick={() => onSelectProduct(p)}
+                        onClick={() => onOpenTarot && onOpenTarot('')}
                         className="w-full py-1 text-[11px] font-mono text-zinc-400 hover:text-purple-400 transition text-center cursor-pointer"
                       >
-                        Quét QR 10k ủng hộ Mèo
+                        Đã có mã kích hoạt? Nhập mã
                       </button>
                     </>
                   )}

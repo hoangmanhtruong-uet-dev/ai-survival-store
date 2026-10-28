@@ -13,7 +13,28 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Vui lòng nhập nội dung CV hoặc tải lên file PDF' }, { status: 400 });
     }
 
-    const validCode = redeemCode?.trim().toUpperCase() || 'RCV-FREE';
+    const validCode = redeemCode?.trim().toUpperCase();
+
+    if (!validCode) {
+      return NextResponse.json({ success: false, error: 'Vui lòng nhập mã kích hoạt hoặc quét mã đơn hàng 10.000đ để sấy CV' }, { status: 400 });
+    }
+
+    const supabase = getSupabaseClient();
+    if (supabase && process.env.NODE_ENV === 'production') {
+      const { data: order } = await supabase
+        .from('orders')
+        .select('*')
+        .or(`redeem_code.eq.${validCode},order_code.eq.${validCode}`)
+        .eq('status', 'PAID')
+        .single();
+
+      if (!order) {
+        return NextResponse.json(
+          { success: false, error: 'Mã kích hoạt không hợp lệ hoặc đơn hàng chưa thanh toán! Vui lòng quét mã 10k để ủng hộ Mèo Dev.' },
+          { status: 403 }
+        );
+      }
+    }
 
     // Che PII trước khi đưa vào AI và phát sóng
     const safeCVText = cvText ? scrubPII(cvText) : 'File PDF đính kèm';
@@ -30,7 +51,6 @@ export async function POST(req: NextRequest) {
 
     const logMsg = `🔥 Mèo vừa sấy CV mã [${validCode}]: "${punchline.slice(0, 70)}..."`;
 
-    const supabase = getSupabaseClient();
     if (supabase) {
       await supabase.from('live_logs').insert({
         type: 'TASK_DONE',

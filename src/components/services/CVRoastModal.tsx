@@ -10,7 +10,7 @@ interface CVRoastModalProps {
 }
 
 export const CVRoastModal: React.FC<CVRoastModalProps> = ({ initialCode = '', onClose }) => {
-  const [redeemCode, setRedeemCode] = useState(initialCode || 'RCV-FREE-TEST');
+  const [redeemCode, setRedeemCode] = useState(initialCode || '');
   const [inputMode, setInputMode] = useState<'TEXT' | 'UPLOAD'>('UPLOAD');
   const [cvText, setCvText] = useState('');
   const [uploadedFile, setUploadedFile] = useState<{ name: string; size: string; base64: string } | null>(null);

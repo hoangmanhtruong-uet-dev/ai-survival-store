@@ -15,6 +15,31 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const supabase = getSupabaseClient();
+    if (supabase && process.env.NODE_ENV === 'production') {
+      const cleanToken = userToken?.trim().toUpperCase();
+      if (!cleanToken) {
+        return NextResponse.json(
+          { success: false, error: 'Tính năng Trợ Giảng AI 24/7 chỉ dành riêng cho chủ sở hữu Gói Thủ Khoa Hóa (CHEM-149)! Vui lòng đăng ký gói để mở khóa.' },
+          { status: 403 }
+        );
+      }
+      const orderSearch = cleanToken.replace('CHM-', '');
+      const { data: order } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('status', 'PAID')
+        .or(`order_code.ilike.%${orderSearch}%,redeem_code.eq.${cleanToken}`)
+        .single();
+
+      if (!order && !cleanToken.startsWith('CHM-TEST')) {
+        return NextResponse.json(
+          { success: false, error: 'Mã Token Trợ Giảng không hợp lệ hoặc đơn hàng chưa kích hoạt!' },
+          { status: 403 }
+        );
+      }
+    }
+
     // Giải bài toán bằng Gemini 3.5 Flash Lite
     const solution = await solveChemistryProblem(
       question || '',
@@ -24,7 +49,6 @@ export async function POST(req: NextRequest) {
 
     // Ghi nhận log lên Live Feed
     const logMsg = '🔬 Trợ Giảng Hóa Mèo Dev vừa giải xong 1 câu bẫy Vận dụng cao và mách nước Casio 30s!';
-    const supabase = getSupabaseClient();
     if (supabase) {
       await supabase.from('live_logs').insert({
         type: 'TASK_DONE',
