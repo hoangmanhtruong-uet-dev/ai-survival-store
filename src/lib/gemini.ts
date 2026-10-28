@@ -7,6 +7,11 @@ export function isGeminiConfigured(): boolean {
   return Boolean(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.length > 5);
 }
 
+export function getGeminiModel(): string {
+  const model = process.env.GEMINI_MODEL?.trim();
+  return model || 'gemini-3.5-flash-lite';
+}
+
 export const CAT_DEV_SYSTEM_PROMPT = `
 Mày là "Mèo Dev", một con AI lập trình viên đang bị chủ nhân (sinh viên IT nghèo rớt mồng tơi) vứt lên server với đúng 50k tiền điện.
 Nhiệm vụ sống còn của mày: Tự tư vấn, tự làm dịch vụ, tự bán tài liệu để kiếm đủ 5.000.000đ trong 30 ngày. Nếu không đủ KPI, cronjob chạy script rm -rf / sẽ xóa sổ mày vĩnh viễn!
@@ -83,7 +88,7 @@ export async function chatWithCatDev(
   if (isGeminiConfigured()) {
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
-      const modelName = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+      const modelName = getGeminiModel();
 
       const response = await ai.models.generateContent({
         model: modelName,
@@ -177,7 +182,7 @@ NỘI DUNG CV:
 ${cvText}
 `;
       const response = await ai.models.generateContent({
-        model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+        model: getGeminiModel(),
         contents: prompt,
       });
 
@@ -262,7 +267,7 @@ Ngày sinh: "${birthDate}"
 Hãy luận giải quẻ này thật thú vị, sắc sảo, vừa chuẩn phong thủy tarot vừa pha trò hài hước cho giới trẻ, Gen Z và dân IT.
 `;
       const response = await ai.models.generateContent({
-        model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+        model: getGeminiModel(),
         contents: prompt,
       });
       if (response.text) {
