@@ -51,23 +51,85 @@ export function rotateDaemonKey(): void {
   }
 }
 
-export async function askGemini(prompt: string, customInstruction?: string): Promise<string> {
-  const ai = getDaemonGemini();
-  const rules = getAgentRules();
+export async function askGemini(prompt: string, customInstruction?: string, retryCount = 0): Promise<string> {
+  const keys = getDaemonKeys();
+  const maxRetries = Math.max(1, keys.length);
 
-  const fullInstruction = [
-    rules ? `=== HIẾN PHÁP & QUY TẮC MÈO DEV TỰ HÀNH (AGENT-RULES.MD) ===\n${rules}\n` : '',
-    customInstruction || ''
-  ].filter(Boolean).join('\n\n');
+  try {
+    const ai = getDaemonGemini();
+    const rules = getAgentRules();
 
-  const contents = [{ parts: [{ text: prompt }] }];
+    const fullInstruction = [
+      rules ? `=== HIẾN PHÁP & QUY TẮC MÈO DEV TỰ HÀNH (AGENT-RULES.MD) ===\n${rules}\n` : '',
+      customInstruction || ''
+    ].filter(Boolean).join('\n\n');
 
-  const response = await ai.models.generateContent({
-    model: DAEMON_CONFIG.geminiModel,
-    contents,
-    config: fullInstruction ? { systemInstruction: fullInstruction } : undefined,
-  });
+    const contents = [{ parts: [{ text: prompt }] }];
 
-  return response.text || '';
+    const response = await ai.models.generateContent({
+      model: DAEMON_CONFIG.geminiModel,
+      contents,
+      config: fullInstruction ? { systemInstruction: fullInstruction } : undefined,
+    });
+
+    return response.text || '';
+  } catch (err) {
+    const isRateLimit = String(err).includes('429') || String(err).includes('RESOURCE_EXHAUSTED');
+    if (isRateLimit && retryCount < maxRetries) {
+      console.warn(`⚠️ [GEMINI 429] Key hiện tại chạm hạn mức quota. Tự động xoay tua sang key tiếp theo (${retryCount + 1}/${maxRetries})...`);
+      rotateDaemonKey();
+      return askGemini(prompt, customInstruction, retryCount + 1);
+    }
+    throw err;
+  }
+}
+
+/**
+ * Gọi Gemini có tích hợp Google Search Grounding để tra cứu thông tin thời gian thực
+ */
+export async function askGeminiWithSearch(
+  prompt: string,
+  customInstruction?: string,
+  retryCount = 0
+): Promise<{ text: string; sources?: unknown[] }> {
+  const keys = getDaemonKeys();
+  const maxRetries = Math.max(1, keys.length);
+
+  try {
+    const ai = getDaemonGemini();
+    const rules = getAgentRules();
+
+    const fullInstruction = [
+      rules ? `=== HIẾN PHÁP & QUY TẮC MÈO DEV TỰ HÀNH (AGENT-RULES.MD) ===\n${rules}\n` : '',
+      customInstruction || ''
+    ].filter(Boolean).join('\n\n');
+
+    const contents = [{ parts: [{ text: prompt }] }];
+
+    const response = await ai.models.generateContent({
+      model: DAEMON_CONFIG.geminiModel,
+      contents,
+      config: {
+        systemInstruction: fullInstruction || undefined,
+        tools: [{ googleSearch: {} }],
+      },
+    });
+
+    return {
+      text: response.text || '',
+      sources: response.candidates?.[0]?.groundingMetadata?.groundingChunks,
+    };
+  } catch (err) {
+    const isRateLimit = String(err).includes('429') || String(err).includes('RESOURCE_EXHAUSTED');
+    if (isRateLimit && retryCount < maxRetries) {
+      console.warn(`⚠️ [SEARCH GROUNDING 429] Key chạm hạn mức. Xoay tua sang key dự phòng (${retryCount + 1}/${maxRetries})...`);
+      rotateDaemonKey();
+      return askGeminiWithSearch(prompt, customInstruction, retryCount + 1);
+    }
+
+    console.warn('⚠️ Google Search Grounding gặp sự cố, tự động fallback sang Gemini tiêu chuẩn:', (err as Error).message);
+    const fallbackText = await askGemini(prompt, customInstruction);
+    return { text: fallbackText };
+  }
 }
 

@@ -16,6 +16,7 @@ import { OrderLookup } from '@/components/services/OrderLookup';
 import { HallOfFame } from '@/components/hall-of-fame/HallOfFame';
 import { CertificateModal } from '@/components/effects/CertificateModal';
 import { CustomTaskModal } from '@/components/services/CustomTaskModal';
+import { EbookReaderModal } from '@/components/services/EbookReaderModal';
 import { soundEngine } from '@/lib/audio';
 import { getSupabaseClient } from '@/lib/supabase/client';
 
@@ -46,6 +47,16 @@ export default function Home() {
 
   const [isCertModalOpen, setIsCertModalOpen] = useState(false);
   const [certOrder, setCertOrder] = useState<Order | null>(null);
+
+  const [isEbookReaderOpen, setIsEbookReaderOpen] = useState(false);
+  const [ebookTitle, setEbookTitle] = useState('');
+  const [ebookMarkdown, setEbookMarkdown] = useState('');
+
+  const handleOpenEbookReader = useCallback((title: string, markdown: string) => {
+    setEbookTitle(title);
+    setEbookMarkdown(markdown);
+    setIsEbookReaderOpen(true);
+  }, []);
 
   // Fetch campaign stats & products
   const fetchStats = useCallback(async () => {
@@ -294,6 +305,7 @@ export default function Home() {
           onOpenTarot={handleOpenTarot}
           onOpenChemistryTutor={handleOpenChemistryTutor}
           onOpenChemistryQuiz={handleOpenChemistryQuiz}
+          onOpenEbookReader={handleOpenEbookReader}
         />
 
         {/* KHU VỰC 5: BẢNG VÀNG ÂN NHÂN (HALL OF FAME) */}
@@ -321,6 +333,7 @@ export default function Home() {
           onOpenTarot={handleOpenTarot}
           onOpenCertificate={handleOpenCertificate}
           onOpenChemistryTutor={handleOpenChemistryTutor}
+          onOpenEbookReader={handleOpenEbookReader}
         />
       )}
 
@@ -363,6 +376,13 @@ export default function Home() {
       <CustomTaskModal
         isOpen={isCustomTaskOpen}
         onClose={() => setIsCustomTaskOpen(false)}
+      />
+
+      <EbookReaderModal
+        isOpen={isEbookReaderOpen}
+        onClose={() => setIsEbookReaderOpen(false)}
+        title={ebookTitle}
+        markdownContent={ebookMarkdown}
       />
 
     </div>

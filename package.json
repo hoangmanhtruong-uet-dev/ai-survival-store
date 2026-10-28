@@ -13,6 +13,8 @@
     "daemon:hunger": "tsx daemon/index.ts --hunger",
     "daemon:sale": "tsx daemon/index.ts --sale",
     "daemon:product": "tsx daemon/index.ts --product",
+    "daemon:market": "tsx daemon/index.ts --market",
+    "daemon:listen": "tsx daemon/index.ts --listen",
     "daemon:worker": "tsx daemon/index.ts --worker"
   },
   "dependencies": {

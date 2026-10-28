@@ -1,8 +1,32 @@
 import { DAEMON_CONFIG } from './config';
 
+export interface TelegramInlineButton {
+  text: string;
+  callback_data?: string;
+  url?: string;
+}
+
 export interface TelegramSendOptions {
   parseMode?: 'HTML' | 'Markdown' | 'MarkdownV2';
   disableWebPagePreview?: boolean;
+  replyMarkup?: {
+    inline_keyboard: TelegramInlineButton[][];
+  };
+}
+
+export interface TelegramCallbackQuery {
+  id: string;
+  from: {
+    id: number;
+    first_name?: string;
+    username?: string;
+  };
+  message?: {
+    message_id: number;
+    chat: { id: number };
+    text?: string;
+  };
+  data?: string;
 }
 
 /**
@@ -40,32 +64,50 @@ export async function sendTelegramNotification(
       remaining = remaining.slice(splitIndex).trim();
     }
 
-    for (const chunk of chunks) {
+    for (let i = 0; i < chunks.length; i++) {
+      const chunk = chunks[i];
+      const isLastChunk = i === chunks.length - 1;
+      
+      const payload: Record<string, unknown> = {
+        chat_id: telegramChatId,
+        text: chunk,
+        parse_mode: options.parseMode || 'HTML',
+        disable_web_page_preview: options.disableWebPagePreview,
+      };
+
+      if (isLastChunk && options.replyMarkup) {
+        payload.reply_markup = options.replyMarkup;
+      }
+
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: telegramChatId,
-          text: chunk,
-          parse_mode: options.parseMode || 'HTML',
-          disable_web_page_preview: options.disableWebPagePreview,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
       if (!data.ok) {
-        // Fallback gửi dạng plain text nếu dính lỗi format HTML
+        // Fallback gửi dạng plain text nếu dính lỗi format HTML (như thẻ chưa đóng)
         if (options.parseMode) {
-          await fetch(url, {
+          const fallbackPayload: Record<string, unknown> = {
+            chat_id: telegramChatId,
+            text: chunk.replace(/<[^>]*>/g, ''),
+          };
+          if (isLastChunk && options.replyMarkup) {
+            fallbackPayload.reply_markup = options.replyMarkup;
+          }
+          const fbRes = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              chat_id: telegramChatId,
-              text: chunk.replace(/<[^>]*>/g, ''),
-            }),
+            body: JSON.stringify(fallbackPayload),
           });
+          const fbData = await fbRes.json();
+          if (!fbData.ok) {
+            console.error('❌ Telegram API error (sau fallback):', fbData.description);
+          }
+        } else {
+          console.error('❌ Telegram API error:', data.description);
         }
-        console.error('❌ Telegram API error:', data.description);
       }
     }
 
@@ -73,6 +115,69 @@ export async function sendTelegramNotification(
   } catch (error) {
     console.error('❌ Lỗi kết nối Telegram API:', (error as Error).message);
     return false;
+  }
+}
+
+/**
+ * Phản hồi Callback Query để Telegram tắt biểu tượng đồng hồ đang chờ trên nút bấm
+ */
+export async function answerTelegramCallback(callbackQueryId: string, text?: string): Promise<boolean> {
+  const { telegramBotToken } = DAEMON_CONFIG;
+  if (!telegramBotToken) return false;
+
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${telegramBotToken}/answerCallbackQuery`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        callback_query_id: callbackQueryId,
+        text: text || 'Mèo Dev đã nhận lệnh!',
+        show_alert: false,
+      }),
+    });
+    const data = await res.json();
+    return Boolean(data.ok);
+  } catch (err) {
+    console.error('❌ Lỗi answerCallbackQuery:', (err as Error).message);
+    return false;
+  }
+}
+
+/**
+ * Lắng nghe các sự kiện bấm nút từ Telegram (Long Polling getUpdates)
+ */
+export async function fetchTelegramUpdates(
+  offset: number
+): Promise<{ nextOffset: number; callbacks: TelegramCallbackQuery[] }> {
+  const { telegramBotToken } = DAEMON_CONFIG;
+  if (!telegramBotToken) return { nextOffset: offset, callbacks: [] };
+
+  try {
+    const url = offset > 0
+      ? `https://api.telegram.org/bot${telegramBotToken}/getUpdates?offset=${offset}&timeout=5`
+      : `https://api.telegram.org/bot${telegramBotToken}/getUpdates?timeout=5`;
+
+    const res = await fetch(url);
+    const data = await res.json();
+    if (!data.ok || !Array.isArray(data.result)) {
+      return { nextOffset: offset, callbacks: [] };
+    }
+
+    let maxUpdateId = offset;
+    const callbacks: TelegramCallbackQuery[] = [];
+
+    for (const update of data.result) {
+      if (update.update_id >= maxUpdateId) {
+        maxUpdateId = update.update_id + 1;
+      }
+      if (update.callback_query) {
+        callbacks.push(update.callback_query);
+      }
+    }
+
+    return { nextOffset: maxUpdateId, callbacks };
+  } catch {
+    return { nextOffset: offset, callbacks: [] };
   }
 }
 

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Product, Order } from '@/types';
-import { X, Copy, Check, Loader2, Sparkles, Download, ArrowRight, ShieldCheck, Heart, Award, ExternalLink, Flame } from 'lucide-react';
+import { X, Copy, Check, Loader2, Sparkles, Download, ArrowRight, ShieldCheck, Heart, Award, ExternalLink, Flame, BookOpen } from 'lucide-react';
 import { generateVietQRUrl, getBankConfig } from '@/lib/vietqr';
 import { soundEngine } from '@/lib/audio';
 import { getSupabaseClient } from '@/lib/supabase/client';
@@ -17,6 +17,7 @@ interface PaymentModalProps {
   onOpenTarot?: (code: string) => void;
   onOpenCertificate?: (order: Order) => void;
   onOpenChemistryTutor?: (token?: string) => void;
+  onOpenEbookReader?: (title: string, markdown: string) => void;
 }
 
 export interface ChemistryTier {
@@ -65,6 +66,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   onOpenTarot,
   onOpenCertificate,
   onOpenChemistryTutor,
+  onOpenEbookReader,
 }) => {
   const [order, setOrder] = useState<Order | null>(null);
   const [buyerName, setBuyerName] = useState('');
@@ -440,6 +442,32 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                       <Download className="w-4 h-4 inline" />
                       <span>Tải Tài Liệu Về Máy Ngay</span>
                     </a>
+                  </div>
+                )}
+
+                {/* 4.1. Nếu là Ebook / Tài liệu số độc quyền (EBOOK) */}
+                {(currentProduct?.type === 'EBOOK' || currentProduct?.content_markdown) && (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-xs text-zinc-300">
+                      <BookOpen className="w-4 h-4 text-amber-400 shrink-0" />
+                      <span>Tài liệu số đã sẵn sàng! Bạn có thể đọc trực tuyến ngay lúc này:</span>
+                    </div>
+                    <button
+                      onClick={() => {
+                        onClose();
+                        if (onOpenEbookReader) {
+                          onOpenEbookReader(
+                            currentProduct.name,
+                            currentProduct.content_markdown || '# Đang tải nội dung...'
+                          );
+                        }
+                      }}
+                      className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-400 to-emerald-400 hover:from-amber-300 hover:to-emerald-300 font-bold text-zinc-950 text-xs flex items-center justify-center gap-2 transition shadow-lg shadow-emerald-950/50 cursor-pointer"
+                    >
+                      <BookOpen className="w-4 h-4" />
+                      <span>Mở Ebook Đọc Trực Tuyến Ngay</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
                   </div>
                 )}
 

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Search, Loader2, CheckCircle2, Clock, Download, ArrowRight, AlertCircle, Zap, Flame, Sparkles, Copy, Check } from 'lucide-react';
+import { Search, Loader2, CheckCircle2, Clock, Download, ArrowRight, AlertCircle, Zap, Flame, Sparkles, Copy, Check, BookOpen } from 'lucide-react';
 import { Order } from '@/types';
 import { soundEngine } from '@/lib/audio';
 
@@ -11,6 +11,7 @@ interface OrderLookupProps {
   onOpenTarot: (code: string) => void;
   onOpenChemistryTutor?: (token?: string) => void;
   onOpenChemistryQuiz?: () => void;
+  onOpenEbookReader?: (title: string, markdown: string) => void;
 }
 
 export const OrderLookup: React.FC<OrderLookupProps> = ({
@@ -19,6 +20,7 @@ export const OrderLookup: React.FC<OrderLookupProps> = ({
   onOpenTarot,
   onOpenChemistryTutor,
   onOpenChemistryQuiz,
+  onOpenEbookReader,
 }) => {
   const [orderCode, setOrderCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -182,6 +184,24 @@ export const OrderLookup: React.FC<OrderLookupProps> = ({
                       </button>
                     )}
                   </div>
+                )}
+
+                {(order.product?.type === 'EBOOK' || order.product?.content_markdown) && (
+                  <button
+                    onClick={() => {
+                      if (onOpenEbookReader) {
+                        onOpenEbookReader(
+                          order.product?.name || 'Tài Liệu Số Độc Quyền',
+                          order.product?.content_markdown || '# Đang tải nội dung tài liệu...'
+                        );
+                      }
+                    }}
+                    className="w-full sm:w-auto px-4 py-2 bg-gradient-to-r from-amber-400 to-emerald-400 hover:from-amber-300 hover:to-emerald-300 text-zinc-950 font-bold rounded-lg transition flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-950/40 cursor-pointer"
+                  >
+                    <BookOpen className="w-3.5 h-3.5" />
+                    <span>Mở Ebook Đọc Trực Tuyến</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
                 )}
 
                 {(order.product_id === 'CUSTOM-TASK' || order.product?.type === 'CUSTOM_TASK') && (

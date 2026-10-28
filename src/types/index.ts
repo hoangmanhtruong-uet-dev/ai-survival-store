@@ -1,6 +1,6 @@
 // TypeScript definitions for Mèo Dev Sinh Tồn
 
-export type ProductType = 'DONATE' | 'AI_TASK' | 'R2_FILE' | 'GDRIVE_ACCESS' | 'CUSTOM_TASK';
+export type ProductType = 'DONATE' | 'AI_TASK' | 'R2_FILE' | 'GDRIVE_ACCESS' | 'CUSTOM_TASK' | 'EBOOK';
 
 export interface Product {
   id: string; // 'PATE-05' | 'ROAST-10' | 'CHEM-PACK' | 'CHEM-49' | 'CHEM-89' | 'CHEM-149' | 'TAROT-10'
@@ -10,6 +10,7 @@ export interface Product {
   type: ProductType;
   r2_file_key?: string | null;
   gdrive_folder_id?: string | null;
+  content_markdown?: string | null;
   icon: string;
   badge?: string;
   is_active: boolean;
@@ -90,4 +91,23 @@ export interface ChemistryQuizQuestion {
   correctIndex: number;
   explanation: string;
   trapType: string; // VD: 'Bẫy Este', 'Bẫy Đồ Thị', 'Bẫy Kim Loại'
+}
+
+export type MarketInsightStatus = 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED' | 'SUPERSEDED';
+
+export interface MarketInsight {
+  id: string;
+  cycle_time?: string;
+  trend_summary: string;
+  target_audience?: string;
+  market_pain_point?: string;
+  proposed_product_id: string;
+  proposed_product_name: string;
+  proposed_price: number;
+  proposed_description: string;
+  proposed_outline?: string;
+  marketing_angle?: string;
+  status: MarketInsightStatus;
+  created_at: string;
+  reviewed_at?: string | null;
 }

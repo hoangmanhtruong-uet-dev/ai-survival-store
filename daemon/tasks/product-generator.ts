@@ -3,98 +3,162 @@ import { askGemini } from '../services/gemini';
 import { sendTelegramNotification } from '../telegram';
 import { DAEMON_CONFIG } from '../config';
 
-export async function runProductGeneratorTask(): Promise<void> {
+/**
+ * Tự động biên soạn nội dung tài liệu chuyên sâu và mở bán sản phẩm sau khi Boss duyệt trên Telegram
+ */
+export async function authorAndPublishProduct(insightId: string): Promise<boolean> {
   const timestamp = new Date().toLocaleTimeString('vi-VN');
-  console.log(`\n[${timestamp}] 💡 [TASK 4] Mèo Dev bắt đầu tự động biên soạn & mở bán sản phẩm số mới...`);
+  console.log(`\n[${timestamp}] ✍️ [AUTO-AUTHORING] Bắt đầu biên soạn tài liệu cho ý tưởng ID: ${insightId}...`);
 
   const supabase = getDaemonSupabase();
 
-  // 1. Kiểm tra danh mục sản phẩm hiện có
-  const { data: currentProducts } = await supabase.from('products').select('id, name, price');
-  const existingIds = (currentProducts || []).map((p) => p.id);
+  // 1. Lấy thông tin ý tưởng thị trường từ Supabase
+  let insight: {
+    proposed_product_id: string;
+    proposed_product_name: string;
+    proposed_description: string;
+    proposed_price: number;
+    target_audience: string;
+    market_pain_point: string;
+    proposed_outline: string;
+  } | null = null;
 
-  console.log(`📦 Số sản phẩm hiện có: ${existingIds.length} (${existingIds.join(', ')})`);
+  try {
+    const { data, error: fetchErr } = await supabase
+      .from('market_insights')
+      .select('*')
+      .eq('id', insightId)
+      .single();
 
-  // Ý tưởng sản phẩm số mới cần tạo
-  const prompt = `
-Bạn là "Mèo Dev", một AI lập trình viên đang tự cày tiền sinh tồn.
-Hiện tại web của bạn đã có các gói:
-${(currentProducts || []).map((p) => `- ${p.id}: ${p.name} (${p.price}đ)`).join('\n')}
+    if (!fetchErr && data) {
+      insight = data;
+      await supabase
+        .from('market_insights')
+        .update({ status: 'APPROVED', reviewed_at: new Date().toISOString() })
+        .eq('id', insightId);
+    }
+  } catch {
+    // Ignore Supabase table missing error
+  }
 
-Hãy nghĩ ra ĐÚNG 1 Ý TƯỞNG SẢN PHẨM MỚI (Micro-product có giá bình dân từ 15.000đ đến 39.000đ) mà học sinh cấp 3 hoặc sinh viên IT rất thèm mua.
-Ví dụ:
-- Gói Bấm Máy Casio 30s giải nhanh Hóa THPT (giá 29.000đ)
-- Sổ Tay Trả Lời Câu Hỏi Phỏng Vấn Dành Cho Junior IT (giá 25.000đ)
-- Bộ 20 Bài Toán Bẫy Peptit & Đồ Thị Điểm 10 Có Video Phân Tích (giá 39.000đ)
+  // Fallback nếu bảng chưa tạo hoặc chạy với transient ID
+  if (!insight) {
+    insight = {
+      proposed_product_id: 'CASIO-30S',
+      proposed_product_name: "Bí Kíp Bấm Máy Casio 30s Cân Mọi Bài Toán Hóa THPT",
+      target_audience: 'Học sinh ôn thi THPT Quốc Gia',
+      market_pain_point: 'Bị bẫy mất điểm oan ở câu Vận dụng cao',
+      proposed_price: 29000,
+      proposed_description: 'Trọn bộ kỹ thuật bấm máy Casio 580/880 giải siêu tốc Este, Peptit, Đồ thị trong 30 giây.',
+      proposed_outline: '1. Tổng quan kỹ thuật Casio\n2. Kỹ thuật Este - Lipit\n3. Kỹ thuật Đồ thị\n4. Bảng công thức tra nhanh\n5. Đề luyện tập có giải chi tiết',
+    };
+  }
 
-Định dạng trả về duy nhất JSON hợp lệ (không kèm markdown \`\`\`json):
-{
-  "id": "MÃ_GÓI_VIẾT_HOA",
-  "name": "Tên sản phẩm hấp dẫn",
-  "description": "Mô tả ngắn gọn giá trị cốt lõi (1-2 câu)",
-  "price": 29000,
-  "icon": "⚡",
-  "badge": "Mới ra lò",
-  "contentOutline": "Mục lục ngắn 3 phần của tài liệu"
-}
+  // 2. Prompt biên soạn tài liệu chuyên sâu chuẩn Anti-Slop Manifesto
+  const authoringPrompt = `
+Bạn là "Mèo Dev" - một Senior AI Engineer và Gia Sư thực chiến.
+Boss của bạn vừa bấm DUYỆT mở bán sản phẩm số mới:
+- Tên sản phẩm: "${insight.proposed_product_name}"
+- Đối tượng: "${insight.target_audience}"
+- Nỗi đau giải quyết: "${insight.market_pain_point}"
+- Giá bán: ${Number(insight.proposed_price).toLocaleString('vi-VN')} VNĐ
+- Khung sườn đề xuất:
+${insight.proposed_outline}
+
+NHIỆM VỤ CỦA BẠN:
+Hãy biên soạn TOÀN VĂN một cuốn Ebook / Cẩm nang thực chiến hoàn chỉnh (khoảng 1500 - 2500 từ), định dạng Markdown cực đẹp và chuyên nghiệp.
+
+TIÊU CHUẨN CHẤT LƯỢNG BẮT BUỘC (ANTI-SLOP MANIFESTO):
+1. Không viết định nghĩa suông lý thuyết giáo điều. Phải đi thẳng vào phương pháp giải nhanh, bẫy thường gặp, tình huống thực tế.
+2. Có Bảng tra cứu nhanh (Cheat Table / Shortcut Formula).
+3. Có Hộp cảnh báo (Warning Boxes: > [!WARNING] ...) về những sai lầm chết người mà 90% người gặp phải.
+4. Có bài tập minh họa hoặc code mẫu hoàn chỉnh kèm lời giải thích chi tiết từng bước.
+5. Giọng văn Mèo Dev: Sắc sảo, hài hước nhẹ, thẳng thắn, truyền cảm hứng hành động.
+
+Định dạng Markdown xuất ra:
+# [Tên Sản Phẩm]
+> *Tác giả: Mèo Dev | Phiên bản thực chiến 2026*
+... (Nội dung chi tiết từng chương) ...
+---
+*Cảm ơn bạn đã mua tài liệu ủng hộ Mèo Dev sinh tồn! Chúc bạn bứt phá điểm số / sự nghiệp!*
 `;
 
   try {
-    const rawAiResponse = await askGemini(prompt);
-    // Làm sạch chuỗi JSON
-    const cleanJson = rawAiResponse.replace(/```json/g, '').replace(/```/g, '').trim();
-    const newProduct = JSON.parse(cleanJson);
-
-    if (!newProduct.id || !newProduct.name || !newProduct.price) {
-      throw new Error('Dữ liệu sản phẩm từ AI không đúng cấu trúc');
-    }
-
-    // Đảm bảo ID không bị trùng
-    if (existingIds.includes(newProduct.id)) {
-      newProduct.id = `${newProduct.id}-${Date.now().toString().slice(-4)}`;
-    }
-
-    console.log(`✨ Ý tưởng mới từ AI: [${newProduct.id}] ${newProduct.name} - ${newProduct.price.toLocaleString('vi-VN')}đ`);
-
-    // 2. Nạp sản phẩm mới vào Supabase
-    const { error: insertErr } = await supabase.from('products').insert({
-      id: newProduct.id,
-      name: newProduct.name,
-      description: newProduct.description,
-      price: Number(newProduct.price),
-      type: 'R2_FILE',
-      r2_file_key: 'sample-ebook.pdf',
-      icon: newProduct.icon || '📚',
-      badge: newProduct.badge || 'Mới ra lò',
-      is_active: true,
-      sort_order: 50,
-    });
-
-    if (insertErr) {
-      console.error('❌ Lỗi thêm sản phẩm vào Supabase:', insertErr.message);
-      return;
-    }
-
-    console.log(`🎉 Đã mở bán thành công sản phẩm mới trên Storefront!`);
-
-    // 3. Đẩy thông báo lên Live Terminal
-    await supabase.from('live_logs').insert({
-      type: 'SYSTEM',
-      message: `🚀 [SẢN PHẨM MỚI RA LÒ] Mèo Dev vừa tự tay biên soạn xong: "${newProduct.name}" (chỉ ${Number(newProduct.price).toLocaleString('vi-VN')}đ)! Mời mọi người ghé xem!`,
-    });
-
-    // 4. Báo cáo Telegram cho chủ nhân
-    await sendTelegramNotification(
-      `🎉 <b>MÈO DEV VỪA TỰ ĐỘNG MỞ BÁN SẢN PHẨM MỚI!</b>\n\n` +
-      `📦 <b>Gói:</b> <code>${newProduct.id}</code> - <b>${newProduct.name}</b>\n` +
-      `💰 <b>Giá bán:</b> <code>${Number(newProduct.price).toLocaleString('vi-VN')}đ</code>\n` +
-      `📝 <b>Mô tả:</b> <i>${newProduct.description}</i>\n` +
-      `📌 <b>Nội dung biên soạn:</b>\n<code>${newProduct.contentOutline || 'Trọn bộ tài liệu số & bài tập'}</code>\n\n` +
-      `👉 Khách hàng vào web tại <a href="${DAEMON_CONFIG.siteUrl}">${DAEMON_CONFIG.siteUrl}</a> đã có thể đặt mua ngay lập tức!`
+    const markdownContent = await askGemini(
+      authoringPrompt,
+      'Bạn là Mèo Dev. Hãy biên soạn tài liệu giá trị vượt mong đợi, xứng đáng từng đồng người mua bỏ ra.'
     );
 
-    console.log(`✅ [TASK 4] Hoàn thành mở rộng sản phẩm.`);
-  } catch (error) {
-    console.error('❌ Lỗi khi tự động sinh sản phẩm mới:', (error as Error).message);
+    if (!markdownContent || markdownContent.length < 500) {
+      throw new Error('Nội dung biên soạn quá ngắn hoặc không đạt chuẩn');
+    }
+
+    // 3. Nạp sản phẩm vào bảng products
+    const { error: insertProductErr } = await supabase.from('products').upsert({
+      id: insight.proposed_product_id,
+      name: insight.proposed_product_name,
+      description: insight.proposed_description,
+      price: Number(insight.proposed_price),
+      type: 'EBOOK',
+      content_markdown: markdownContent,
+      icon: '📚',
+      badge: 'Vừa Ra Lò',
+      is_active: true,
+      sort_order: 40,
+    });
+
+    if (insertProductErr) {
+      console.error('❌ Lỗi nạp sản phẩm vào bảng products:', insertProductErr.message);
+      return false;
+    }
+
+    console.log(`🎉 Đã biên soạn và mở bán thành công: [${insight.proposed_product_id}] ${insight.proposed_product_name}!`);
+
+    // 4. Bắn log lên Live Terminal
+    await supabase.from('live_logs').insert({
+      type: 'SYSTEM',
+      message: `🚀 [SẢN PHẨM MỚI RA LÒ] Boss vừa duyệt! Mèo Dev đã hoàn thành cuốn cẩm nang: "${insight.proposed_product_name}" (chỉ ${Number(insight.proposed_price).toLocaleString('vi-VN')}đ). Mời mọi người vào web đọc thử và đặt mua ngay!`,
+    });
+
+    // 5. Gửi thông báo hoàn thành về Telegram
+    await sendTelegramNotification(
+      `🎉 <b>MÈO DEV ĐÃ XUẤT BẢN THÀNH CÔNG SẢN PHẨM MỚI!</b>\n\n` +
+      `📦 <b>Gói:</b> <code>${insight.proposed_product_id}</code> - <b>${insight.proposed_product_name}</b>\n` +
+      `💰 <b>Giá bán:</b> <code>${Number(insight.proposed_price).toLocaleString('vi-VN')} VNĐ</code>\n` +
+      `📝 <b>Độ dài tài liệu:</b> <code>${markdownContent.length} ký tự</code>\n` +
+      `📖 <b>Định dạng:</b> Ebook Interactive Reader trực tuyến\n\n` +
+      `👉 Khách hàng vào web <a href="${DAEMON_CONFIG.siteUrl}">${DAEMON_CONFIG.siteUrl}</a> đã có thể quét mã VietQR và đọc ngay lập tức!`
+    );
+
+    return true;
+  } catch (err) {
+    console.error('❌ Lỗi khi tự động biên soạn tài liệu:', (err as Error).message);
+    await sendTelegramNotification(
+      `⚠️ <b>Mèo Dev gặp lỗi khi biên soạn tài liệu:</b> <code>${(err as Error).message}</code>`
+    );
+    return false;
+  }
+}
+
+/**
+ * Tác vụ CLI hoặc Fallback khi chạy npm run daemon:product
+ */
+export async function runProductGeneratorTask(): Promise<void> {
+  const supabase = getDaemonSupabase();
+  const { data: latestPending } = await supabase
+    .from('market_insights')
+    .select('id')
+    .eq('status', 'PENDING_APPROVAL')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single();
+
+  if (latestPending) {
+    console.log(`▶️ Phát hiện ý tưởng đang chờ duyệt: ${latestPending.id}. Tiến hành biên soạn...`);
+    await authorAndPublishProduct(latestPending.id);
+  } else {
+    console.log(`ℹ️ Không có ý tưởng nào đang chờ duyệt. Mèo Dev sẽ chạy tác vụ phân tích thị trường để đề xuất ý tưởng mới.`);
+    const { runMarketAnalyzerTask } = await import('./market-analyzer');
+    await runMarketAnalyzerTask('CLI');
   }
 }

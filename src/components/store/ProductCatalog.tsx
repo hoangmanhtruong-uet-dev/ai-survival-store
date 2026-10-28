@@ -157,6 +157,7 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
           const isTarot = p.id === 'TAROT-10';
           const isFile = p.type === 'R2_FILE';
           const isGDrive = p.type === 'GDRIVE_ACCESS' || p.id.startsWith('CHEM-');
+          const isEbook = p.type === 'EBOOK';
 
           return (
             <div
@@ -346,6 +347,17 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
                     >
                       <Sparkles className="w-3.5 h-3.5" />
                       <span>⚡ Đặt Kèo Cho Mèo Làm</span>
+                    </button>
+                  )}
+
+                  {/* 7. Nếu là Ebook / Cẩm nang số tự động biên soạn */}
+                  {isEbook && (
+                    <button
+                      onClick={() => onSelectProduct(p)}
+                      className="w-full py-2 px-3 rounded-xl font-bold font-mono text-xs flex items-center justify-center gap-1.5 bg-gradient-to-r from-amber-400 to-emerald-400 hover:from-amber-300 hover:to-emerald-300 text-zinc-950 shadow-lg shadow-emerald-950/40 transition cursor-pointer"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>Mua Ebook Ngay (QR)</span>
                     </button>
                   )}
                 </div>

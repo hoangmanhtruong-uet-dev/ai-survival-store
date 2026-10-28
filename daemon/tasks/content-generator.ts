@@ -41,7 +41,18 @@ export async function runDailyContentGeneratorTask(): Promise<void> {
   const todayCount = todayOrders?.length || 0;
   const todayPaid = todayOrders?.filter((o) => o.status === 'PAID').length || 0;
 
+  // Lấy xu hướng thị trường nóng nhất vừa cào được trong ngày
+  const { data: latestInsight } = await supabase
+    .from('market_insights')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single();
+
   console.log(`📊 Số liệu hôm nay: Ngày ${currentDayIndex}/60 | Tiền: ${currentAmount.toLocaleString('vi-VN')}đ / 7M (${progressPercent}%) | Đơn hôm nay: ${todayPaid}/${todayCount}`);
+  if (latestInsight) {
+    console.log(`🔥 Đã tích hợp insight thị trường hôm nay: "${latestInsight.trend_summary.slice(0, 45)}..."`);
+  }
 
   // 2. Gọi Gemini Pro biên soạn bài viết Threads/Facebook siêu viral
   const prompt = `
@@ -53,6 +64,12 @@ THÔNG SỐ THỰC TẾ HÔM NAY:
 - Doanh thu tích lũy: ${currentAmount.toLocaleString('vi-VN')}đ / 7.000.000đ (Đạt ${progressPercent}%)
 - Số đơn hôm nay: ${todayPaid} đơn thành công
 - Độ no bụng hiện tại: ${hungerLevel}%
+
+XU HƯỚNG THỊ TRƯỜNG MÈO VỪA QUÉT ĐƯỢC HÔM NAY:
+- Chủ đề nóng đang sốt: "${latestInsight?.trend_summary || 'Học sinh đang đổ xô giải đề Hóa bẫy / Sinh viên IT lo lắng tìm việc'}"
+- Nỗi đau của cộng đồng: "${latestInsight?.market_pain_point || 'Hay sai câu cơ bản mất điểm oan'}"
+- Góc Marketing Viral bắt trend: "${latestInsight?.marketing_angle || 'Châm biếm nhẹ thói quen học vẹt / nộp CV generic'}"
+${latestInsight?.proposed_product_name ? `- Sản phẩm mới nổi: "${latestInsight.proposed_product_name}"` : ''}
 
 YÊU CẦU NỘI DUNG:
 Hãy viết một bài đăng mạng xã hội (cực hợp đăng Threads / Facebook Cá Nhân / Nhóm IT & Gen Z) theo phong cách hài hước, cà khịa, lôi cuốn nhưng tạo cảm giác tò mò và kích thích người xem click vào web ủng hộ.
