@@ -17,6 +17,7 @@ import { HallOfFame } from '@/components/hall-of-fame/HallOfFame';
 import { CertificateModal } from '@/components/effects/CertificateModal';
 import { CustomTaskModal } from '@/components/services/CustomTaskModal';
 import { EbookReaderModal } from '@/components/services/EbookReaderModal';
+import { ChemistryPreorderModal } from '@/components/funnel/ChemistryPreorderModal';
 import { soundEngine } from '@/lib/audio';
 import { getSupabaseClient } from '@/lib/supabase/client';
 
@@ -51,6 +52,14 @@ export default function Home() {
   const [isEbookReaderOpen, setIsEbookReaderOpen] = useState(false);
   const [ebookTitle, setEbookTitle] = useState('');
   const [ebookMarkdown, setEbookMarkdown] = useState('');
+
+  const [isChemistryPreorderOpen, setIsChemistryPreorderOpen] = useState(false);
+  const [preorderTierId, setPreorderTierId] = useState<string>('CHEM-PACK');
+
+  const handleOpenChemistryPreorder = useCallback((tierId?: string) => {
+    if (tierId) setPreorderTierId(tierId);
+    setIsChemistryPreorderOpen(true);
+  }, []);
 
   const handleOpenEbookReader = useCallback((title: string, markdown: string) => {
     setEbookTitle(title);
@@ -292,6 +301,7 @@ export default function Home() {
           onOpenChemistryTutor={handleOpenChemistryTutor}
           onOpenChemistryQuiz={handleOpenChemistryQuiz}
           onOpenCustomTask={() => setIsCustomTaskOpen(true)}
+          onOpenChemistryPreorder={handleOpenChemistryPreorder}
         />
 
         {/* KHU VỰC 4: KHU THỰC THI DỊCH VỤ & TRA CỨU ĐƠN */}
@@ -334,6 +344,7 @@ export default function Home() {
           onOpenCertificate={handleOpenCertificate}
           onOpenChemistryTutor={handleOpenChemistryTutor}
           onOpenEbookReader={handleOpenEbookReader}
+          onOpenChemistryPreorder={handleOpenChemistryPreorder}
         />
       )}
 
@@ -364,6 +375,12 @@ export default function Home() {
           const p = products.find((x) => x.id === pkgId);
           if (p) handleSelectProduct(p);
         }}
+      />
+
+      <ChemistryPreorderModal
+        isOpen={isChemistryPreorderOpen}
+        onClose={() => setIsChemistryPreorderOpen(false)}
+        selectedTierId={preorderTierId}
       />
 
       {isCertModalOpen && (

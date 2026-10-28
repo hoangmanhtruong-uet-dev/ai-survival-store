@@ -2,7 +2,8 @@
 
 import React from 'react';
 import { Product } from '@/types';
-import { ShoppingBag, Sparkles, Zap, Heart, Flame, Download } from 'lucide-react';
+import { ShoppingBag, Sparkles, Zap, Heart, Flame, Download, Clock } from 'lucide-react';
+import { isChemistryComingSoon } from '@/lib/constants';
 
 interface ProductCatalogProps {
   products: Product[];
@@ -12,6 +13,7 @@ interface ProductCatalogProps {
   onOpenChemistryTutor?: (token?: string) => void;
   onOpenChemistryQuiz?: () => void;
   onOpenCustomTask?: () => void;
+  onOpenChemistryPreorder?: (tierId?: string) => void;
 }
 
 export const ProductCatalog: React.FC<ProductCatalogProps> = ({
@@ -22,7 +24,14 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
   onOpenChemistryTutor,
   onOpenChemistryQuiz,
   onOpenCustomTask,
+  onOpenChemistryPreorder,
 }) => {
+  const [isComingSoon, setIsComingSoon] = React.useState(true);
+
+  React.useEffect(() => {
+    setIsComingSoon(isChemistryComingSoon());
+  }, []);
+
   // Gom các gói Hóa học lại thành 1 thẻ duy nhất "CHEM-PACK", ẩn các gói con CHEM-49, CHEM-89, CHEM-149
   const displayProducts = React.useMemo(() => {
     const nonSubChem = products.filter((p) => !['CHEM-49', 'CHEM-89', 'CHEM-149'].includes(p.id));
@@ -37,7 +46,7 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
         price: 49000,
         type: 'GDRIVE_ACCESS',
         icon: '🧪',
-        badge: '3 Gói Lựa Chọn',
+        badge: isComingSoon ? '⏳ Đang Hoàn Thiện • Mở Bán Sau 3 Ngày' : '3 Gói Lựa Chọn',
         is_active: true,
         sort_order: 3,
       };
@@ -308,13 +317,25 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
                   {/* 5. Nếu là Gói Đề Hóa GDRIVE_ACCESS (CHEM-PACK) */}
                   {isGDrive && (
                     <>
-                      <button
-                        onClick={() => onSelectProduct(p)}
-                        className="w-full py-2 px-3 rounded-xl font-bold font-mono text-xs flex items-center justify-center gap-1.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-zinc-950 shadow-lg shadow-emerald-950/40 transition cursor-pointer"
-                      >
-                        <Sparkles className="w-3.5 h-3.5" />
-                        <span>⚡ Chọn Gói Mua (3 Lựa Chọn)</span>
-                      </button>
+                      {isComingSoon ? (
+                        <button
+                          onClick={() => {
+                            if (onOpenChemistryPreorder) onOpenChemistryPreorder('CHEM-PACK');
+                          }}
+                          className="w-full py-2 px-3 rounded-xl font-bold font-mono text-xs flex items-center justify-center gap-1.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-zinc-950 shadow-lg shadow-amber-950/40 transition cursor-pointer"
+                        >
+                          <Clock className="w-3.5 h-3.5" />
+                          <span>🎯 Đăng Ký Sớm 0đ (Mở Bán Sau 3 Ngày)</span>
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => onSelectProduct(p)}
+                          className="w-full py-2 px-3 rounded-xl font-bold font-mono text-xs flex items-center justify-center gap-1.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-zinc-950 shadow-lg shadow-emerald-950/40 transition cursor-pointer"
+                        >
+                          <Sparkles className="w-3.5 h-3.5" />
+                          <span>⚡ Chọn Gói Mua (3 Lựa Chọn)</span>
+                        </button>
+                      )}
 
                       <div className="flex items-center justify-between gap-1 pt-0.5">
                         {onOpenChemistryQuiz && (

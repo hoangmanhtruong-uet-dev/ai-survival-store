@@ -2,10 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { Product, Order } from '@/types';
-import { X, Copy, Check, Loader2, Sparkles, Download, ArrowRight, ShieldCheck, Heart, Award, ExternalLink, Flame, BookOpen } from 'lucide-react';
+import { X, Copy, Check, Loader2, Sparkles, Download, ArrowRight, ShieldCheck, Heart, Award, ExternalLink, Flame, BookOpen, Clock } from 'lucide-react';
 import { generateVietQRUrl, getBankConfig } from '@/lib/vietqr';
 import { soundEngine } from '@/lib/audio';
 import { getSupabaseClient } from '@/lib/supabase/client';
+import { isChemistryComingSoon } from '@/lib/constants';
 import { RealtimeChannel } from '@supabase/supabase-js';
 import confetti from 'canvas-confetti';
 
@@ -18,6 +19,7 @@ interface PaymentModalProps {
   onOpenCertificate?: (order: Order) => void;
   onOpenChemistryTutor?: (token?: string) => void;
   onOpenEbookReader?: (title: string, markdown: string) => void;
+  onOpenChemistryPreorder?: (tierId?: string) => void;
 }
 
 export interface ChemistryTier {
@@ -67,6 +69,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   onOpenCertificate,
   onOpenChemistryTutor,
   onOpenEbookReader,
+  onOpenChemistryPreorder,
 }) => {
   const [order, setOrder] = useState<Order | null>(null);
   const [buyerName, setBuyerName] = useState('');
@@ -79,6 +82,11 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
   const [directQrUrl, setDirectQrUrl] = useState<string | null>(null);
   const [payosAccount, setPayosAccount] = useState<{ bankId: string; accountNo: string; accountName?: string } | null>(null);
+  const [isComingSoon, setIsComingSoon] = useState(true);
+
+  useEffect(() => {
+    setIsComingSoon(isChemistryComingSoon());
+  }, []);
 
   // Xác định gói mặc định cho sản phẩm Hóa học
   const initialTier =
@@ -679,95 +687,122 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 </div>
               )}
               
-              {/* Ảnh VietQR chuẩn Compact2 */}
-              <div className="relative flex flex-col items-center justify-center bg-white p-3 rounded-2xl shadow-inner">
-                {isCreatingOrder || !qrUrl ? (
-                  <div className="h-60 flex flex-col items-center justify-center gap-2 text-zinc-600 text-xs font-mono">
-                    <Loader2 className="w-6 h-6 animate-spin text-emerald-600" />
-                    <span>Đang khởi tạo mã đơn...</span>
+              {/* Ảnh VietQR chuẩn Compact2 hoặc Thông báo Đang Hoàn Thiện */}
+              {isChemistry && isComingSoon ? (
+                <div className="bg-amber-950/40 border border-amber-600/50 rounded-2xl p-4 text-center space-y-3">
+                  <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center mx-auto text-amber-400">
+                    <Clock className="w-5 h-5" />
                   </div>
-                ) : (
-                  <>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={qrUrl}
-                      alt="VietQR Code"
-                      className="w-56 h-56 object-contain"
-                    />
-                    <div className="text-[10px] text-zinc-500 font-mono mt-1 text-center">
-                      Mở app Mobile Banking quét mã để điền tự động 100%
-                    </div>
-                  </>
-                )}
-              </div>
-
-              {/* Thông tin chuyển khoản chi tiết */}
-              {order && (
-                <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-3 space-y-2 text-xs font-mono">
-                  
-                  {/* Số tiền */}
-                  <div className="flex items-center justify-between py-1 border-b border-zinc-800/80">
-                    <span className="text-zinc-400">Số tiền:</span>
-                    <span className="text-sm font-bold text-emerald-400">
-                      {order.amount.toLocaleString('vi-VN')} VNĐ
-                    </span>
+                  <div>
+                    <h4 className="font-bold font-mono text-sm text-amber-400">GÓI ĐỀ HÓA ĐANG HOÀN THIỆN ĐỢT ĐỀ CUỐI</h4>
+                    <p className="text-xs text-zinc-300 mt-1 leading-relaxed">
+                      Thư mục Google Drive tuyển chọn đang được kiểm duyệt đợt cuối và sẽ chính thức mở bán sau 3 ngày nữa (06:00 ngày 01/11/2026).
+                    </p>
                   </div>
-
-                  {/* Ngân hàng & Số tài khoản */}
-                  <div className="flex items-center justify-between py-1 border-b border-zinc-800/80">
-                    <span className="text-zinc-400">Ngân hàng:</span>
-                    <span className="text-zinc-200 font-bold">{activeBankId}</span>
-                  </div>
-
-                  <div className="flex items-center justify-between py-1 border-b border-zinc-800/80">
-                    <span className="text-zinc-400">Số tài khoản:</span>
-                    <button
-                      onClick={() => copyToClipboard(activeAccountNo, 'stk')}
-                      className="flex items-center gap-1.5 text-zinc-200 hover:text-emerald-400 transition"
-                    >
-                      <span className="font-bold">{activeAccountNo}</span>
-                      {copiedField === 'stk' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                    </button>
-                  </div>
-
-                  {/* NỘI DUNG CHUYỂN KHOẢN (BẮT BUỘC CHÍNH XÁC) */}
-                  <div className="flex items-center justify-between py-1.5 bg-zinc-950 px-2 rounded-lg border border-amber-500/30">
-                    <span className="text-amber-400 font-bold text-[11px]">Nội dung CK:</span>
-                    <button
-                      onClick={() => copyToClipboard(order.order_code, 'code')}
-                      className="flex items-center gap-1.5 text-amber-300 font-bold hover:text-amber-200 transition"
-                      title="Bấm để copy mã đơn"
-                    >
-                      <span className="text-sm underline">{order.order_code}</span>
-                      {copiedField === 'code' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                    </button>
-                  </div>
-
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose();
+                      if (onOpenChemistryPreorder) onOpenChemistryPreorder(selectedTierId);
+                    }}
+                    className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-400 to-orange-400 hover:from-amber-300 hover:to-orange-300 text-zinc-950 font-bold font-mono text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-amber-950/40 transition cursor-pointer"
+                  >
+                    <span>🎯 Chuyển Sang Nhận Quà & Đăng Ký Sớm 0đ</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
                 </div>
+              ) : (
+                <>
+                  <div className="relative flex flex-col items-center justify-center bg-white p-3 rounded-2xl shadow-inner">
+                    {isCreatingOrder || !qrUrl ? (
+                      <div className="h-60 flex flex-col items-center justify-center gap-2 text-zinc-600 text-xs font-mono">
+                        <Loader2 className="w-6 h-6 animate-spin text-emerald-600" />
+                        <span>Đang khởi tạo mã đơn...</span>
+                      </div>
+                    ) : (
+                      <>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={qrUrl}
+                          alt="VietQR Code"
+                          className="w-56 h-56 object-contain"
+                        />
+                        <div className="text-[10px] text-zinc-500 font-mono mt-1 text-center">
+                          Mở app Mobile Banking quét mã để điền tự động 100%
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Thông tin chuyển khoản chi tiết */}
+                  {order && (
+                    <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-3 space-y-2 text-xs font-mono">
+                      
+                      {/* Số tiền */}
+                      <div className="flex items-center justify-between py-1 border-b border-zinc-800/80">
+                        <span className="text-zinc-400">Số tiền:</span>
+                        <span className="text-sm font-bold text-emerald-400">
+                          {order.amount.toLocaleString('vi-VN')} VNĐ
+                        </span>
+                      </div>
+
+                      {/* Ngân hàng & Số tài khoản */}
+                      <div className="flex items-center justify-between py-1 border-b border-zinc-800/80">
+                        <span className="text-zinc-400">Ngân hàng:</span>
+                        <span className="text-zinc-200 font-bold">{activeBankId}</span>
+                      </div>
+
+                      <div className="flex items-center justify-between py-1 border-b border-zinc-800/80">
+                        <span className="text-zinc-400">Số tài khoản:</span>
+                        <button
+                          onClick={() => copyToClipboard(activeAccountNo, 'stk')}
+                          className="flex items-center gap-1.5 text-zinc-200 hover:text-emerald-400 transition"
+                        >
+                          <span className="font-bold">{activeAccountNo}</span>
+                          {copiedField === 'stk' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                        </button>
+                      </div>
+
+                      {/* NỘI DUNG CHUYỂN KHOẢN (BẮT BUỘC CHÍNH XÁC) */}
+                      <div className="flex items-center justify-between py-1.5 bg-zinc-950 px-2 rounded-lg border border-amber-500/30">
+                        <span className="text-amber-400 font-bold text-[11px]">Nội dung CK:</span>
+                        <button
+                          onClick={() => copyToClipboard(order.order_code, 'code')}
+                          className="flex items-center gap-1.5 text-amber-300 font-bold hover:text-amber-200 transition"
+                          title="Bấm để copy mã đơn"
+                        >
+                          <span className="text-sm underline">{order.order_code}</span>
+                          {copiedField === 'code' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                        </button>
+                      </div>
+
+                    </div>
+                  )}
+
+                  {/* Nút Mở Cổng PayOS nếu được kích hoạt */}
+                  {checkoutUrl && (
+                    <a
+                      href={checkoutUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold font-mono text-xs flex items-center justify-center gap-2 transition shadow-lg shadow-blue-950/40"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      <span>Mở Cổng Thanh Toán PayOS (Có Chọn Ngân Hàng)</span>
+                    </a>
+                  )}
+
+                  {/* Trạng thái chờ Webhook */}
+                  <div className="flex items-center justify-center gap-2 py-1 text-xs text-zinc-400 font-mono">
+                    <Loader2 className="w-4 h-4 animate-spin text-emerald-400" />
+                    <span>Đang chờ ngân hàng báo ting ting (2 - 5 giây)...</span>
+                  </div>
+
+                  <div className="text-[11px] text-zinc-500 text-center">
+                    Ngay khi nhận được tiền, màn hình sẽ tự động lật sang nhận hàng mà không cần bấm F5!
+                  </div>
+                </>
               )}
-
-              {/* Nút Mở Cổng PayOS nếu được kích hoạt */}
-              {checkoutUrl && (
-                <a
-                  href={checkoutUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold font-mono text-xs flex items-center justify-center gap-2 transition shadow-lg shadow-blue-950/40"
-                >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                  <span>Mở Cổng Thanh Toán PayOS (Có Chọn Ngân Hàng)</span>
-                </a>
-              )}
-
-              {/* Trạng thái chờ Webhook */}
-              <div className="flex items-center justify-center gap-2 py-1 text-xs text-zinc-400 font-mono">
-                <Loader2 className="w-4 h-4 animate-spin text-emerald-400" />
-                <span>Đang chờ ngân hàng báo ting ting (2 - 5 giây)...</span>
-              </div>
-
-              <div className="text-[11px] text-zinc-500 text-center">
-                Ngay khi nhận được tiền, màn hình sẽ tự động lật sang nhận hàng mà không cần bấm F5!
-              </div>
 
             </div>
           )}
