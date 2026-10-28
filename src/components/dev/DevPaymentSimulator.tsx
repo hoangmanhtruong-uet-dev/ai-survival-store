@@ -13,7 +13,7 @@ export const DevPaymentSimulator: React.FC<DevPaymentSimulatorProps> = ({
   onClose,
   onPaymentSuccess,
 }) => {
-  const [provider, setProvider] = useState<'SEPAY' | 'CASSO' | 'DIRECT'>('SEPAY');
+  const [provider, setProvider] = useState<'SEPAY' | 'CASSO' | 'PAYOS' | 'DIRECT'>('SEPAY');
   const [orderCode, setOrderCode] = useState('MEO-8921');
   const [amount, setAmount] = useState('10000');
   const [buyerName, setBuyerName] = useState('Dev Tester');
@@ -34,6 +34,7 @@ export const DevPaymentSimulator: React.FC<DevPaymentSimulatorProps> = ({
     const numAmount = parseInt(amount, 10) || 10000;
 
     let payload: Record<string, unknown> = {};
+    let endpoint = '/api/webhooks/payment';
 
     if (provider === 'SEPAY') {
       // Chuẩn SePay webhook payload
@@ -64,6 +65,23 @@ export const DevPaymentSimulator: React.FC<DevPaymentSimulatorProps> = ({
           },
         ],
       };
+    } else if (provider === 'PAYOS') {
+      // Chuẩn PayOS webhook payload
+      endpoint = '/api/webhooks/payos';
+      const numericCode = parseInt(cleanCode.replace(/\D/g, ''), 10) || 4829;
+      payload = {
+        code: '00',
+        desc: 'success',
+        data: {
+          orderCode: numericCode,
+          amount: numAmount,
+          description: cleanCode,
+          accountNumber: '0987654321',
+          reference: `PAYOS_${Date.now()}`,
+          transactionDateTime: new Date().toISOString(),
+        },
+        signature: 'simulated_payos_signature',
+      };
     } else {
       // Direct
       payload = {
@@ -73,7 +91,7 @@ export const DevPaymentSimulator: React.FC<DevPaymentSimulatorProps> = ({
     }
 
     try {
-      const res = await fetch('/api/webhooks/payment', {
+      const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -119,13 +137,13 @@ export const DevPaymentSimulator: React.FC<DevPaymentSimulatorProps> = ({
           {/* Chọn Provider */}
           <div>
             <label className="block text-zinc-400 mb-1">Cổng Webhook:</label>
-            <div className="grid grid-cols-3 gap-2">
-              {(['SEPAY', 'CASSO', 'DIRECT'] as const).map((p) => (
+            <div className="grid grid-cols-4 gap-1.5">
+              {(['SEPAY', 'CASSO', 'PAYOS', 'DIRECT'] as const).map((p) => (
                 <button
                   key={p}
                   type="button"
                   onClick={() => setProvider(p)}
-                  className={`py-1.5 px-2 rounded-lg border text-center transition ${
+                  className={`py-1.5 px-1.5 rounded-lg border text-center transition text-[11px] ${
                     provider === p
                       ? 'bg-amber-950 text-amber-300 border-amber-500 font-bold'
                       : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:bg-zinc-800'

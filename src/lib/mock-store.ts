@@ -241,8 +241,22 @@ export const mockStore = {
   },
 
   markOrderAsPaid(orderCode: string, transferAmount?: number, paymentMeta?: Record<string, unknown>): Order | null {
-    const order = global.__mockStoreData!.orders.get(orderCode);
-    if (!order) return null;
+    let order = global.__mockStoreData!.orders.get(orderCode);
+    if (!order) {
+      // Tự động khởi tạo đơn nếu khách chuyển khoản trực tiếp hoặc worker khác tạo
+      const defaultProduct = this.getProductById('PATE-05') || INITIAL_PRODUCTS[0];
+      order = {
+        id: `ord_${Date.now()}`,
+        order_code: orderCode,
+        product_id: defaultProduct.id,
+        product: defaultProduct,
+        amount: transferAmount || defaultProduct.price,
+        status: 'PENDING',
+        buyer_name: 'Ân nhân hảo tâm',
+        created_at: new Date().toISOString(),
+      };
+      global.__mockStoreData!.orders.set(orderCode, order);
+    }
     if (order.status === 'PAID') return order; // Đã thanh toán trước đó
 
     order.status = 'PAID';

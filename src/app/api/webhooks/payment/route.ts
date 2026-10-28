@@ -42,6 +42,13 @@ export async function POST(req: NextRequest) {
       transferAmount = Number(payload.transferAmount || 0);
       paymentMeta = payload;
     }
+    // Trường hợp 4: PayOS Webhook ({ code: "00", data: { orderCode, amount, description, ... }, signature: "..." })
+    else if (payload.data && typeof payload.data === 'object' && !Array.isArray(payload.data) && payload.data.orderCode) {
+      content = payload.data.description || '';
+      transferAmount = Number(payload.data.amount || 0);
+      rawOrderCode = `MEO-${payload.data.orderCode}`;
+      paymentMeta = payload.data;
+    }
 
     // Nếu chưa có trực tiếp orderCode thì bóc tách bằng Regex từ content/description
     const orderCode = rawOrderCode ? rawOrderCode.toUpperCase().trim() : extractOrderCode(content);

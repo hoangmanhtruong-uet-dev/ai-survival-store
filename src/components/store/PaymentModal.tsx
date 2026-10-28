@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Product, Order } from '@/types';
-import { X, Copy, Check, Loader2, Sparkles, Download, ArrowRight, ShieldCheck, Heart, Award } from 'lucide-react';
+import { X, Copy, Check, Loader2, Sparkles, Download, ArrowRight, ShieldCheck, Heart, Award, ExternalLink } from 'lucide-react';
 import { generateVietQRUrl, getBankConfig } from '@/lib/vietqr';
 import { soundEngine } from '@/lib/audio';
 import confetti from 'canvas-confetti';
@@ -30,6 +30,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [isPolling, setIsPolling] = useState(false);
+  const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
 
   const bankConfig = getBankConfig();
 
@@ -45,6 +46,9 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
           const data = await res.json();
           if (active && data.success && data.order) {
             setOrder(data.order);
+            if (data.checkoutUrl) {
+              setCheckoutUrl(data.checkoutUrl);
+            }
           }
         } catch {
           // Ignore
@@ -65,6 +69,9 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
           const data = await res.json();
           if (active && data.success && data.order) {
             setOrder(data.order);
+            if (data.checkoutUrl) {
+              setCheckoutUrl(data.checkoutUrl);
+            }
           }
         } catch {
           // Ignore
@@ -338,6 +345,19 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                   </div>
 
                 </div>
+              )}
+
+              {/* Nút Mở Cổng PayOS nếu được kích hoạt */}
+              {checkoutUrl && (
+                <a
+                  href={checkoutUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold font-mono text-xs flex items-center justify-center gap-2 transition shadow-lg shadow-blue-950/40"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span>Mở Cổng Thanh Toán PayOS (Có Chọn Ngân Hàng)</span>
+                </a>
               )}
 
               {/* Trạng thái chờ Webhook */}

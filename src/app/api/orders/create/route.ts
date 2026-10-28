@@ -3,6 +3,7 @@ import { mockStore } from '@/lib/mock-store';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import { generateVietQRUrl, generateOrderCode } from '@/lib/vietqr';
 import { sanitizeBuyerName, filterProfanity } from '@/lib/profanity';
+import { isPayOSConfigured, createPayOSPaymentLink } from '@/lib/payos';
 
 export async function POST(req: NextRequest) {
   try {
@@ -20,7 +21,6 @@ export async function POST(req: NextRequest) {
     let order;
 
     if (supabase) {
-      // Lấy thông tin sản phẩm từ Supabase
       const { data: prodData } = await supabase.from('products').select('*').eq('id', productId).single();
       const productPrice = customAmount || prodData?.price || 5000;
       const orderCode = generateOrderCode();
@@ -41,7 +41,6 @@ export async function POST(req: NextRequest) {
 
       if (!error && newOrder) {
         order = newOrder;
-        // Bắn log vào Supabase
         await supabase.from('live_logs').insert({
           type: 'ORDER_CREATED',
           message: `🧾 Đã tạo đơn ${orderCode} (${prodData?.name || productId} - ${productPrice.toLocaleString('vi-VN')}đ) - Chờ thanh toán...`,
@@ -50,17 +49,41 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Nếu không có Supabase hoặc fallback
     if (!order) {
       order = mockStore.createOrder(productId, cleanName, cleanNote, customAmount);
     }
 
-    const qrUrl = generateVietQRUrl(order.amount, order.order_code);
+    // Mặc định sinh link VietQR
+    let qrUrl = generateVietQRUrl(order.amount, order.order_code);
+    let checkoutUrl: string | undefined = undefined;
+    let isPayOS = false;
+
+    // Nếu cấu hình PayOS thì gọi PayOS API tạo Payment Link
+    if (isPayOSConfigured()) {
+      const origin = req.nextUrl.origin;
+      const payOSRes = await createPayOSPaymentLink({
+        orderCodeStr: order.order_code,
+        amount: order.amount,
+        productName: order.product?.name || productId,
+        origin,
+      });
+
+      if (payOSRes) {
+        checkoutUrl = payOSRes.checkoutUrl;
+        isPayOS = true;
+        // Nếu PayOS trả về qrCode (chuỗi VietQR) ta có thể dùng hoặc giữ ảnh VietQR
+        if (payOSRes.qrCode && payOSRes.qrCode.startsWith('http')) {
+          qrUrl = payOSRes.qrCode;
+        }
+      }
+    }
 
     return NextResponse.json({
       success: true,
       order,
       qrUrl,
+      checkoutUrl,
+      isPayOS,
     });
   } catch (error) {
     return NextResponse.json(
