@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Product, Order } from '@/types';
-import { X, Copy, Check, Loader2, Sparkles, Download, ArrowRight, ShieldCheck, Heart, Award, ExternalLink, Zap } from 'lucide-react';
+import { X, Copy, Check, Loader2, Sparkles, Download, ArrowRight, ShieldCheck, Heart, Award, ExternalLink, Zap, Flame } from 'lucide-react';
 import { generateVietQRUrl, getBankConfig } from '@/lib/vietqr';
 import { soundEngine } from '@/lib/audio';
 import confetti from 'canvas-confetti';
@@ -311,6 +311,44 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
           ) : (
             /* TRƯỜNG HỢP 2: ĐANG CHỜ QUÉT QR & THANH TOÁN */
             <div className="space-y-4">
+
+              {currentProduct?.id === 'ROAST-10' && (
+                <div className="bg-orange-950/60 border border-orange-700/70 p-3 rounded-2xl flex items-center justify-between gap-2">
+                  <div className="text-xs text-orange-300 font-mono">
+                    💡 Mở trực tiếp trang Quét & Sấy CV:
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose();
+                      if (onOpenRoastCV) onOpenRoastCV(order?.order_code || 'RCV-FREE-TEST');
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-orange-500 hover:bg-orange-400 text-zinc-950 font-bold font-mono text-xs flex items-center gap-1 shrink-0 shadow transition"
+                  >
+                    <Flame className="w-3.5 h-3.5" />
+                    <span>Mở Trang Quét CV</span>
+                  </button>
+                </div>
+              )}
+
+              {currentProduct?.id === 'TAROT-10' && (
+                <div className="bg-purple-950/60 border border-purple-700/70 p-3 rounded-2xl flex items-center justify-between gap-2">
+                  <div className="text-xs text-purple-300 font-mono">
+                    💡 Mở trực tiếp phòng Bói Quẻ:
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose();
+                      if (onOpenTarot) onOpenTarot(order?.order_code || 'TRT-FREE-TEST');
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-purple-500 hover:bg-purple-400 text-white font-bold font-mono text-xs flex items-center gap-1 shrink-0 shadow transition"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>Mở Bói Quẻ</span>
+                  </button>
+                </div>
+              )}
               
               {/* Ảnh VietQR chuẩn Compact2 */}
               <div className="relative flex flex-col items-center justify-center bg-white p-3 rounded-2xl shadow-inner">

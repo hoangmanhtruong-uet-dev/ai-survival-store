@@ -7,20 +7,20 @@ import { scrubPII } from '@/lib/profanity';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { redeemCode, cvText } = body;
+    const { redeemCode, cvText, pdfBase64 } = body;
 
-    if (!cvText || cvText.trim().length < 20) {
-      return NextResponse.json({ success: false, error: 'Nội dung CV quá ngắn hoặc trống' }, { status: 400 });
+    if ((!cvText || cvText.trim().length < 10) && !pdfBase64) {
+      return NextResponse.json({ success: false, error: 'Vui lòng nhập nội dung CV hoặc tải lên file PDF' }, { status: 400 });
     }
 
     // Chấp nhận mã RCV-XXXX hoặc bất kỳ mã test nào khi đang thử nghiệm
     const validCode = redeemCode?.trim().toUpperCase() || 'RCV-TEST-MODE';
 
     // Che PII trước khi đưa vào AI và phát sóng
-    const safeCVText = scrubPII(cvText);
+    const safeCVText = cvText ? scrubPII(cvText) : 'File PDF đính kèm';
 
     // Tạo báo cáo sấy từ Gemini
-    const roastReport = await roastCVContent(safeCVText);
+    const roastReport = await roastCVContent(safeCVText, pdfBase64);
 
     // Trích xuất highlight đắt giá để bắn lên Live Terminal công cộng
     const highlightMatches = roastReport.match(/\[HIGHLIGHT\]\s*([^\n]+)/g);

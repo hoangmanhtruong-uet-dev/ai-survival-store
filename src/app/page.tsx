@@ -205,7 +205,12 @@ export default function Home() {
         </section>
 
         {/* KHU VỰC 3: CỬA HÀNG MÌ ĂN LIỀN (INSTANT STORE) */}
-        <ProductCatalog products={products} onSelectProduct={handleSelectProduct} />
+        <ProductCatalog
+          products={products}
+          onSelectProduct={handleSelectProduct}
+          onOpenRoastCV={handleOpenRoastCV}
+          onOpenTarot={handleOpenTarot}
+        />
 
         {/* KHU VỰC 4: KHU THỰC THI DỊCH VỤ & TRA CỨU ĐƠN */}
         <OrderLookup

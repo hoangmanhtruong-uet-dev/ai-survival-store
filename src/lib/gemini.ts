@@ -162,9 +162,9 @@ export async function chatWithCatDev(
 }
 
 /**
- * AI Roast CV Engine
+ * AI Roast CV Engine (Hỗ trợ cả Text thô và File PDF Upload trực tiếp)
  */
-export async function roastCVContent(cvText: string) {
+export async function roastCVContent(cvText: string, pdfBase64?: string) {
   if (isGeminiConfigured()) {
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
@@ -177,13 +177,27 @@ Sau đó đưa ra các gợi ý cụ thể để viết lại chuẩn ATS (Appli
 1. BÀI SẤY CỰC GẮT (3-4 đoạn văn xéo xắt, gọi ứng viên là "con sen", "tấm chiếu mới")
 2. TOP 3 CÂU CHÂM BIẾM ĐẮT GIÁ NHẤT (Mỗi câu 1 dòng, bắt đầu bằng [HIGHLIGHT])
 3. BẢNG BÓC TÁCH LỖI VÀ HƯỚNG SỬA CHUẨN ATS (Format Markdown bảng hoặc danh sách)
-
-NỘI DUNG CV:
-${cvText}
 `;
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const parts: any[] = [{ text: prompt }];
+
+      if (pdfBase64) {
+        parts.push({
+          inlineData: {
+            mimeType: 'application/pdf',
+            data: pdfBase64,
+          },
+        });
+      } else {
+        parts.push({
+          text: `NỘI DUNG CV:\n${cvText}`,
+        });
+      }
+
       const response = await ai.models.generateContent({
         model: getGeminiModel(),
-        contents: prompt,
+        contents: [{ parts }],
       });
 
       return response.text || getMockCVRoast(cvText);
