@@ -1,6 +1,6 @@
 // TypeScript definitions for Mèo Dev Sinh Tồn
 
-export type ProductType = 'DONATE' | 'AI_TASK' | 'R2_FILE' | 'GDRIVE_ACCESS';
+export type ProductType = 'DONATE' | 'AI_TASK' | 'R2_FILE' | 'GDRIVE_ACCESS' | 'CUSTOM_TASK';
 
 export interface Product {
   id: string; // 'PATE-05' | 'ROAST-10' | 'CHEM-PACK' | 'CHEM-49' | 'CHEM-89' | 'CHEM-149' | 'TAROT-10'

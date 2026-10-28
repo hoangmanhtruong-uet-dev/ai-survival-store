@@ -1,5 +1,12 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { DAEMON_CONFIG } from '../config';
+import WebSocket from 'ws';
+
+// Đảm bảo WebSocket luôn có sẵn trên mọi phiên bản Node.js (Node 18, 20, 22+)
+if (typeof globalThis.WebSocket === 'undefined') {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (globalThis as any).WebSocket = WebSocket;
+}
 
 let client: SupabaseClient | null = null;
 
