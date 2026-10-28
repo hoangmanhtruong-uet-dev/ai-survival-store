@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  meo-dev-daemon:
+    build:
+      context: ..
+      dockerfile: daemon/Dockerfile
+    container_name: meo-dev-survival-daemon
+    restart: unless-stopped
+    env_file:
+      - ../.env.local
+    environment:
+      - NODE_ENV=production
+      - TZ=Asia/Ho_Chi_Minh
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+

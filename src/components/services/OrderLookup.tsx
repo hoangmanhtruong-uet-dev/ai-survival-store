@@ -9,12 +9,16 @@ interface OrderLookupProps {
   onOpenPaymentModal: (orderCode: string) => void;
   onOpenRoastCV: (code: string) => void;
   onOpenTarot: (code: string) => void;
+  onOpenChemistryTutor?: (token?: string) => void;
+  onOpenChemistryQuiz?: () => void;
 }
 
 export const OrderLookup: React.FC<OrderLookupProps> = ({
   onOpenPaymentModal,
   onOpenRoastCV,
   onOpenTarot,
+  onOpenChemistryTutor,
+  onOpenChemistryQuiz,
 }) => {
   const [orderCode, setOrderCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -100,21 +104,31 @@ export const OrderLookup: React.FC<OrderLookupProps> = ({
           <Sparkles className="w-3.5 h-3.5 text-purple-400" />
           <span>🔮 Thầy Mèo Bói Quẻ</span>
         </button>
+        {onOpenChemistryTutor && (
+          <button
+            type="button"
+            onClick={() => onOpenChemistryTutor('CHM-DEMO')}
+            className="px-3 py-1.5 rounded-xl bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-700/60 text-emerald-300 font-bold font-mono text-xs flex items-center gap-1.5 transition shadow hover:scale-105 cursor-pointer"
+          >
+            <span>🧪 Trợ Giảng Hóa AI</span>
+          </button>
+        )}
+        {onOpenChemistryQuiz && (
+          <button
+            type="button"
+            onClick={onOpenChemistryQuiz}
+            className="px-3 py-1.5 rounded-xl bg-amber-950/80 hover:bg-amber-900 border border-amber-700/60 text-amber-300 font-bold font-mono text-xs flex items-center gap-1.5 transition shadow hover:scale-105 cursor-pointer"
+          >
+            <span>🎯 Thi Thử 10 Câu Bẫy</span>
+          </button>
+        )}
         <a
           href="/api/download?code=TEST&key=chem-12-lo-trinh.pdf"
           download
           className="px-3 py-1.5 rounded-xl bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-700/60 text-emerald-300 font-bold font-mono text-xs flex items-center gap-1.5 transition shadow hover:scale-105"
         >
           <Download className="w-3.5 h-3.5 text-emerald-400" />
-          <span>🧪 Tải Đề Hóa 12</span>
-        </a>
-        <a
-          href="/api/download?code=TEST&key=nextjs-starter-template.zip"
-          download
-          className="px-3 py-1.5 rounded-xl bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-700/60 text-cyan-300 font-bold font-mono text-xs flex items-center gap-1.5 transition shadow hover:scale-105"
-        >
-          <Download className="w-3.5 h-3.5 text-cyan-400" />
-          <span>⚡ Tải Source Next.js</span>
+          <span>🧪 Tải Đề Hóa 12 Mẫu</span>
         </a>
       </div>
 
@@ -188,6 +202,34 @@ export const OrderLookup: React.FC<OrderLookupProps> = ({
                     <Download className="w-3.5 h-3.5 inline" />
                     <span>Tải File Đã Mua</span>
                   </a>
+                )}
+
+                {order.product?.type === 'GDRIVE_ACCESS' && (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <a
+                      href={order.redeem_code || 'https://drive.google.com'}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full sm:w-auto px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold rounded-lg transition flex items-center justify-center gap-1.5 text-center"
+                    >
+                      <Download className="w-3.5 h-3.5 inline" />
+                      <span>Mở Thư Mục Google Drive</span>
+                    </a>
+                    {order.product_id === 'CHEM-149' && onOpenChemistryTutor && (
+                      <button
+                        onClick={() =>
+                          onOpenChemistryTutor(
+                            ((order.ai_result as Record<string, unknown>)?.tutor_token as string) ||
+                            `CHM-${order.order_code.replace('MEO-', '')}`
+                          )
+                        }
+                        className="w-full sm:w-auto px-4 py-2 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold rounded-lg transition flex items-center justify-center gap-1.5"
+                      >
+                        <span>Mở Trợ Giảng AI</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
                 )}
               </div>
             ) : (

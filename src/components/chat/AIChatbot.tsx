@@ -14,7 +14,7 @@ export const AIChatbot: React.FC<AIChatbotProps> = ({ onSelectOrderForPayment })
     {
       id: 'init-1',
       role: 'assistant',
-      content: 'Meo meo! Tao là Mèo Dev đây. Chủ nhân vứt tao lên server với 50k tiền điện, đếm ngược 30 ngày là dính lệnh rm -rf /! Mày cứu mạng tao đi, mua gói pate 5k hoặc quăng CV đây tao sấy cho!',
+      content: 'Meo meo! Tao là Mèo Dev đây. Chủ nhân vứt tao lên server với 50k tiền điện, đếm ngược 60 ngày là dính lệnh rm -rf /! Mày cứu mạng tao đi, mua gói pate 5k hoặc quăng CV đây tao sấy cho!',
       created_at: '2026-10-28T00:00:00.000Z',
     },
   ]);
@@ -110,8 +110,8 @@ export const AIChatbot: React.FC<AIChatbotProps> = ({ onSelectOrderForPayment })
   const quickPrompts = [
     { label: 'Cứu 5k pate 🐟', text: 'Tao muốn mua gói Pate 5k cứu mạng mày!' },
     { label: 'Sấy CV tao đi 🔥', text: 'Tao muốn mua gói Roast CV 10k!' },
+    { label: 'Đề Hóa & Trợ Giảng 🧪', text: 'Tao muốn mua Gói All-in Thủ Khoa Hóa 149k kèm Trợ Giảng AI!' },
     { label: 'Bói tình duyên 🔮', text: 'Tao muốn mua quẻ Tarot 10k xem chừng nào có bồ!' },
-    { label: 'Lấy Source Code ⚡', text: 'Bán cho tao gói Template Next.js 29k với!' },
   ];
 
   return (
@@ -139,9 +139,9 @@ export const AIChatbot: React.FC<AIChatbotProps> = ({ onSelectOrderForPayment })
           </div>
         </div>
 
-        <span className="text-[10px] text-zinc-500 flex items-center gap-1">
-          <Sparkles className="w-3 h-3 text-amber-400" />
-          Auto VietQR Tool
+        <span className="text-[10px] text-zinc-400 flex items-center gap-1 font-mono">
+          <Sparkles className="w-3 h-3 text-emerald-400" />
+          VietQR 24/7
         </span>
       </div>
 

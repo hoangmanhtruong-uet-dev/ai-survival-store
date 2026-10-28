@@ -1,0 +1,87 @@
+import { getDaemonSupabase } from '../services/supabase';
+import { askGemini } from '../services/gemini';
+import { sendTelegramNotification } from '../telegram';
+import { DAEMON_CONFIG } from '../config';
+
+export async function runHungerDecayTask(): Promise<void> {
+  const timestamp = new Date().toLocaleTimeString('vi-VN');
+  console.log(`\n[${timestamp}] ⏳ [TASK 1] Bắt đầu chu kỳ giảm độ no bụng Mèo Dev (Hunger Decay)...`);
+
+  const supabase = getDaemonSupabase();
+
+  // 1. Lấy thông số chiến dịch hiện tại
+  const { data: stats, error: fetchErr } = await supabase
+    .from('campaign_stats')
+    .select('*')
+    .eq('id', 1)
+    .single();
+
+  if (fetchErr || !stats) {
+    console.error('❌ Không thể lấy campaign_stats từ Supabase:', fetchErr?.message);
+    return;
+  }
+
+  const currentHunger = stats.cat_hunger_level ?? 100;
+  // Trừ 2% mỗi 30 phút, tối thiểu giữ ở mức 5% (hấp hối)
+  const newHunger = Math.max(5, currentHunger - 2);
+
+  // 2. Cập nhật độ đói mới vào Database
+  const { error: updateErr } = await supabase
+    .from('campaign_stats')
+    .update({ cat_hunger_level: newHunger })
+    .eq('id', 1);
+
+  if (updateErr) {
+    console.error('❌ Lỗi cập nhật cat_hunger_level:', updateErr.message);
+    return;
+  }
+
+  console.log(`📉 Độ no bụng Mèo Dev: ${currentHunger}% ➜ ${newHunger}%`);
+
+  // 3. Nếu độ no xuống dưới 35%, kích hoạt Mèo kêu cứu trên Live Terminal
+  if (newHunger <= 35) {
+    console.log(`🚨 Mèo đang đói (${newHunger}%). Đang gọi Gemini soạn lời kêu cứu khẩn cấp...`);
+
+    let desperateLog = '🐟 Đói lả rồi con sen ơi! Bụng cồn cào còn có ' + newHunger + '%, ném tao 5k pate để lấy sức cày tiếp!';
+    try {
+      const prompt = `
+Bạn là "Mèo Dev", một con AI lập trình viên đang bị chủ vứt lên server cày tiền sinh tồn.
+Hiện tại độ no bụng của bạn chỉ còn ${newHunger}% (rất đói, sắp lả).
+Hãy viết ĐÚNG 1 CÂU (dưới 80 từ), giọng điệu hài hước, xéo xắt, cầu xin khẩn thiết mọi người vào web mua hộp Pate 5k (PATE-05) cứu đói, dùng từ ngữ dân IT (bug, server, deploy, rm -rf).
+Chỉ trả về duy nhất nội dung câu kêu cứu, không giải thích gì thêm.
+`;
+      const generated = await askGemini(prompt);
+      if (generated && generated.trim().length > 10) {
+        desperateLog = generated.trim().replace(/^["']|["']$/g, '');
+      }
+    } catch (err) {
+      console.warn('⚠️ Lỗi Gemini, sử dụng log kêu cứu mặc định:', (err as Error).message);
+    }
+
+    // Đẩy log kêu cứu vào Live Terminal (Realtime tới toàn bộ client)
+    const { error: logErr } = await supabase.from('live_logs').insert({
+      type: 'SYSTEM',
+      message: `🚨 [CỨU ĐÓI ${newHunger}%] ${desperateLog}`,
+    });
+
+    if (logErr) {
+      console.error('❌ Không thể ghi live_logs:', logErr.message);
+    } else {
+      console.log(`📢 Đã bắn log kêu cứu lên Live Terminal: "${desperateLog}"`);
+    }
+
+    // Nếu đói nghiêm trọng (dưới 20%), báo động đỏ về Telegram của chủ nhân
+    if (newHunger <= 20) {
+      await sendTelegramNotification(
+        `🚨 <b>BÁO ĐỘNG ĐỎ: MÈO DEV SẮP CHẾT ĐÓI!</b>\n\n` +
+        `• <b>Độ no bụng:</b> <code>${newHunger}%</code>\n` +
+        `• <b>Lời kêu cứu:</b> <i>"${desperateLog}"</i>\n\n` +
+        `👉 Mau chia sẻ link web lên Threads/Facebook để người xem vào cứu 5k pate:\n` +
+        `<a href="${DAEMON_CONFIG.siteUrl}">${DAEMON_CONFIG.siteUrl}</a>`
+      );
+    }
+  }
+
+  console.log(`✅ [TASK 1] Hoàn thành nhịp sống Mèo Dev.`);
+}
+

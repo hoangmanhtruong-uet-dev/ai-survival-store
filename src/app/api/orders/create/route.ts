@@ -8,20 +8,25 @@ import { isPayOSConfigured, createPayOSPaymentLink } from '@/lib/payos';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { productId, buyerName, buyerNote, customAmount, buyerSocialLink } = body;
+    const { productId, buyerName, buyerEmail, buyerNote, customAmount, buyerSocialLink, refCode } = body;
 
     if (!productId) {
       return NextResponse.json({ success: false, error: 'Thiếu mã sản phẩm (productId)' }, { status: 400 });
     }
 
+    // Nếu truyền mã gói chung CHEM-PACK thì mặc định gán vào gói All-in CHEM-149
+    const targetProductId = productId === 'CHEM-PACK' ? 'CHEM-149' : productId;
+
     const cleanName = sanitizeBuyerName(buyerName);
     const cleanNote = buyerNote ? filterProfanity(buyerNote) : '';
+    const cleanEmail = buyerEmail ? buyerEmail.trim().toLowerCase() : undefined;
+    const cleanRef = refCode ? refCode.trim().toUpperCase() : undefined;
     const supabase = getSupabaseClient();
 
     let order;
 
     if (supabase) {
-      const { data: prodData } = await supabase.from('products').select('*').eq('id', productId).single();
+      const { data: prodData } = await supabase.from('products').select('*').eq('id', targetProductId).single();
       const productPrice = customAmount || prodData?.price || 5000;
       const orderCode = generateOrderCode();
 
@@ -29,11 +34,13 @@ export async function POST(req: NextRequest) {
         .from('orders')
         .insert({
           order_code: orderCode,
-          product_id: productId,
+          product_id: targetProductId,
           amount: productPrice,
           buyer_name: cleanName,
+          buyer_email: cleanEmail || null,
           buyer_note: cleanNote,
           buyer_social_link: buyerSocialLink || '',
+          ref_code: cleanRef || null,
           status: 'PENDING',
         })
         .select('*, product:products(*)')
@@ -43,14 +50,14 @@ export async function POST(req: NextRequest) {
         order = newOrder;
         await supabase.from('live_logs').insert({
           type: 'ORDER_CREATED',
-          message: `🧾 Đã tạo đơn ${orderCode} (${prodData?.name || productId} - ${productPrice.toLocaleString('vi-VN')}đ) - Chờ thanh toán...`,
-          meta: { orderCode, amount: productPrice, productId },
+          message: `🧾 Đã tạo đơn ${orderCode} (${prodData?.name || targetProductId} - ${productPrice.toLocaleString('vi-VN')}đ) - Chờ thanh toán...`,
+          meta: { orderCode, amount: productPrice, productId: targetProductId, buyerEmail: cleanEmail },
         });
       }
     }
 
     if (!order) {
-      order = mockStore.createOrder(productId, cleanName, cleanNote, customAmount);
+      order = mockStore.createOrder(targetProductId, cleanName, cleanNote, customAmount, cleanEmail, cleanRef);
     }
 
     // Mặc định sinh link VietQR

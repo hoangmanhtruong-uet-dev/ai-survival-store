@@ -2,9 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { Product, Order } from '@/types';
-import { X, Copy, Check, Loader2, Sparkles, Download, ArrowRight, ShieldCheck, Heart, Award, ExternalLink, Zap, Flame } from 'lucide-react';
+import { X, Copy, Check, Loader2, Sparkles, Download, ArrowRight, ShieldCheck, Heart, Award, ExternalLink, Flame } from 'lucide-react';
 import { generateVietQRUrl, getBankConfig } from '@/lib/vietqr';
 import { soundEngine } from '@/lib/audio';
+import { getSupabaseClient } from '@/lib/supabase/client';
+import { RealtimeChannel } from '@supabase/supabase-js';
 import confetti from 'canvas-confetti';
 
 interface PaymentModalProps {
@@ -14,7 +16,46 @@ interface PaymentModalProps {
   onOpenRoastCV?: (code: string) => void;
   onOpenTarot?: (code: string) => void;
   onOpenCertificate?: (order: Order) => void;
+  onOpenChemistryTutor?: (token?: string) => void;
 }
+
+export interface ChemistryTier {
+  id: string;
+  name: string;
+  detail: string;
+  price: number;
+  badge: string;
+  icon: string;
+  isPopular?: boolean;
+}
+
+export const CHEMISTRY_TIERS: ChemistryTier[] = [
+  {
+    id: 'CHEM-49',
+    name: 'Gói Khởi Động 8+',
+    detail: '30 đề 8+ có giải chi tiết + Lộ trình',
+    price: 49000,
+    badge: 'Mục tiêu 8+',
+    icon: '🧪',
+  },
+  {
+    id: 'CHEM-89',
+    name: 'Gói Bứt Phá 9+',
+    detail: '60 đề 8+ & 9+ + Vận dụng cao Este + Tip Casio 30s',
+    price: 89000,
+    badge: 'Hot 9+',
+    icon: '⚗️',
+  },
+  {
+    id: 'CHEM-149',
+    name: 'Gói All-in Thủ Khoa',
+    detail: 'Full 100 đề 8+, 9+, 10+ + Trợ Giảng AI 24/7 sấy bài & chỉ Casio',
+    price: 149000,
+    badge: '⭐ Đầy Đủ Nhất',
+    icon: '🏆',
+    isPopular: true,
+  },
+];
 
 export const PaymentModal: React.FC<PaymentModalProps> = ({
   product,
@@ -23,14 +64,41 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   onOpenRoastCV,
   onOpenTarot,
   onOpenCertificate,
+  onOpenChemistryTutor,
 }) => {
   const [order, setOrder] = useState<Order | null>(null);
   const [buyerName, setBuyerName] = useState('');
+  const [buyerEmail, setBuyerEmail] = useState('');
+  const [refCode, setRefCode] = useState('');
   const [buyerNote, setBuyerNote] = useState('');
   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [isPolling, setIsPolling] = useState(false);
   const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
+
+  // Xác định gói mặc định cho sản phẩm Hóa học
+  const initialTier =
+    product?.id && ['CHEM-49', 'CHEM-89', 'CHEM-149'].includes(product.id)
+      ? product.id
+      : 'CHEM-149';
+  const [selectedTierId, setSelectedTierId] = useState<string>(initialTier);
+
+  useEffect(() => {
+    if (product?.id && ['CHEM-49', 'CHEM-89', 'CHEM-149'].includes(product.id)) {
+      setSelectedTierId(product.id);
+    }
+  }, [product?.id]);
+
+  // Đọc ref_code và buyer_email từ localStorage hoặc URL search param
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const urlRef = params.get('ref');
+      if (urlRef) setRefCode(urlRef);
+      const savedEmail = localStorage.getItem('buyer_email');
+      if (savedEmail) setBuyerEmail(savedEmail);
+    }
+  }, []);
 
   const bankConfig = getBankConfig();
 
@@ -56,13 +124,16 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
       } else if (product && !order && !isCreatingOrder) {
         // Tạo đơn hàng mới
         setIsCreatingOrder(true);
+        const targetProductId = product.id === 'CHEM-PACK' ? selectedTierId : product.id;
         try {
           const res = await fetch('/api/orders/create', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              productId: product.id,
+              productId: targetProductId,
               buyerName: buyerName || 'Ân nhân giấu tên',
+              buyerEmail: buyerEmail.trim() || undefined,
+              refCode: refCode.trim() || undefined,
               buyerNote: buyerNote || '',
             }),
           });
@@ -85,58 +156,48 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     return () => {
       active = false;
     };
-  }, [product, initialOrderCode]);
+  }, [product, initialOrderCode, selectedTierId]);
 
-  // Lắng nghe trạng thái thanh toán (Polling mỗi 2 giây)
+  const handleSelectTier = async (newTierId: string) => {
+    if (newTierId === (order?.product_id || selectedTierId) && order) return;
+    setSelectedTierId(newTierId);
+    setIsCreatingOrder(true);
+    soundEngine.playKeyClick();
+    try {
+      const res = await fetch('/api/orders/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          productId: newTierId,
+          buyerName: buyerName || order?.buyer_name || 'Ân nhân giấu tên',
+          buyerEmail: buyerEmail.trim() || order?.buyer_email || undefined,
+          refCode: refCode.trim() || order?.ref_code || undefined,
+          buyerNote: buyerNote || order?.buyer_note || '',
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.order) {
+        setOrder(data.order);
+        if (data.checkoutUrl) {
+          setCheckoutUrl(data.checkoutUrl);
+        }
+      }
+    } catch (err) {
+      console.error('Error switching tier', err);
+    } finally {
+      setIsCreatingOrder(false);
+    }
+  };
+
+  // Lắng nghe trạng thái thanh toán bằng Supabase Realtime (Không Polling spam)
   useEffect(() => {
     if (!order || order.status === 'PAID') return;
 
     setIsPolling(true);
-    const interval = setInterval(async () => {
-      try {
-        const res = await fetch(`/api/orders/${order.order_code}`);
-        const data = await res.json();
-        if (data.success && data.order && data.order.status === 'PAID') {
-          setOrder(data.order);
-          setIsPolling(false);
-          // Âm thanh và hiệu ứng ăn mừng
-          soundEngine.playTingTing();
-          soundEngine.playNomNom();
-          soundEngine.playMeow();
-          confetti({
-            particleCount: 120,
-            spread: 80,
-            origin: { y: 0.6 },
-          });
-          clearInterval(interval);
-        }
-      } catch {
-        // Polling retry
-      }
-    }, 2000);
 
-    return () => clearInterval(interval);
-  }, [order?.order_code, order?.status]);
-
-  const handleBypassPayment = async () => {
-    if (!order) return;
-    try {
-      await fetch('/api/webhooks/payment', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          orderCode: order.order_code,
-          amount: order.amount,
-        }),
-      });
-      // Lấy thông tin đơn hàng sau khi kích hoạt PAID
-      const res = await fetch(`/api/orders/${order.order_code}`);
-      const data = await res.json();
-      if (data.success && data.order) {
-        setOrder(data.order);
-      } else {
-        setOrder({ ...order, status: 'PAID' });
-      }
+    const handleSuccess = (paidOrder: Order) => {
+      setOrder(paidOrder);
+      setIsPolling(false);
       soundEngine.playTingTing();
       soundEngine.playNomNom();
       soundEngine.playMeow();
@@ -145,10 +206,53 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
         spread: 80,
         origin: { y: 0.6 },
       });
-    } catch {
-      setOrder({ ...order, status: 'PAID' });
+    };
+
+    const supabase = getSupabaseClient();
+    let channel: RealtimeChannel | null = null;
+
+    if (supabase) {
+      channel = supabase
+        .channel(`order_realtime_${order.order_code}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'orders',
+            filter: `order_code=eq.${order.order_code}`,
+          },
+          (payload) => {
+            const updated = payload.new as Order;
+            if (updated && updated.status === 'PAID') {
+              handleSuccess(updated);
+            }
+          }
+        )
+        .subscribe();
     }
-  };
+
+    // Dự phòng chu kỳ rất chậm (10s) trong trường hợp kết nối realtime tạm gián đoạn
+    const fallbackInterval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/orders/${order.order_code}`);
+        const data = await res.json();
+        if (data.success && data.order && data.order.status === 'PAID') {
+          handleSuccess(data.order);
+          clearInterval(fallbackInterval);
+        }
+      } catch {
+        // Polling retry
+      }
+    }, 10000);
+
+    return () => {
+      if (channel && supabase) {
+        supabase.removeChannel(channel);
+      }
+      clearInterval(fallbackInterval);
+    };
+  }, [order?.order_code, order?.status]);
 
   const copyToClipboard = (text: string, field: string) => {
     navigator.clipboard.writeText(text);
@@ -161,19 +265,37 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
   const currentProduct = order?.product || product;
   const isPaid = order?.status === 'PAID';
+  const isChemistry = Boolean(
+    currentProduct?.type === 'GDRIVE_ACCESS' ||
+    currentProduct?.id?.startsWith('CHEM-') ||
+    order?.product_id?.startsWith('CHEM-')
+  );
+  const activeChemistryTier = CHEMISTRY_TIERS.find(
+    (t) => t.id === (order?.product_id || selectedTierId)
+  );
   const qrUrl = order ? generateVietQRUrl(order.amount, order.order_code) : '';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-md bg-zinc-950 border border-zinc-800 rounded-3xl shadow-2xl overflow-hidden font-sans">
+      <div
+        className={`relative w-full ${
+          isChemistry ? 'max-w-xl' : 'max-w-md'
+        } bg-zinc-950 border border-zinc-800 rounded-3xl shadow-2xl overflow-hidden font-sans transition-all duration-300`}
+      >
         
         {/* MODAL HEADER */}
         <div className="flex items-center justify-between px-5 py-3.5 bg-zinc-900 border-b border-zinc-800">
           <div className="flex items-center gap-2">
-            <span className="text-xl">{currentProduct?.icon || '🐱'}</span>
+            <span className="text-xl">
+              {isChemistry && activeChemistryTier ? activeChemistryTier.icon : currentProduct?.icon || '🐱'}
+            </span>
             <div>
               <h3 className="font-mono text-sm font-bold text-zinc-100 flex items-center gap-2">
-                {isPaid ? 'THANH TOÁN THÀNH CÔNG!' : 'THANH TOÁN VIETQR'}
+                {isPaid
+                  ? 'THANH TOÁN THÀNH CÔNG!'
+                  : isChemistry && activeChemistryTier
+                  ? `MUA ${activeChemistryTier.name.toUpperCase()}`
+                  : 'THANH TOÁN VIETQR'}
                 {order && (
                   <span className="text-[10px] text-emerald-400 bg-emerald-950 px-1.5 py-0.5 rounded border border-emerald-800">
                     {order.order_code}
@@ -184,7 +306,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded-lg text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition"
+            className="p-1 rounded-lg text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -299,6 +421,92 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                   </div>
                 )}
 
+                {/* 5. Nếu là Gói Đề Hóa Học (GDRIVE_ACCESS) */}
+                {currentProduct?.type === 'GDRIVE_ACCESS' && (
+                  <div className="space-y-3">
+                    <div className="p-3 bg-emerald-950/40 border border-emerald-500/40 rounded-xl space-y-1.5">
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-400">
+                        <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                        <span>Đã Cấp Quyền Truy Cập Google Drive!</span>
+                      </div>
+                      <p className="text-[11px] text-zinc-300">
+                        Quyền xem tài liệu đã được cấp tới Gmail:{' '}
+                        <strong className="text-white">{order?.buyer_email || buyerEmail || 'Gmail của bạn'}</strong>{' '}
+                        (Chế độ View-Only chống leak).
+                      </p>
+                    </div>
+
+                    <a
+                      href={order?.redeem_code || 'https://drive.google.com'}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 font-bold text-zinc-950 text-xs flex items-center justify-center gap-2 transition shadow-lg shadow-emerald-950/50 block text-center"
+                    >
+                      <ExternalLink className="w-4 h-4 inline" />
+                      <span>Mở Thư Mục Google Drive</span>
+                    </a>
+
+                    {/* Đặc quyền gói Thủ Khoa: Trợ Giảng AI 24/7 */}
+                    {currentProduct.id === 'CHEM-149' && (
+                      <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl space-y-2">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-bold text-amber-400 flex items-center gap-1.5">
+                            <span>🏆</span> Token Trợ Giảng Hóa AI:
+                          </span>
+                          <span className="font-mono font-bold text-amber-300 bg-zinc-950 px-2 py-0.5 rounded border border-amber-500/40">
+                            {((order?.ai_result as Record<string, unknown>)?.tutor_token as string) || `CHM-${order?.order_code?.replace('MEO-', '') || '149'}`}
+                          </span>
+                        </div>
+                        {onOpenChemistryTutor && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              onClose();
+                              onOpenChemistryTutor(
+                                ((order?.ai_result as Record<string, unknown>)?.tutor_token as string) ||
+                                `CHM-${order?.order_code?.replace('MEO-', '') || '149'}`
+                              );
+                            }}
+                            className="w-full py-2 px-3 rounded-lg bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
+                          >
+                            <span>Hỏi Bài Trợ Giảng AI Ngay (Giải + Casio 30s)</span>
+                            <ArrowRight className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Hộp Referral Mời Bạn Cùng Bàn */}
+                    <div className="p-3 bg-zinc-950/80 border border-zinc-800 rounded-xl space-y-1.5 text-xs">
+                      <div className="flex items-center justify-between text-[11px] text-zinc-400">
+                        <span className="text-zinc-300 font-semibold">👥 Rủ bạn cùng bàn — Nhận nâng cấp Free:</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="text"
+                          readOnly
+                          value={typeof window !== 'undefined' ? `${window.location.origin}?ref=${order?.order_code}` : `?ref=${order?.order_code}`}
+                          className="flex-1 bg-zinc-900 border border-zinc-800 rounded-lg px-2.5 py-1 text-[11px] text-zinc-300 font-mono select-all"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (typeof window !== 'undefined') {
+                              copyToClipboard(`${window.location.origin}?ref=${order?.order_code}`, 'ref_link');
+                            }
+                          }}
+                          className="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg text-[11px] font-semibold transition cursor-pointer"
+                        >
+                          {copiedField === 'ref_link' ? 'Đã chép' : 'Chép link'}
+                        </button>
+                      </div>
+                      <p className="text-[10px] text-zinc-500">
+                        Rủ 2 bạn cùng mua qua mã ref của bạn để được nâng cấp miễn phí lên gói All-in Thủ Khoa!
+                      </p>
+                    </div>
+                  </div>
+                )}
+
               </div>
 
               <button
@@ -349,6 +557,116 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                   </button>
                 </div>
               )}
+
+              {isChemistry && (
+                <div className="space-y-3">
+                  {/* BẢNG 3 LỰA CHỌN GÓI HÓA HỌC */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between text-xs font-bold text-zinc-300">
+                      <span className="flex items-center gap-1.5 text-emerald-400 font-mono">
+                        <span>📦</span> CHỌN 1 TRONG 3 GÓI ÔN THI HÓA:
+                      </span>
+                      <span className="text-[10px] text-zinc-500 font-mono">Bấm để đổi gói</span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      {CHEMISTRY_TIERS.map((tier) => {
+                        const isSelected = (order?.product_id || selectedTierId) === tier.id;
+                        return (
+                          <button
+                            key={tier.id}
+                            type="button"
+                            onClick={() => handleSelectTier(tier.id)}
+                            className={`relative text-left p-2.5 rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${
+                              isSelected
+                                ? 'bg-emerald-950/60 border-emerald-400 ring-1 ring-emerald-500 shadow-md shadow-emerald-950/40 text-white'
+                                : 'bg-zinc-900/70 hover:bg-zinc-800/80 border-zinc-800 text-zinc-300'
+                            }`}
+                          >
+                            {tier.badge && (
+                              <span
+                                className={`absolute -top-2 right-2 text-[8px] font-bold px-1.5 py-0.2 rounded-full border ${
+                                  tier.isPopular
+                                    ? 'bg-amber-500 text-zinc-950 border-amber-300 font-black'
+                                    : 'bg-zinc-800 text-zinc-300 border-zinc-700'
+                                }`}
+                              >
+                                {tier.badge}
+                              </span>
+                            )}
+
+                            <div>
+                              <div className="flex items-center gap-1.5 text-xs font-bold">
+                                <span>{tier.icon}</span>
+                                <span>{tier.name}</span>
+                              </div>
+                              <p className="text-[10px] text-zinc-400 line-clamp-2 mt-1 leading-tight">
+                                {tier.detail}
+                              </p>
+                            </div>
+
+                            <div className="mt-2 pt-1 border-t border-zinc-800/80 flex items-center justify-between">
+                              <span className="text-xs font-bold font-mono text-emerald-400">
+                                {tier.price.toLocaleString('vi-VN')}đ
+                              </span>
+                              <span
+                                className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center text-[9px] ${
+                                  isSelected
+                                    ? 'border-emerald-400 bg-emerald-500 text-zinc-950 font-bold'
+                                    : 'border-zinc-700'
+                                }`}
+                              >
+                                {isSelected && '✓'}
+                              </span>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Nút trải nghiệm nhanh Trợ Giảng AI */}
+                  <div className="bg-emerald-950/60 border border-emerald-700/70 p-2.5 rounded-xl flex items-center justify-between gap-2">
+                    <div className="text-xs text-emerald-300 font-mono">
+                      💡 Mở thử Trợ Giảng Hóa AI 24/7:
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onClose();
+                        if (onOpenChemistryTutor) onOpenChemistryTutor('CHM-DEMO');
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold font-mono text-xs flex items-center gap-1 shrink-0 shadow transition cursor-pointer"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>Hỏi Mèo Ngay</span>
+                    </button>
+                  </div>
+
+                  {/* Nhập Gmail */}
+                  <div className="bg-zinc-900 border border-zinc-800 p-3 rounded-2xl space-y-1.5">
+                    <label className="text-xs font-semibold text-zinc-300 flex items-center justify-between">
+                      <span>📧 Nhập Gmail để cấp quyền Drive:</span>
+                      <span className="text-[10px] text-emerald-400 font-mono">Bảo mật View-Only</span>
+                    </label>
+                    <input
+                      type="email"
+                      value={buyerEmail}
+                      onChange={(e) => {
+                        setBuyerEmail(e.target.value);
+                        if (typeof window !== 'undefined') {
+                          localStorage.setItem('buyer_email', e.target.value);
+                        }
+                      }}
+                      placeholder="vidu@gmail.com (Bắt buộc để nhận Drive)"
+                      className="w-full bg-zinc-950 border border-zinc-700 focus:border-emerald-500 rounded-xl px-3 py-2 text-xs text-zinc-100 placeholder-zinc-500 font-mono focus:outline-none"
+                    />
+                    <div className="text-[10px] text-zinc-500">
+                      * Server tự động gửi quyền View tới Gmail này ngay sau khi ting ting 2 giây.
+                    </div>
+                  </div>
+                </div>
+              )}
               
               {/* Ảnh VietQR chuẩn Compact2 */}
               <div className="relative flex flex-col items-center justify-center bg-white p-3 rounded-2xl shadow-inner">
@@ -371,16 +689,6 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                   </>
                 )}
               </div>
-
-              {/* Nút Bỏ Qua Thanh Toán Dành Cho Test Thử Dịch Vụ */}
-              <button
-                type="button"
-                onClick={handleBypassPayment}
-                className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-zinc-950 font-bold font-mono text-xs flex items-center justify-center gap-2 transition shadow-lg shadow-amber-950/40"
-              >
-                <Zap className="w-4 h-4 fill-current" />
-                <span>⚡ Bỏ Qua Thanh Toán (Test Nhận Hàng Ngay)</span>
-              </button>
 
               {/* Thông tin chuyển khoản chi tiết */}
               {order && (

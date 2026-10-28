@@ -2,20 +2,19 @@
 
 import React, { useEffect, useState } from 'react';
 import { CampaignStats } from '@/types';
-import { Volume2, VolumeX, AlertTriangle, Flame, ShieldAlert, Wrench } from 'lucide-react';
+import { Volume2, VolumeX, AlertTriangle, Flame, ShieldAlert } from 'lucide-react';
 import { soundEngine } from '@/lib/audio';
 
 interface SurvivalHeaderProps {
   stats: CampaignStats | null;
-  onOpenDevSim?: () => void;
 }
 
-export const SurvivalHeader: React.FC<SurvivalHeaderProps> = ({ stats, onOpenDevSim }) => {
+export const SurvivalHeader: React.FC<SurvivalHeaderProps> = ({ stats }) => {
   const [timeLeft, setTimeLeft] = useState<{ days: number; hours: number; minutes: number; seconds: number }>({
-    days: 29,
-    hours: 14,
-    minutes: 22,
-    seconds: 9,
+    days: 59,
+    hours: 23,
+    minutes: 59,
+    seconds: 59,
   });
   const [isMuted, setIsMuted] = useState(false);
 
@@ -48,10 +47,10 @@ export const SurvivalHeader: React.FC<SurvivalHeaderProps> = ({ stats, onOpenDev
     }
   };
 
-  const currentAmount = stats?.current_amount || 345000;
-  const targetAmount = stats?.target_amount || 5000000;
+  const currentAmount = stats?.current_amount ?? 0;
+  const targetAmount = stats?.target_amount || 7000000;
   const progressPercent = Math.min(100, (currentAmount / targetAmount) * 100);
-  const hungerLevel = stats?.cat_hunger_level !== undefined ? stats.cat_hunger_level : 82;
+  const hungerLevel = stats?.cat_hunger_level ?? 100;
 
   // Màu sắc thanh độ đói
   const getHungerColor = (level: number) => {
@@ -73,7 +72,7 @@ export const SurvivalHeader: React.FC<SurvivalHeaderProps> = ({ stats, onOpenDev
                 <h1 className="font-mono text-base md:text-lg font-black tracking-tight text-emerald-400 flex items-center gap-1.5">
                   MÈO DEV SINH TỒN
                   <span className="text-[10px] bg-rose-950/80 text-rose-400 border border-rose-800/60 px-1.5 py-0.5 rounded font-mono font-normal">
-                    KPI: 5.000.000đ
+                    KPI: {targetAmount.toLocaleString('vi-VN')}đ
                   </span>
                 </h1>
               </div>
@@ -83,7 +82,7 @@ export const SurvivalHeader: React.FC<SurvivalHeaderProps> = ({ stats, onOpenDev
             </div>
           </div>
 
-          {/* Cụm nút Bật/Tắt âm thanh & Dev Simulator */}
+          {/* Cụm nút Bật/Tắt âm thanh */}
           <div className="flex items-center gap-2">
             <button
               onClick={handleToggleSound}
@@ -92,17 +91,6 @@ export const SurvivalHeader: React.FC<SurvivalHeaderProps> = ({ stats, onOpenDev
             >
               {isMuted ? <VolumeX className="w-4 h-4 text-zinc-500" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
             </button>
-
-            {onOpenDevSim && (
-              <button
-                onClick={onOpenDevSim}
-                className="flex items-center gap-1 px-2.5 py-1 text-xs font-mono font-medium rounded-lg border border-amber-500/40 bg-amber-950/40 text-amber-300 hover:bg-amber-900/60 transition shadow-sm"
-                title="Mở bảng giả lập chuyển khoản để test trên Localhost"
-              >
-                <Wrench className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Dev Simulator</span>
-              </button>
-            )}
           </div>
         </div>
 
@@ -136,7 +124,7 @@ export const SurvivalHeader: React.FC<SurvivalHeaderProps> = ({ stats, onOpenDev
                 <span className="font-bold">{progressPercent.toFixed(1)}%</span>
               </div>
               <div className="text-xs font-mono font-bold text-emerald-300 truncate">
-                {currentAmount.toLocaleString('vi-VN')}đ <span className="text-zinc-500 font-normal">/ 5M</span>
+                {currentAmount.toLocaleString('vi-VN')}đ <span className="text-zinc-500 font-normal">/ {(targetAmount / 1000000).toFixed(0)}M</span>
               </div>
               {/* Progress bar */}
               <div className="w-full bg-zinc-800 rounded-full h-1.5 mt-1 overflow-hidden">

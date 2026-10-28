@@ -1,14 +1,15 @@
 // TypeScript definitions for Mèo Dev Sinh Tồn
 
-export type ProductType = 'DONATE' | 'AI_TASK' | 'R2_FILE';
+export type ProductType = 'DONATE' | 'AI_TASK' | 'R2_FILE' | 'GDRIVE_ACCESS';
 
 export interface Product {
-  id: string; // 'PATE-05' | 'ROAST-10' | 'CHEM-15' | 'TAROT-10' | 'TEMPLATE-29'
+  id: string; // 'PATE-05' | 'ROAST-10' | 'CHEM-PACK' | 'CHEM-49' | 'CHEM-89' | 'CHEM-149' | 'TAROT-10'
   name: string;
   description: string;
   price: number;
   type: ProductType;
   r2_file_key?: string | null;
+  gdrive_folder_id?: string | null;
   icon: string;
   badge?: string;
   is_active: boolean;
@@ -25,11 +26,14 @@ export interface Order {
   amount: number;
   status: OrderStatus;
   buyer_name?: string;
+  buyer_email?: string; // Gmail nhận quyền Google Drive
   buyer_note?: string;
   buyer_social_link?: string;
+  ref_code?: string; // Mã giới thiệu của bạn bè
   redeem_code?: string;
   is_redeemed?: boolean;
   ai_result?: Record<string, unknown> | null;
+  payment_meta?: Record<string, unknown> | null;
   created_at: string;
   paid_at?: string | null;
 }
@@ -51,7 +55,7 @@ export interface CampaignStats {
   total_orders: number;
   paid_orders: number;
   cat_hunger_level: number; // 0 - 100
-  last_order_at: string;
+  last_order_at?: string | null;
   start_date: string;
   end_date: string;
 }
@@ -77,4 +81,13 @@ export interface TarotCard {
   keywords: string[];
   emoji: string;
   upright_meaning: string;
+}
+
+export interface ChemistryQuizQuestion {
+  id: number;
+  question: string;
+  options: string[];
+  correctIndex: number;
+  explanation: string;
+  trapType: string; // VD: 'Bẫy Este', 'Bẫy Đồ Thị', 'Bẫy Kim Loại'
 }

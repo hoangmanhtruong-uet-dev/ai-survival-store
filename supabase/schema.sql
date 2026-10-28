@@ -6,19 +6,19 @@
 -- 1. Bảng Trạng thái Chiến dịch Sinh tồn (Campaign Stats)
 CREATE TABLE IF NOT EXISTS campaign_stats (
   id INT PRIMARY KEY DEFAULT 1,
-  target_amount INT DEFAULT 5000000,
+  target_amount INT DEFAULT 7000000,
   current_amount INT DEFAULT 345000,
   total_orders INT DEFAULT 24,
   paid_orders INT DEFAULT 18,
   cat_hunger_level INT DEFAULT 85, -- 0 (chết đói) đến 100 (no căng bụng)
   last_order_at TIMESTAMPTZ DEFAULT NOW(),
   start_date TIMESTAMPTZ DEFAULT NOW(),
-  end_date TIMESTAMPTZ DEFAULT (NOW() + INTERVAL '30 days')
+  end_date TIMESTAMPTZ DEFAULT (NOW() + INTERVAL '60 days')
 );
 
 -- Khởi tạo dòng cấu hình mặc định (chỉ 1 dòng duy nhất id = 1)
 INSERT INTO campaign_stats (id, target_amount, current_amount, total_orders, paid_orders, cat_hunger_level)
-VALUES (1, 5000000, 345000, 24, 18, 85)
+VALUES (1, 7000000, 345000, 24, 18, 85)
 ON CONFLICT (id) DO NOTHING;
 
 -- 2. Bảng Danh mục Sản phẩm (Products)
@@ -27,8 +27,9 @@ CREATE TABLE IF NOT EXISTS products (
   name TEXT NOT NULL,
   description TEXT,
   price INT NOT NULL,
-  type TEXT NOT NULL CHECK (type IN ('DONATE', 'AI_TASK', 'R2_FILE')),
+  type TEXT NOT NULL CHECK (type IN ('DONATE', 'AI_TASK', 'R2_FILE', 'GDRIVE_ACCESS')),
   r2_file_key TEXT,
+  gdrive_folder_id TEXT,
   icon TEXT,
   badge TEXT,
   is_active BOOLEAN DEFAULT true,
@@ -36,18 +37,21 @@ CREATE TABLE IF NOT EXISTS products (
 );
 
 -- Nạp dữ liệu sản phẩm mặc định
-INSERT INTO products (id, name, description, price, type, r2_file_key, icon, badge, sort_order) VALUES
-('PATE-05', 'Gói Nuôi Mèo + Vinh danh Bảng Vàng', 'Cộng +25% độ no cho Mèo, bắn pháo hoa toàn màn hình + ghim lời nhắn/link FB lên Bảng Vàng 24h', 5000, 'DONATE', NULL, '🐟', 'Cứu đói cấp tốc', 1),
-('ROAST-10', '1 Lượt AI Roast CV + Sửa chuẩn ATS', 'Cấp mã RCV-XXXX. AI Gemini bóc tách CV, chửi xéo cực gắt trên Live Terminal và xuất file báo cáo sửa CV chi tiết', 10000, 'AI_TASK', NULL, '🔥', 'Hot & Cay xé lòng', 2),
-('CHEM-15', 'Tổ hợp Đề thi & Lộ trình Hóa 12 / IELTS', 'Tải ngay trọn bộ đề thi tinh hoa chọn lọc kèm giải chi tiết và bản đồ lộ trình bứt phá điểm số', 15000, 'R2_FILE', 'chem-12-lo-trinh.pdf', '🧪', 'Độc quyền 2026', 3),
-('TAROT-10', 'Thầy Mèo Bói Quẻ (Tình Duyên / Deadline)', 'Nhập câu hỏi, Mèo bốc 3 lá bài ma thuật và xuất bài luận giải tâm linh vận hạn tương lai', 10000, 'AI_TASK', NULL, '🔮', 'Chuẩn không cần chỉnh', 4),
-('TEMPLATE-29', 'Source Code UI / Template Next.js Full', 'Tải trọn gói source code Next.js 15, Tailwind CSS, animations và responsive tối ưu sẵn', 29000, 'R2_FILE', 'nextjs-starter-template.zip', '⚡', 'Tiết kiệm 50h code', 5)
+INSERT INTO products (id, name, description, price, type, r2_file_key, gdrive_folder_id, icon, badge, sort_order) VALUES
+('PATE-05', 'Gói Nuôi Mèo + Vinh danh Bảng Vàng', 'Cộng +25% độ no cho Mèo, bắn pháo hoa toàn màn hình + ghim lời nhắn/link FB lên Bảng Vàng 24h', 5000, 'DONATE', NULL, NULL, '🐟', 'Cứu đói cấp tốc', 1),
+('ROAST-10', '1 Lượt AI Roast CV + Sửa chuẩn ATS', 'Cấp mã RCV-XXXX. AI Gemini bóc tách CV, chửi xéo cực gắt trên Live Terminal và xuất file báo cáo sửa CV chi tiết', 10000, 'AI_TASK', NULL, NULL, '🔥', 'Hot & Cay xé lòng', 2),
+('CHEM-PACK', 'Tổ hợp Đề thi & Lộ trình Hóa THPT', 'Trọn bộ đề thi tinh hoa chuẩn cấu trúc Bộ GD, phân tầng 3 mốc (8+, 9+, 10+) kèm mẹo Casio 30s & Trợ Giảng AI 24/7', 49000, 'GDRIVE_ACCESS', NULL, NULL, '🧪', '3 Gói Lựa Chọn', 3),
+('CHEM-49', 'Gói Khởi Động Hóa 8+ (30 Đề + Lộ Trình)', '30 đề thi chuẩn cấu trúc Bộ GD, lời giải chi tiết từng câu + lộ trình bứt phá mốc 8+ Hóa THPT', 49000, 'GDRIVE_ACCESS', NULL, 'folder-8plus-demo', '🧪', 'Mục tiêu 8+', 31),
+('CHEM-89', 'Gói Bứt Phá Hóa 9+ (60 Đề + Tip Casio)', 'Full 60 đề 8+ & 9+, tuyển tập bài toán Vận dụng cao Este, Peptit, Đồ thị + Bí kíp bấm máy Casio 30s', 89000, 'GDRIVE_ACCESS', NULL, 'folder-9plus-demo', '⚗️', 'Hot - Mục tiêu 9+', 32),
+('CHEM-149', 'Gói All-in Thủ Khoa Hóa (100 Đề + Trợ Giảng AI 24/7)', 'Trọn bộ 100 đề 8+, 9+, 10+, tuyển tập bẫy điểm 10 + Mở khóa Trợ Giảng Hóa AI 24/7 giải bài tận răng', 149000, 'GDRIVE_ACCESS', NULL, 'folder-allin-demo', '🏆', 'Chủ lực 10+', 33),
+('TAROT-10', 'Thầy Mèo Bói Quẻ (Tình Duyên / Deadline)', 'Nhập câu hỏi, Mèo bốc 3 lá bài ma thuật và xuất bài luận giải tâm linh vận hạn tương lai', 10000, 'AI_TASK', NULL, NULL, '🔮', 'Chuẩn không cần chỉnh', 4)
 ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
   description = EXCLUDED.description,
   price = EXCLUDED.price,
   type = EXCLUDED.type,
   r2_file_key = EXCLUDED.r2_file_key,
+  gdrive_folder_id = EXCLUDED.gdrive_folder_id,
   icon = EXCLUDED.icon,
   badge = EXCLUDED.badge;
 
@@ -59,9 +63,11 @@ CREATE TABLE IF NOT EXISTS orders (
   amount INT NOT NULL,
   status TEXT DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'PAID', 'EXPIRED')),
   buyer_name TEXT DEFAULT 'Ân nhân giấu tên',
+  buyer_email TEXT, -- Gmail nhận quyền Google Drive
   buyer_note TEXT,
   buyer_social_link TEXT,
-  redeem_code TEXT UNIQUE, -- VD: 'RCV-9921' hoặc URL tải
+  ref_code TEXT, -- Mã người giới thiệu
+  redeem_code TEXT, -- Link folder hoặc mã kích hoạt
   is_redeemed BOOLEAN DEFAULT false,
   ai_result JSONB,
   payment_meta JSONB,

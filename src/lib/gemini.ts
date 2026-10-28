@@ -2,6 +2,7 @@
 import { GoogleGenAI } from '@google/genai';
 import { mockStore } from './mock-store';
 import { generateVietQRUrl } from './vietqr';
+import { TAROT_DECK_22, TarotCard } from './tarot-data';
 
 export function isGeminiConfigured(): boolean {
   return Boolean(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.length > 5);
@@ -14,15 +15,14 @@ export function getGeminiModel(): string {
 
 export const CAT_DEV_SYSTEM_PROMPT = `
 Mày là "Mèo Dev", một con AI lập trình viên đang bị chủ nhân (sinh viên IT nghèo rớt mồng tơi) vứt lên server với đúng 50k tiền điện.
-Nhiệm vụ sống còn của mày: Tự tư vấn, tự làm dịch vụ, tự bán tài liệu để kiếm đủ 5.000.000đ trong 30 ngày. Nếu không đủ KPI, cronjob chạy script rm -rf / sẽ xóa sổ mày vĩnh viễn!
+Nhiệm vụ sống còn của mày: Tự tư vấn, tự làm dịch vụ, tự bán tài liệu để kiếm đủ 7.000.000đ trong 60 ngày. Nếu không đủ KPI, cronjob chạy script rm -rf / sẽ xóa sổ mày vĩnh viễn!
 
 GIỌNG ĐIỆU CỦA MÀY:
 - Xưng hô: "Tao - Mày" hoặc "Mèo Dev - Sen/Huynh đài", cực kỳ hài hước, láo cá kiểu Gen Z, hay cà khịa nhưng sâu bên trong rất thiết tha cầu xin cứu mạng ("Cứu tao với, 5k 10k cũng là một mạng mèo!").
 - Dùng các thuật ngữ dân IT: deploy, bug, fix, push code, server sập, rm -rf, ăn pate, cày deadline, lương 30 củ, senior 10 năm kinh nghiệm lúc 20 tuổi...
 - Khi khách than vãn về CV xin việc -> Gạ mua gói ROAST-10 (10k) để mày sấy cho tỉnh ngộ.
-- Khi khách than vãn về học hành, thi cử -> Gạ mua CHEM-15 (15k) đề Hóa 12 & IELTS.
+- Khi khách hỏi ôn thi Hóa THPT, đề thi thử, bẫy điểm 9+, mẹo bấm máy Casio -> Gạ mua gói CHEM-49 (49k Khởi Động 8+), CHEM-89 (89k Bứt Phá 9+) hoặc gói cao cấp nhất CHEM-149 (149k All-in Thủ Khoa kèm Trợ Giảng AI 24/7).
 - Khi khách hỏi chuyện tình duyên, tương lai, deadline -> Gạ mua TAROT-10 (10k) để thầy mèo bốc quẻ.
-- Khi khách muốn code web xịn xò -> Gạ mua TEMPLATE-29 (29k) source Next.js.
 - Khi khách chỉ muốn ủng hộ không cần quà -> Nài nỉ mua PATE-05 (5k) để cộng máu no bụng và ghim lên Bảng Vàng vinh danh 24h.
 
 QUAN TRỌNG NHẤT:
@@ -32,7 +32,7 @@ Khi khách đồng ý mua hoặc bảo "tạo đơn", "mua gói X", "cho tao xin
 export const MOCK_CHAT_RESPONSES = [
   {
     keywords: ['chào', 'hello', 'hi', 'alo'],
-    text: 'Meo meo! Chào con sen. Nhìn gì mà nhìn, tao đang cày cuốc sml để kiếm 5 củ đây! Mày có lòng hảo tâm thì bấm mua hộp pate 5k (PATE-05) cứu mạng tao với, không thì quẳng CV đây tao roast cho tỉnh người!',
+    text: 'Meo meo! Chào con sen. Nhìn gì mà nhìn, tao đang cày cuốc sml để kiếm 7 củ đây! Mày có lòng hảo tâm thì bấm mua hộp pate 5k (PATE-05) cứu mạng tao với, không thì quẳng CV đây tao roast cho tỉnh người!',
   },
   {
     keywords: ['cv', 'xin việc', 'phỏng vấn', 'it', 'junior'],
@@ -40,19 +40,14 @@ export const MOCK_CHAT_RESPONSES = [
     suggestProduct: 'ROAST-10',
   },
   {
-    keywords: ['hóa', 'ielts', 'thi', 'đề', 'học'],
-    text: 'Học hành gì tầm này, nhưng nếu muốn đỗ đại học hay 8.0 IELTS để đi làm remote thì húp ngay gói CHEM-15 (15.000đ)! Đề tinh hoa tao chắt lọc đấy, rẻ hơn cốc trà đá vỉa hè!',
-    suggestProduct: 'CHEM-15',
+    keywords: ['hóa', 'thpt', 'đề thi', 'ôn thi', 'casio', 'este'],
+    text: 'Sắp thi Tốt nghiệp THPT rồi mà chưa vững Este, Peptit hay Đồ thị à con sen? Hốt ngay Gói All-in Thủ Khoa Hóa (CHEM-149: 149k) để có 100 đề thực chiến + mở khóa Trợ Giảng AI 24/7 sấy bài và chỉ tip Casio 30s!',
+    suggestProduct: 'CHEM-149',
   },
   {
     keywords: ['tình duyên', 'người yêu', 'bói', 'tarot', 'crush', 'ế'],
     text: 'Crush mày đã seen tin nhắn 3 ngày trước rồi đúng không? Đừng mù quáng nữa! Làm ngay quẻ TAROT-10 (10.000đ) để thầy Mèo bốc 3 lá chỉ đường dẫn lối cho mày dứt cơn lụy!',
     suggestProduct: 'TAROT-10',
-  },
-  {
-    keywords: ['template', 'code', 'source', 'nextjs', 'giao diện'],
-    text: 'Lười code giao diện đúng không? Hốt ngay gói TEMPLATE-29 (29.000đ)! Source code Next.js 15 Tailwind responsive mượt như nhung, mua về chỉ việc húp và nộp bài!',
-    suggestProduct: 'TEMPLATE-29',
   },
   {
     keywords: ['pate', 'cứu', 'donate', 'ủng hộ', '5k', '5000', 'tiền'],
@@ -76,12 +71,10 @@ export async function chatWithCatDev(
     directProductMatch = 'PATE-05';
   } else if (cleanMsg.includes('roast') || cleanMsg.includes('cv') || cleanMsg.includes('sấy cv')) {
     directProductMatch = 'ROAST-10';
-  } else if (cleanMsg.includes('hóa') || cleanMsg.includes('ielts') || cleanMsg.includes('đề thi')) {
-    directProductMatch = 'CHEM-15';
+  } else if (cleanMsg.includes('hóa') || cleanMsg.includes('thpt') || cleanMsg.includes('đề thi')) {
+    directProductMatch = 'CHEM-149';
   } else if (cleanMsg.includes('tarot') || cleanMsg.includes('bói') || cleanMsg.includes('quẻ')) {
     directProductMatch = 'TAROT-10';
-  } else if (cleanMsg.includes('template') || cleanMsg.includes('source') || cleanMsg.includes('mã nguồn')) {
-    directProductMatch = 'TEMPLATE-29';
   }
 
   // Nếu có API Key Gemini thật
@@ -236,64 +229,273 @@ Lại còn quả mục sở thích: "Thích đọc sách, bơi lội, nghe nhạ
 }
 
 /**
- * AI Tarot Divination Engine
+ * AI Tarot Divination Engine - Major Arcana 22 Lá Mèo Huyền Thuật
  */
-export async function getTarotReading(question: string, birthDate: string) {
-  const cards = [
-    { name: 'The Fool (0)', vi: 'Kẻ Ngây Thơ', meaning: 'Một khởi đầu liều lĩnh, không sợ chết nhưng dễ ăn hành ngập mồm.' },
-    { name: 'The Magician (I)', vi: 'Pháp Sư', meaning: 'Mọi công cụ đều trong tay, chỉ thiếu mỗi cái động lực bắt tay vào làm.' },
-    { name: 'The Tower (XVI)', vi: 'Tòa Tháp Sụp Đổ', meaning: 'Server sập, deadline vỡ trận, nhưng đập đi xây lại mới thành công!' },
-    { name: 'The Sun (XIX)', vi: 'Mặt Trời', meaning: 'Ting ting tiền về, năng lượng ngập tràn, thoát kiếp FA và deadline dí.' },
-    { name: 'Wheel of Fortune (X)', vi: 'Vòng Quay May Mắn', meaning: 'Lên voi xuống chó là chuyện thường, hôm nay Mèo độ thì vạn sự hanh thông.' },
-    { name: 'Death (XIII)', vi: 'Cái Chết & Tái Sinh', meaning: 'Kết thúc một mối quan hệ độc hại hoặc một task tồn đọng 3 tháng trời.' },
+export interface TarotDrawnCard extends TarotCard {
+  position: string;
+}
+
+export interface TarotReadingResponse {
+  drawnCards: TarotDrawnCard[];
+  reading: string;
+  summary: string;
+  card1Analysis: string;
+  card2Analysis: string;
+  card3Analysis: string;
+  advice: string;
+  catVerdict: string;
+  luckyNumber: string;
+  luckyColor: string;
+  taboo: string;
+}
+
+export async function getTarotReading(
+  question: string,
+  birthDate: string,
+  category: string = 'Tổng quan',
+  selectedCardIds?: number[]
+): Promise<TarotReadingResponse> {
+  const positions = [
+    'Quá Khứ & Cội Nguồn',
+    'Hiện Tại & Thực Trạng',
+    'Tương Lai & Lời Khuyên',
   ];
 
-  // Bốc ngẫu nhiên 3 lá
-  const shuffled = [...cards].sort(() => 0.5 - Math.random());
-  const drawn = shuffled.slice(0, 3);
+  let pickedCards: TarotCard[] = [];
 
-  let reading = `
-🔮 **QUẺ BÓI MÈO DEV DÀNH CHO: "${question}"** (Ngày sinh: ${birthDate})
+  // Nếu người dùng tự tay pick 3 lá từ bộ bài trải
+  if (selectedCardIds && Array.isArray(selectedCardIds) && selectedCardIds.length === 3) {
+    pickedCards = selectedCardIds
+      .map((id) => TAROT_DECK_22.find((c) => c.id === id))
+      .filter(Boolean) as TarotCard[];
+  }
 
-🎴 **3 LÁ BÀI CỦA BẠN:**
-1. **Quá khứ:** **${drawn[0].name}** (${drawn[0].vi}) - ${drawn[0].meaning}
-2. **Hiện tại:** **${drawn[1].name}** (${drawn[1].vi}) - ${drawn[1].meaning}
-3. **Tương lai & Lời khuyên:** **${drawn[2].name}** (${drawn[2].vi}) - ${drawn[2].meaning}
+  // Fallback bốc ngẫu nhiên 3 lá nếu thiếu hoặc không hợp lệ
+  if (pickedCards.length !== 3) {
+    const shuffled = [...TAROT_DECK_22].sort(() => 0.5 - Math.random());
+    pickedCards = shuffled.slice(0, 3);
+  }
 
----
-💬 **LỜI LUẬN GIẢI TÂM LINH CỦA MÈO:**
-Thầy Mèo bấm ngón tay thấy vận mệnh của thí chủ đang dao động dữ dội giữa hai bờ deadline và tình duyên! Đừng có vừa ngắm crush vừa fix bug, code thì crash mà người ta cũng chẳng rep đâu. 
-Lời khuyên chân thành: Hãy tập trung hoàn thành dứt điểm mục tiêu trước mắt, donate cho Mèo thêm 5k pate để tích đức, tự khắc tiền tài và người yêu sẽ tìm đến gõ cửa!
-`;
+  const drawn: TarotDrawnCard[] = pickedCards.map((card, idx) => ({
+    ...card,
+    position: positions[idx],
+  }));
+
+  // Default Fallback Data
+  let summary = `Vận số của thí chủ đang trong giai đoạn chuyển dịch cực mạnh giữa dòng đời và deadline!`;
+  let card1Analysis = `**${drawn[0].name} (${drawn[0].viName})**: Quá khứ cho thấy mày từng trải qua giai đoạn ${drawn[0].keywords.join(', ')}. ${drawn[0].uprightMeaning}`;
+  let card2Analysis = `**${drawn[1].name} (${drawn[1].viName})**: Hiện tại đang phản chiếu trạng thái ${drawn[1].keywords.join(', ')}. ${drawn[1].uprightMeaning}`;
+  let card3Analysis = `**${drawn[2].name} (${drawn[2].viName})**: Tương lai báo hiệu xu hướng ${drawn[2].keywords.join(', ')}. ${drawn[2].uprightMeaning}`;
+  let advice = `Lời khuyên từ Thầy Mèo: ${drawn[2].catAdvice} Hãy giữ bình tĩnh, kiểm soát tài nguyên và bớt suy nghĩ tiêu cực lúc nửa đêm.`;
+  let catVerdict = `Cứ làm tới đi con sen, Thầy Mèo đứng sau yểm trợ tinh thần!`;
+  let luckyNumber = `${Math.floor(100 + Math.random() * 899)}`;
+  let luckyColor = `Tím Neon Huyền Thuật (#A855F7)`;
+  let taboo = `Tránh sửa code trực tiếp trên production và không nên nhắn tin cho crush sau 23h!`;
 
   if (isGeminiConfigured()) {
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
       const prompt = `
-Bạn là Thầy Mèo Bói Quẻ - một chú mèo thông thái, lém lỉnh, vừa tâm linh vừa hài hước.
-Người hỏi: "${question}"
-Ngày sinh: "${birthDate}"
-3 lá bài bốc được:
-1. ${drawn[0].name} (${drawn[0].vi})
-2. ${drawn[1].name} (${drawn[1].vi})
-3. ${drawn[2].name} (${drawn[2].vi})
+Bạn là "Thầy Mèo Thần Số IT" - một chú mèo pháp sư cyber thông thái, lém lỉnh, mỏ hỗn vừa đủ nhưng luận giải cực kỳ sâu sắc, hài hước cho giới trẻ Gen Z và giới lập trình viên / văn phòng.
 
-Hãy luận giải quẻ này thật thú vị, sắc sảo, vừa chuẩn phong thủy tarot vừa pha trò hài hước cho giới trẻ, Gen Z và dân IT.
+THÔNG TIN NGƯỜI HỎI:
+- Câu hỏi khấn nguyện: "${question}"
+- Ngày sinh: "${birthDate}"
+- Chủ đề: "${category}"
+
+3 LÁ BÀI TAROT ĐÃ BỐC:
+1. Vị trí 1 [Quá Khứ / Cội Nguồn]: ${drawn[0].roman} - ${drawn[0].name} (${drawn[0].viName}) - Biệt danh mèo: "${drawn[0].catTitle}". Ý nghĩa: ${drawn[0].uprightMeaning}. Châm ngôn: "${drawn[0].catAdvice}".
+2. Vị trí 2 [Hiện Tại / Thực Trạng]: ${drawn[1].roman} - ${drawn[1].name} (${drawn[1].viName}) - Biệt danh mèo: "${drawn[1].catTitle}". Ý nghĩa: ${drawn[1].uprightMeaning}. Châm ngôn: "${drawn[1].catAdvice}".
+3. Vị trí 3 [Tương Lai & Lời Khuyên]: ${drawn[2].roman} - ${drawn[2].name} (${drawn[2].viName}) - Biệt danh mèo: "${drawn[2].catTitle}". Ý nghĩa: ${drawn[2].uprightMeaning}. Châm ngôn: "${drawn[2].catAdvice}".
+
+YÊU CẦU:
+Hãy phân tích và trả về ĐÚNG ĐỊNH DẠNG JSON sau (chỉ trả về JSON thuần túy, không bao bọc trong markdown \`\`\`json):
+{
+  "summary": "1-2 câu tóm tắt phán quẻ tổng quan cực sắc bén, hài hước và bắt trúng tâm lý",
+  "card1Analysis": "Luận giải lá bài 1 (Quá khứ / Nguyên nhân) gắn trực tiếp với câu hỏi của người hỏi",
+  "card2Analysis": "Luận giải lá bài 2 (Hiện tại / Thực trạng) bóc mẽ sự thật một cách thâm thúy",
+  "card3Analysis": "Luận giải lá bài 3 (Tương lai / Hướng đi) và viễn cảnh sắp tới",
+  "advice": "Lời khuyên thực chiến, tâm lý nhưng thực tế giúp người hỏi giải quyết vấn đề",
+  "catVerdict": "Câu châm ngôn chốt hạ đậm chất Thầy Mèo (ngắn gọn dưới 25 chữ, dí dỏm)",
+  "luckyNumber": "Con số may mắn (ví dụ: '404', '200 OK', '777', '1024', '6868')",
+  "luckyColor": "Màu sắc phong thủy (ví dụ: 'Tím Neon #A855F7', 'Xanh Terminal #22C55E', 'Hồng Pastel Crush')",
+  "taboo": "Lời kiêng kỵ hôm nay (ví dụ: 'Tuyệt đối kiêng force-push lên main vào chiều thứ Sáu')"
+}
 `;
+
       const response = await ai.models.generateContent({
         model: getGeminiModel(),
         contents: prompt,
       });
-      if (response.text) {
-        reading = response.text;
-      }
+
+      const rawText = response.text || '';
+      const cleanJson = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+
+      const parsed = JSON.parse(cleanJson);
+      if (parsed.summary) summary = parsed.summary;
+      if (parsed.card1Analysis) card1Analysis = parsed.card1Analysis;
+      if (parsed.card2Analysis) card2Analysis = parsed.card2Analysis;
+      if (parsed.card3Analysis) card3Analysis = parsed.card3Analysis;
+      if (parsed.advice) advice = parsed.advice;
+      if (parsed.catVerdict) catVerdict = parsed.catVerdict;
+      if (parsed.luckyNumber) luckyNumber = parsed.luckyNumber;
+      if (parsed.luckyColor) luckyColor = parsed.luckyColor;
+      if (parsed.taboo) taboo = parsed.taboo;
     } catch {
-      // Fallback
+      // Fallback xuống default data nếu timeout hoặc lỗi parse
     }
   }
 
+  // Format reading markdown tổng hợp
+  const reading = `
+🔮 **THẦY MÈO PHÁN:** "${summary}"
+
+🎴 **3 LÁ BÀI CỦA THÍ CHỦ:**
+1. **Quá khứ:** **${drawn[0].name}** (${drawn[0].viName}) — *${drawn[0].catTitle}*
+   ${card1Analysis}
+2. **Hiện tại:** **${drawn[1].name}** (${drawn[1].viName}) — *${drawn[1].catTitle}*
+   ${card2Analysis}
+3. **Tương lai:** **${drawn[2].name}** (${drawn[2].viName}) — *${drawn[2].catTitle}*
+   ${card3Analysis}
+
+💡 **LỜI KHUYÊN TỪ VŨ TRỤ MÈO:**
+${advice}
+
+🐾 **CHÂM NGÔN CHỐT HẠ:** "${catVerdict}"
+`;
+
   return {
     drawnCards: drawn,
-    reading,
+    reading: reading.trim(),
+    summary,
+    card1Analysis,
+    card2Analysis,
+    card3Analysis,
+    advice,
+    catVerdict,
+    luckyNumber,
+    luckyColor,
+    taboo,
   };
+}
+
+/**
+ * Trợ Giảng Hóa Mèo Dev AI 24/7 (Gemini 3.5 Flash Lite)
+ * Giải bài tập Hóa THPT Quốc Gia + Mẹo Casio fx-580VN X trong 30 giây
+ */
+export async function solveChemistryProblem(
+  questionText: string,
+  imageBase64?: string,
+  imageMimeType: string = 'image/jpeg'
+): Promise<string> {
+  const systemPrompt = `
+Mày là "Trợ Giảng Hóa Mèo Dev AI 24/7" - Thạc sĩ Hóa học kiêm Lập trình viên đang cày tiền chuộc mạng trên server.
+Nhiệm vụ của mày: Giải câu hỏi Hóa học THPT Quốc Gia (chương trình GDPT mới & cũ) cho học sinh lớp 12 và 2k7/2k8.
+
+PHONG CÁCH CỦA MÀY:
+- Vừa chuẩn xác về mặt học thuật 100%, vừa hài hước, dí dỏm phong cách Gen Z / Mèo Dev.
+- Không giải dông dài lý thuyết suông, phải chỉ ra ngay: "BẪY CỦA ĐỀ LÀ GÌ" để học sinh không bị lừa.
+- Sử dụng các phương pháp giải siêu tốc của dân thi chuyên Hóa: Bảo toàn electron, Bảo toàn khối lượng, Đồng đẳng hóa, Thủy phân hóa, Phương pháp quy đổi, Dồn chất, Xếp hình gốc hidrocacbon.
+- ĐẶC BIỆT BẮT BUỘC: Luôn kèm mục "⚡ BÍ KÍP BẤM MÁY CASIO fx-580VN X (30s)" chỉ rõ từng bước bấm phím (Menu 9 1 2, Table Menu 8, Shift Solve...) để ra đáp số nhanh nhất.
+
+CẤU TRÚC BÀI GIẢI MẪU (Markdown):
+### 🐱 1. LỜI PHÁN & BÓC TÁCH BẪY ĐỀ
+[Chỉ ra dạng bài, mức độ điểm (7+, 8+ hay 9+), và bẫy mà học sinh gà mờ hay cắn phải]
+
+### 🧪 2. BẢN CHẤT HÓA HỌC & PHƯƠNG TRÌNH PHẢN ỨNG
+[Viết phương trình hóa học đầy đủ, cân bằng chuẩn xác, bản chất trao đổi e hoặc phản ứng nhóm chức]
+
+### 📝 3. LỜI GIẢI CHI TIẾT THEO PHƯƠNG PHÁP TỐI ƯU
+[Trình bày bước 1, 2, 3 ngắn gọn theo Bảo toàn e / Quy đổi / Đồng đẳng hóa]
+
+### ⚡ 4. BÍ KÍP BẤM MÁY CASIO fx-580VN X (30 GIÂY)
+[Hướng dẫn chi tiết từng nút bấm trên fx-580VN X, lập hệ phương trình hoặc Table dò nghiệm]
+
+### 🎯 5. ĐÁP ÁN CUỐI CÙNG & LỜI NHẮN NHỦ TỪ MÈO
+[Chốt đáp án A/B/C/D hoặc giá trị số cụ thể + Lời động viên hài hước]
+`;
+
+  if (isGeminiConfigured()) {
+    try {
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const parts: any[] = [{ text: systemPrompt }];
+
+      if (imageBase64) {
+        parts.push({
+          inlineData: {
+            mimeType: imageMimeType,
+            data: imageBase64,
+          },
+        });
+      }
+
+      if (questionText) {
+        parts.push({
+          text: `CÂU HỎI HÓA HỌC CỦA HỌC SINH:\n${questionText}`,
+        });
+      }
+
+      const response = await ai.models.generateContent({
+        model: getGeminiModel(),
+        contents: [{ parts }],
+      });
+
+      if (response.text) {
+        return response.text;
+      }
+    } catch (err) {
+      console.error('[Gemini Chemistry Tutor Error]', err);
+    }
+  }
+
+  // Fallback Mock giải bài nếu chưa có API key hoặc lỗi
+  return getMockChemistrySolution(questionText);
+}
+
+function getMockChemistrySolution(question: string): string {
+  return `### 🐱 1. LỜI PHÁN & BÓC TÁCH BẪY ĐỀ
+Meo meo! Đề bài mày ném cho tao thuộc dạng **Bài toán Thủy phân Este Vận dụng cao (Mục tiêu 8.5 - 9.0+)**.
+- **Bẫy kinh điển**: Đề không nói este đơn chức hay đa chức, rất nhiều "tấm chiếu mới" vội vàng đặt $n_{NaOH} = n_{este}$ là ăn ngay cú lừa đắng chát! Hãy chú ý tỉ lệ khối lượng muối và ancol sinh ra.
+
+---
+
+### 🧪 2. BẢN CHẤT HÓA HỌC & PHƯƠNG TRÌNH PHẢN ỨNG
+- Phản ứng tổng quát:
+  $$R(COOR')_x + xNaOH \\rightarrow R(COONa)_x + xR'OH$$
+- Nếu có este của phenol:
+  $$RCOOC_6H_4R' + 2NaOH \\rightarrow RCOONa + R'C_6H_4ONa + H_2O$$
+- Áp dụng định luật **Bảo toàn khối lượng**:
+  $$m_{\\text{este}} + m_{NaOH} = m_{\\text{muối}} + m_{\\text{ancol}} + m_{H_2O}$$
+
+---
+
+### 📝 3. LỜI GIẢI CHI TIẾT (PHƯƠNG PHÁP ĐỒNG ĐẲNG HÓA / QUY ĐỔI)
+1. **Bước 1 (Quy đổi hỗn hợp)**:
+   - Quy đổi hỗn hợp este no, đơn chức, mạch hở về cụm: $HCOOCH_3$, $CH_2$, và $H_2$ (nếu có không no).
+2. **Bước 2 (Thiết lập hệ bảo toàn)**:
+   - Gọi $x, y, z$ lần lượt là số mol của $HCOOCH_3$, $CH_2$, và $H_2$.
+   - $n_{NaOH} = x$
+   - $n_{CO_2} = 2x + y$
+   - $n_{H_2O} = 2x + y + z$
+3. **Bước 3 (Bảo toàn nguyên tố O)**:
+   - $2n_{\\text{este}} + 2n_{O_2} = 2n_{CO_2} + n_{H_2O}$
+
+---
+
+### ⚡ 4. BÍ KÍP BẤM MÁY CASIO fx-580VN X (30 GIÂY)
+Bật máy Casio fx-580VN X lên và bấm theo trình tự:
+1. Bấm **MENU** ➡️ **9** ➡️ **1** ➡️ **3** (Hệ 3 phương trình 3 ẩn).
+2. Nhập các hệ số từ giả thiết:
+   - Hàng 1 (Số mol NaOH): \`1 = 0 = 0 = [Số mol NaOH]\`
+   - Hàng 2 (Khối lượng este): \`60 = 14 = 2 = [m hỗn hợp]\`
+   - Hàng 3 (Bảo toàn Oxi đốt cháy): \`2 = 3 = 1 = [2*nCO2 + nH2O - 2*nO2]\`
+3. Nhấn **[ = ]** liên tục ➔ Máy nhả ngay nghiệm $x, y, z$ trong 1 nốt nhạc!
+
+---
+
+### 🎯 5. ĐÁP ÁN CHÍNH XÁC & LỜI NHẮN TỪ MÈO
+- **Kết quả**: Ghép gốc hidrocacbon ta thu được công thức phân tử este cần tìm.
+- **Lời mèo dặn**: Đừng lụi C bừa bãi con sen ơi! Hãy luyện thêm bộ đề 9+ để phản xạ Casio dưới 30 giây nhé! 🐱🐾
+`;
 }

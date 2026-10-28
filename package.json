@@ -6,29 +6,41 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "daemon": "tsx daemon/index.ts",
+    "daemon:test": "tsx daemon/index.ts --test",
+    "daemon:content": "tsx daemon/index.ts --content",
+    "daemon:hunger": "tsx daemon/index.ts --hunger",
+    "daemon:sale": "tsx daemon/index.ts --sale",
+    "daemon:product": "tsx daemon/index.ts --product"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1158.0",
     "@aws-sdk/s3-request-presigner": "^3.1158.0",
     "@google/genai": "^2.31.0",
+    "@googleapis/drive": "^27.0.0",
     "@payos/node": "^2.0.5",
     "@supabase/supabase-js": "^2.118.0",
     "canvas-confetti": "^1.9.4",
+    "dotenv": "^18.0.9",
     "lucide-react": "^1.62.0",
     "next": "16.4.3",
+    "node-cron": "^4.6.0",
     "react": "19.3.0",
     "react-dom": "19.3.0"
   },
   "devDependencies": {
     "@tailwindcss/turbopack": "^4",
     "@types/canvas-confetti": "^1.9.0",
+    "@types/dotenv": "^6.1.1",
     "@types/node": "^20",
+    "@types/node-cron": "^3.0.11",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.4.3",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5"
   }
 }

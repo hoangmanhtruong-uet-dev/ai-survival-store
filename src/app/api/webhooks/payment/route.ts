@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { mockStore } from '@/lib/mock-store';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import { extractOrderCode, generateRedeemCode } from '@/lib/vietqr';
+import { grantDriveAccess, getChemistryFolderId } from '@/lib/google-drive';
 
 export async function POST(req: NextRequest) {
   try {
@@ -80,12 +81,27 @@ export async function POST(req: NextRequest) {
 
         const actualAmount = transferAmount > 0 ? transferAmount : existingOrder.amount;
         let redeemCode = existingOrder.redeem_code;
+        let aiResult = existingOrder.ai_result;
 
         // Xử lý tạo mã kích hoạt / link giao hàng
         if (existingOrder.product?.type === 'AI_TASK') {
           redeemCode = generateRedeemCode(existingOrder.product_id === 'ROAST-10' ? 'RCV' : 'TRT');
         } else if (existingOrder.product?.type === 'R2_FILE') {
           redeemCode = `/api/download?code=${orderCode}&key=${existingOrder.product.r2_file_key}`;
+        } else if (existingOrder.product?.type === 'GDRIVE_ACCESS') {
+          const folderId = existingOrder.product?.gdrive_folder_id || getChemistryFolderId(existingOrder.product_id);
+          redeemCode = `https://drive.google.com/drive/folders/${folderId}`;
+
+          if (existingOrder.buyer_email) {
+            await grantDriveAccess({
+              folderId,
+              buyerEmail: existingOrder.buyer_email,
+            });
+          }
+
+          if (existingOrder.product_id === 'CHEM-149') {
+            aiResult = { tutor_token: `CHM-${orderCode.replace('MEO-', '')}` };
+          }
         }
 
         // Cập nhật trạng thái PAID
@@ -95,6 +111,7 @@ export async function POST(req: NextRequest) {
             status: 'PAID',
             paid_at: new Date().toISOString(),
             redeem_code: redeemCode,
+            ai_result: aiResult,
             payment_meta: paymentMeta,
           })
           .eq('order_code', orderCode)
@@ -139,6 +156,12 @@ export async function POST(req: NextRequest) {
         success: false,
         error: `Không tìm thấy đơn hàng tương ứng với mã ${orderCode}`,
       }, { status: 404 });
+    }
+
+    // Đảm bảo cấp quyền Google Drive nếu là sản phẩm GDRIVE_ACCESS (hỗ trợ cả mock mode)
+    if (updatedOrder.product?.type === 'GDRIVE_ACCESS' && updatedOrder.buyer_email) {
+      const folderId = updatedOrder.product?.gdrive_folder_id || getChemistryFolderId(updatedOrder.product_id);
+      await grantDriveAccess({ folderId, buyerEmail: updatedOrder.buyer_email });
     }
 
     return NextResponse.json({

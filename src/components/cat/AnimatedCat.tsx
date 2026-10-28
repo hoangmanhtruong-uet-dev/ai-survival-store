@@ -16,14 +16,14 @@ export const AnimatedCat: React.FC<AnimatedCatProps> = ({
   hungerLevel = 80,
   onCatClick,
 }) => {
-  const [speech, setSpeech] = useState<string>('Gõ phím cày 5 củ cứu mạng!');
+  const [speech, setSpeech] = useState<string>('Gõ phím cày 7 củ cứu mạng!');
   const [isWobbling, setIsWobbling] = useState(false);
 
   // Chọn câu thoại ngẫu nhiên khi click vào mèo
   const catQuotes = [
     'Meo meo! Đừng chọc, tao đang cày deadline!',
     '5k một hộp pate cứu đói đi bạn ơi!',
-    'rm -rf / đang chờ tao ở ngày thứ 30 kìa...',
+    'rm -rf / đang chờ tao ở ngày thứ 60 kìa...',
     'CV viết thế kia mà đòi lương 30 củ à?',
     'Ting ting một cái là tao nhảy cẫng lên liền!',
     'Lương senior của tao đâu hết rồi...',
@@ -42,9 +42,9 @@ export const AnimatedCat: React.FC<AnimatedCatProps> = ({
   const currentMood: CatMood = isLowHunger && mood === 'TYPING' ? 'HUNGRY' : mood;
 
   return (
-    <div className="relative flex flex-col items-center justify-center p-4 select-none">
+    <div className="relative flex flex-col items-center justify-center p-2 sm:p-3 select-none w-full">
       {/* Speech bubble */}
-      <div className="relative mb-3 bg-zinc-900 border border-emerald-500/50 rounded-xl px-3 py-2 text-xs text-emerald-300 font-mono shadow-lg shadow-emerald-950/40 max-w-[240px] text-center transition-all animate-bounce">
+      <div className="relative mb-2.5 bg-zinc-900 border border-emerald-500/50 rounded-xl px-2.5 py-1.5 text-[11px] sm:text-xs text-emerald-300 font-mono shadow-lg shadow-emerald-950/40 max-w-[200px] text-center transition-all animate-bounce">
         <span>{speech}</span>
         {/* Tam giác đuôi bubble */}
         <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-emerald-500/50" />
@@ -60,7 +60,7 @@ export const AnimatedCat: React.FC<AnimatedCatProps> = ({
       >
         <svg
           viewBox="0 0 240 220"
-          className="w-48 h-48 md:w-56 md:h-56 filter drop-shadow-[0_8px_20px_rgba(16,185,129,0.25)]"
+          className="w-32 h-32 sm:w-40 sm:h-40 md:w-44 md:h-44 lg:w-36 lg:h-36 xl:w-44 xl:h-44 filter drop-shadow-[0_8px_20px_rgba(16,185,129,0.25)] transition-all"
         >
           <defs>
             <linearGradient id="catBody" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -205,14 +205,14 @@ export const AnimatedCat: React.FC<AnimatedCatProps> = ({
       </div>
 
       {/* Trạng thái hoạt động dưới chân mèo */}
-      <div className="mt-2 flex items-center gap-2">
-        <span className="relative flex h-2 w-2">
+      <div className="mt-2 flex items-center justify-center gap-1.5 px-2 py-1 rounded-full bg-zinc-950/80 border border-zinc-800/80 max-w-full">
+        <span className="relative flex h-2 w-2 shrink-0">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
           <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
         </span>
-        <span className="text-[11px] font-mono text-zinc-400 uppercase tracking-wider">
+        <span className="text-[10px] sm:text-[11px] font-mono text-zinc-400 uppercase tracking-wider truncate">
           {currentMood === 'TYPING' && 'AI đang gõ phím cày đơn...'}
-          {currentMood === 'HUNGRY' && 'Đang đói lả, cần tiếp tế Pate!'}
+          {currentMood === 'HUNGRY' && 'Đang đói lả, cần cứu Pate!'}
           {currentMood === 'EATING' && 'Đang húp pate ngon lành!'}
           {currentMood === 'ROASTING' && 'Đang sấy CV cực căng!'}
         </span>

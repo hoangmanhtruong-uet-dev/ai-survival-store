@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Trophy, Heart, Sparkles, ExternalLink } from 'lucide-react';
 import { Order } from '@/types';
+import { getSupabaseClient } from '@/lib/supabase/client';
 
 interface HallOfFameProps {
   onOpenCertificate?: (order: Order) => void;
@@ -12,26 +13,51 @@ export const HallOfFame: React.FC<HallOfFameProps> = ({ onOpenCertificate }) => 
   const [donors, setDonors] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    async function fetchDonors() {
-      setIsLoading(true);
-      try {
-        const res = await fetch('/api/hall-of-fame');
-        const data = await res.json();
-        if (data.success && data.donors) {
-          setDonors(data.donors);
-        }
-      } catch {
-        // Ignore
-      } finally {
-        setIsLoading(false);
+  const fetchDonors = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const res = await fetch('/api/hall-of-fame');
+      const data = await res.json();
+      if (data.success && data.donors) {
+        setDonors(data.donors);
       }
+    } catch {
+      // Ignore
+    } finally {
+      setIsLoading(false);
     }
-
-    fetchDonors();
-    const interval = setInterval(fetchDonors, 10000); // Polling mỗi 10 giây
-    return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    // 1. Fetch 1 lần duy nhất khi mount
+    fetchDonors();
+
+    // 2. Lắng nghe Realtime qua Supabase WebSocket (Zero HTTP GET Polling)
+    const supabase = getSupabaseClient();
+    if (supabase) {
+      const channel = supabase
+        .channel('realtime_hall_of_fame')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'orders' },
+          (payload) => {
+            const updated = payload.new as Order;
+            if (updated && updated.status === 'PAID') {
+              fetchDonors();
+            }
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    } else {
+      // Fallback nếu không có Supabase (chu kỳ rất chậm 60s)
+      const interval = setInterval(fetchDonors, 60000);
+      return () => clearInterval(interval);
+    }
+  }, [fetchDonors]);
 
   const formatRelativeTime = (isoString?: string | null) => {
     if (!isoString) return 'Vừa xong';
@@ -57,7 +83,7 @@ export const HallOfFame: React.FC<HallOfFameProps> = ({ onOpenCertificate }) => 
             BẢNG VÀNG ÂN NHÂN CỨU MẠNG MÈO (HALL OF FAME)
           </h3>
           <p className="text-xs text-zinc-400">
-            Vinh danh những tấm lòng hảo tâm đã donate pate hoặc mua dịch vụ giúp Mèo Dev sống sót qua 30 ngày!
+            Vinh danh những tấm lòng hảo tâm đã donate pate hoặc mua dịch vụ giúp Mèo Dev sống sót qua 60 ngày!
           </p>
         </div>
         <div className="flex items-center gap-1 text-[11px] font-mono text-pink-400 bg-pink-950/40 border border-pink-800/40 px-2.5 py-1 rounded-lg w-fit">
@@ -69,6 +95,12 @@ export const HallOfFame: React.FC<HallOfFameProps> = ({ onOpenCertificate }) => 
       {isLoading && donors.length === 0 ? (
         <div className="py-8 text-center text-xs text-zinc-500 font-mono">
           Đang tải danh sách ân nhân...
+        </div>
+      ) : donors.length === 0 ? (
+        <div className="py-8 text-center text-xs text-zinc-500 font-mono flex flex-col items-center justify-center gap-1.5 border border-dashed border-zinc-800/80 rounded-xl bg-zinc-950/40">
+          <span className="text-xl">🐟</span>
+          <p className="text-zinc-300 font-medium font-sans">Chưa có ân nhân nào mở bát cứu trợ!</p>
+          <p className="text-[11px] text-zinc-500 font-sans">Hãy là người đầu tiên ủng hộ 5k pate để tên của bạn được vinh danh trang trọng tại đây.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">

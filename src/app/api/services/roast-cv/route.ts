@@ -13,8 +13,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Vui lòng nhập nội dung CV hoặc tải lên file PDF' }, { status: 400 });
     }
 
-    // Chấp nhận mã RCV-XXXX hoặc bất kỳ mã test nào khi đang thử nghiệm
-    const validCode = redeemCode?.trim().toUpperCase() || 'RCV-TEST-MODE';
+    const validCode = redeemCode?.trim().toUpperCase() || 'RCV-FREE';
 
     // Che PII trước khi đưa vào AI và phát sóng
     const safeCVText = cvText ? scrubPII(cvText) : 'File PDF đính kèm';

@@ -7,7 +7,7 @@ import { filterProfanity } from '@/lib/profanity';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { redeemCode, question, birthDate } = body;
+    const { redeemCode, question, birthDate, category, selectedCardIds } = body;
 
     if (!question || question.trim().length < 3) {
       return NextResponse.json({ success: false, error: 'Vui lòng nhập câu hỏi cần bói quẻ' }, { status: 400 });
@@ -16,9 +16,9 @@ export async function POST(req: NextRequest) {
     const cleanQuestion = filterProfanity(question.trim());
     const cleanBirthDate = birthDate || '2000-01-01';
 
-    const result = await getTarotReading(cleanQuestion, cleanBirthDate);
+    const result = await getTarotReading(cleanQuestion, cleanBirthDate, category, selectedCardIds);
 
-    const logMsg = `🔮 Thầy Mèo vừa bốc 3 lá luận quẻ: "${cleanQuestion.slice(0, 50)}..."`;
+    const logMsg = `🔮 Thầy Mèo vừa bốc 3 lá luận quẻ [${category || 'Tổng quan'}]: "${cleanQuestion.slice(0, 40)}..."`;
 
     const supabase = getSupabaseClient();
     if (supabase) {
@@ -35,8 +35,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      drawnCards: result.drawnCards,
-      reading: result.reading,
+      ...result,
     });
   } catch (error) {
     return NextResponse.json(

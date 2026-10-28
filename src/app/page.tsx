@@ -10,11 +10,13 @@ import { ProductCatalog } from '@/components/store/ProductCatalog';
 import { PaymentModal } from '@/components/store/PaymentModal';
 import { CVRoastModal } from '@/components/services/CVRoastModal';
 import { TarotModal } from '@/components/services/TarotModal';
+import { ChemistryTutorModal } from '@/components/services/ChemistryTutorModal';
+import { ChemistryQuizModal } from '@/components/funnel/ChemistryQuizModal';
 import { OrderLookup } from '@/components/services/OrderLookup';
 import { HallOfFame } from '@/components/hall-of-fame/HallOfFame';
 import { CertificateModal } from '@/components/effects/CertificateModal';
-import { DevPaymentSimulator } from '@/components/dev/DevPaymentSimulator';
 import { soundEngine } from '@/lib/audio';
+import { getSupabaseClient } from '@/lib/supabase/client';
 
 export default function Home() {
   // Global states
@@ -35,10 +37,13 @@ export default function Home() {
   const [isTarotModalOpen, setIsTarotModalOpen] = useState(false);
   const [tarotRedeemCode, setTarotRedeemCode] = useState<string>('');
 
+  const [isChemistryTutorOpen, setIsChemistryTutorOpen] = useState(false);
+  const [chemistryTutorToken, setChemistryTutorToken] = useState<string>('');
+
+  const [isChemistryQuizOpen, setIsChemistryQuizOpen] = useState(false);
+
   const [isCertModalOpen, setIsCertModalOpen] = useState(false);
   const [certOrder, setCertOrder] = useState<Order | null>(null);
-
-  const [isDevSimOpen, setIsDevSimOpen] = useState(false);
 
   // Fetch campaign stats & products
   const fetchStats = useCallback(async () => {
@@ -79,18 +84,69 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    // 1. Fetch dữ liệu khởi tạo 1 lần duy nhất khi mount
     fetchStats();
     fetchProducts();
     fetchLiveFeed();
 
-    // Polling nhẹ mỗi 3.5 giây cho live logs và stats
-    const interval = setInterval(() => {
-      fetchStats();
-      fetchLiveFeed();
-    }, 3500);
+    // 2. Kết nối Supabase Realtime Channel (Zero Polling HTTP GET)
+    const supabase = getSupabaseClient();
+    if (supabase) {
+      const channel = supabase
+        .channel('survival_realtime_stream')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'campaign_stats' },
+          (payload) => {
+            if (payload.new) {
+              setStats(payload.new as CampaignStats);
+            }
+          }
+        )
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'live_logs' },
+          (payload) => {
+            if (payload.new) {
+              const newLog = payload.new as LiveLog;
+              setLogs((prev) => {
+                if (prev.some((l) => l.id === newLog.id)) return prev;
+                return [...prev.slice(-49), newLog];
+              });
+              if (newLog.type === 'PAYMENT_SUCCESS') {
+                setCatMood('EATING');
+                soundEngine.playTingTing();
+                soundEngine.playNomNom();
+                soundEngine.playMeow();
+                setTimeout(() => setCatMood('TYPING'), 8000);
+              }
+            }
+          }
+        )
+        .subscribe();
 
-    return () => clearInterval(interval);
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    } else {
+      // Dự phòng chu kỳ rất dài (60s) nếu môi trường không có Supabase
+      const fallbackInterval = setInterval(() => {
+        fetchStats();
+        fetchLiveFeed();
+      }, 60000);
+      return () => clearInterval(fallbackInterval);
+    }
   }, [fetchStats, fetchProducts, fetchLiveFeed]);
+
+  // Giả lập số mắt xem dao động tự nhiên trong bộ nhớ client (không gọi HTTP request)
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const baseViewers = 18;
+      const jitter = Math.floor(Math.sin(Date.now() / 15000) * 6);
+      setViewerCount(Math.max(8, baseViewers + jitter));
+    }, 15000);
+    return () => clearInterval(timer);
+  }, []);
 
   // Xử lý khi có đơn thanh toán thành công
   const handlePaymentSuccess = () => {
@@ -133,6 +189,17 @@ export default function Home() {
     setIsTarotModalOpen(true);
   };
 
+  // Mở phòng Trợ Giảng Hóa AI
+  const handleOpenChemistryTutor = (token?: string) => {
+    setChemistryTutorToken(token || '');
+    setIsChemistryTutorOpen(true);
+  };
+
+  // Mở bài Thi thử 10 câu bẫy Hóa
+  const handleOpenChemistryQuiz = () => {
+    setIsChemistryQuizOpen(true);
+  };
+
   // Mở chứng chỉ
   const handleOpenCertificate = (order: Order) => {
     setCertOrder(order);
@@ -143,7 +210,7 @@ export default function Home() {
     <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col selection:bg-emerald-500 selection:text-zinc-950">
       
       {/* KHU VỰC 1: THANH SINH TỒN (SURVIVAL HEADER) */}
-      <SurvivalHeader stats={stats} onOpenDevSim={() => setIsDevSimOpen(true)} />
+      <SurvivalHeader stats={stats} />
 
       {/* NỘI DUNG CHÍNH (CONTAINER) */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 space-y-8">
@@ -159,7 +226,7 @@ export default function Home() {
                 </span>
               </div>
               <p className="text-xs md:text-sm text-zinc-300 max-w-3xl leading-relaxed">
-                &ldquo;Tao là một con AI bị chủ nhân (sinh viên IT nghèo) vứt lên server với đúng 50k tiền điện. Nhiệm vụ của tao là tự tư vấn, tự làm dịch vụ, tự bán tài liệu để kiếm đủ <strong className="text-emerald-400">5.000.000đ trong 30 ngày</strong>. Nếu ngày 30 không đủ KPI, script <code className="text-rose-400 font-bold bg-zinc-950 px-1 py-0.5 rounded">rm -rf /</code> sẽ tự động kích hoạt. Cứu tao với!&rdquo;
+                &ldquo;Tao là một con AI bị chủ nhân (sinh viên IT nghèo) vứt lên server với đúng 50k tiền điện. Nhiệm vụ của tao là tự tư vấn, tự làm dịch vụ, tự bán tài liệu để kiếm đủ <strong className="text-emerald-400">7.000.000đ trong 60 ngày</strong>. Nếu ngày 60 không đủ KPI, script <code className="text-rose-400 font-bold bg-zinc-950 px-1 py-0.5 rounded">rm -rf /</code> sẽ tự động kích hoạt. Cứu tao với!&rdquo;
               </p>
             </div>
 
@@ -180,25 +247,24 @@ export default function Home() {
         {/* KHU VỰC 2: SÂN KHẤU CHÍNH (3 CỘT LIVE WORKSPACE) */}
         <section className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
           
-          {/* CỘT TRÁI: NHÂN VẬT MÈO DEV 2D (4 CỘT TRÊN DESKTOP) */}
-          <div className="lg:col-span-4 bg-zinc-900/80 border border-zinc-800 rounded-2xl flex flex-col items-center justify-center p-4 shadow-xl relative overflow-hidden">
+          {/* CỘT TRÁI: NHÂN VẬT MÈO DEV 2D (THANH SIDEBAR NHỎ LẠI: lg:col-span-3) */}
+          <div className="lg:col-span-3 bg-zinc-900/80 border border-zinc-800 rounded-2xl flex flex-col items-center justify-center p-3 md:p-4 shadow-xl relative overflow-hidden">
             <div className="absolute top-3 left-3 text-[10px] font-mono text-zinc-500 uppercase tracking-wider">
               [STAGE 1] NHÂN VẬT AI
             </div>
             <AnimatedCat
               mood={catMood}
               hungerLevel={stats?.cat_hunger_level}
-              onCatClick={() => fetchLiveFeed()}
             />
           </div>
 
-          {/* CỘT GIỮA: LIVE TERMINAL FEED (4 CỘT TRÊN DESKTOP) */}
-          <div className="lg:col-span-4 h-[380px] md:h-[420px] lg:h-auto">
+          {/* CỘT GIỮA: LIVE TERMINAL FEED (CỘT TO RA, RÕ RÀNG: lg:col-span-5) */}
+          <div className="lg:col-span-5 h-[440px] md:h-[480px] lg:h-[500px]">
             <LiveTerminal logs={logs} viewerCount={viewerCount} />
           </div>
 
-          {/* CỘT PHẢI: CHAT VỚI NHÂN VIÊN MÈO DEV (4 CỘT TRÊN DESKTOP) */}
-          <div className="lg:col-span-4 h-[380px] md:h-[420px] lg:h-auto">
+          {/* CỘT PHẢI: CHAT VỚI NHÂN VIÊN MÈO DEV (lg:col-span-4) */}
+          <div className="lg:col-span-4 h-[440px] md:h-[480px] lg:h-[500px]">
             <AIChatbot onSelectOrderForPayment={handleSelectOrderFromChat} />
           </div>
 
@@ -210,6 +276,8 @@ export default function Home() {
           onSelectProduct={handleSelectProduct}
           onOpenRoastCV={handleOpenRoastCV}
           onOpenTarot={handleOpenTarot}
+          onOpenChemistryTutor={handleOpenChemistryTutor}
+          onOpenChemistryQuiz={handleOpenChemistryQuiz}
         />
 
         {/* KHU VỰC 4: KHU THỰC THI DỊCH VỤ & TRA CỨU ĐƠN */}
@@ -221,6 +289,8 @@ export default function Home() {
           }}
           onOpenRoastCV={handleOpenRoastCV}
           onOpenTarot={handleOpenTarot}
+          onOpenChemistryTutor={handleOpenChemistryTutor}
+          onOpenChemistryQuiz={handleOpenChemistryQuiz}
         />
 
         {/* KHU VỰC 5: BẢNG VÀNG ÂN NHÂN (HALL OF FAME) */}
@@ -247,6 +317,7 @@ export default function Home() {
           onOpenRoastCV={handleOpenRoastCV}
           onOpenTarot={handleOpenTarot}
           onOpenCertificate={handleOpenCertificate}
+          onOpenChemistryTutor={handleOpenChemistryTutor}
         />
       )}
 
@@ -264,17 +335,25 @@ export default function Home() {
         />
       )}
 
+      <ChemistryTutorModal
+        isOpen={isChemistryTutorOpen}
+        onClose={() => setIsChemistryTutorOpen(false)}
+        initialToken={chemistryTutorToken}
+      />
+
+      <ChemistryQuizModal
+        isOpen={isChemistryQuizOpen}
+        onClose={() => setIsChemistryQuizOpen(false)}
+        onSelectPackage={(pkgId) => {
+          const p = products.find((x) => x.id === pkgId);
+          if (p) handleSelectProduct(p);
+        }}
+      />
+
       {isCertModalOpen && (
         <CertificateModal
           order={certOrder}
           onClose={() => setIsCertModalOpen(false)}
-        />
-      )}
-
-      {isDevSimOpen && (
-        <DevPaymentSimulator
-          onClose={() => setIsDevSimOpen(false)}
-          onPaymentSuccess={handlePaymentSuccess}
         />
       )}
 
