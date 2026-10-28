@@ -3,91 +3,200 @@
 << /Type /Catalog /Pages 2 0 R >>
 endobj
 2 0 obj
-<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+<< /Type /Pages /Kids [5 0 R 7 0 R] /Count 2 >>
 endobj
 3 0 obj
-<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
 endobj
 4 0 obj
-<< /Length 2337 >>
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+5 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 6 0 R >>
+endobj
+6 0 obj
+<< /Length 2283 >>
 stream
 BT
-/F1 16 Tf
-50 740 Td
-(MEO DEV - GIT CHEATSHEET CAP TOC (BAN PREVIEW)) Tj
-/F1 10 Tf
-0 -22 Td
-(------------------------------------------------------------------------------------------) Tj
-0 -15 Td
-([BAN PREVIEW MIEN PHI] Danh cho Sinh vien IT Viet Nam) Tj
-0 -15 Td
-(Du an: Meo Dev Sinh Ton - https://ai-survival-store.vercel.app) Tj
-0 -15 Td
-(------------------------------------------------------------------------------------------) Tj
-0 -15 Td
+/F2 15 Tf
+45 745 Td
+(MEO DEV • CAM NANG GIT CAP TOC \(BAN PREVIEW MIEN PHI\)) Tj
+/F2 10 Tf
+0 -20 Td
+(------------------------------------------------------------------------------------------------) Tj
+/F1 9 Tf
+0 -13 Td
+(Du an: Meo Dev Sinh Ton 24/7 • Website: https://ai-survival-store.vercel.app) Tj
+/F1 9 Tf
+0 -13 Td
+(Bien soan: Meo Dev \(Senior Tech Lead kiem Chu No 7 Trieu\)) Tj
+/F2 10 Tf
+0 -13 Td
+(------------------------------------------------------------------------------------------------) Tj
+/F1 9 Tf
+0 -13 Td
 () Tj
-0 -15 Td
-(1. git init                      : Khoi tao Git repository trong thu muc hien tai) Tj
-0 -15 Td
-(2. git clone <url>               : Sao chep ma nguon tu GitHub / GitLab ve may tinh) Tj
-0 -15 Td
-(3. git status                    : Kiem tra trang thai cac file da sua doi hoac chua stage) Tj
-0 -15 Td
-(4. git add .                     : Dua toan bo file da sua vao Staging Area san sang commit) Tj
-0 -15 Td
-(5. git commit -m "[msg]"         : Luu snapshot code kem thong diep giai thich) Tj
-0 -15 Td
-(6. git push origin <branch>      : Day code tu may local len nhanh tren remote server) Tj
-0 -15 Td
-(7. git pull origin <branch>      : Keo va cap nhat code moi nhat tu remote ve may) Tj
-0 -15 Td
-(8. git branch -a                 : Xem toan bo danh sach cac branch local va remote) Tj
-0 -15 Td
-(9. git checkout -b <branch>      : Tao mot branch moi va chuyen sang branch do ngay) Tj
-0 -15 Td
-(10. git log --oneline -n 10      : Xem lich su 10 commit gan nhat duoi dang 1 dong) Tj
-0 -15 Td
+/F2 10 Tf
+0 -13 Td
+(>>> PHAN 1: 10 LENH GIT CO BAN HANG NGAY MA SINH VIEN BAT BUOC PHAI THUOC) Tj
+/F1 9 Tf
+0 -13 Td
 () Tj
-0 -15 Td
-(==========================================================================================) Tj
-0 -15 Td
-(BAN CAN BAN FULL CHUYEN SAU DE CUU DO AN NHOM?) Tj
-0 -15 Td
-(Ban Full bao gom:) Tj
-0 -15 Td
-(- Xu ly Merge Conflict khi bi trung code ban be ma khong lam mat code bat ky ai) Tj
-0 -15 Td
-(- Bi kip Git Stash de cat tam code dang viet do khi can pull gap) Tj
-0 -15 Td
-(- Git Rebase -i de gop \(squash\) cac commit rac truoc khi nop bai) Tj
-0 -15 Td
-(- Git Cherry-pick va Git Reset --hard khi lo tay commit sai) Tj
-0 -15 Td
-(- Quy trinh Git Flow chuan chinh danh cho nhom 3 - 5 sinh vien IT) Tj
-0 -15 Td
+/F1 9 Tf
+0 -13 Td
+(1. git init                      : Khoi tao mot Git repository trong thu muc hien tai.) Tj
+/F1 9 Tf
+0 -13 Td
+(2. git clone <repo_url>          : Keo toan bo ma nguon va lich su commit tu GitHub ve may.) Tj
+/F1 9 Tf
+0 -13 Td
+(3. git status                    : Kiem tra trang thai cac file: modified \(do\), staged \(xanh\).) Tj
+/F1 9 Tf
+0 -13 Td
+(4. git add <file> hoac git add . : Dua file da sua vao Staging Area de chuan bi dong goi.) Tj
+/F1 9 Tf
+0 -13 Td
+(5. git commit -m "[msg]"         : Tao mot snapshot danh dau code, thong diep ro rang ngan gon.) Tj
+/F1 9 Tf
+0 -13 Td
+(6. git push origin <branch>      : Day toan bo commit tu local len remote server \(GitHub/GitLab\).) Tj
+/F1 9 Tf
+0 -13 Td
+(7. git pull origin <branch>      : Keo va tu dong merge code moi nhat tu remote ve may local.) Tj
+/F1 9 Tf
+0 -13 Td
+(8. git branch -a                 : Xem toan bo danh sach nhanh \(local va remote dang theo doi\).) Tj
+/F1 9 Tf
+0 -13 Td
+(9. git checkout -b <branch_name> : Tao ngay mot branch moi va nhay sang branch do de code.) Tj
+/F1 9 Tf
+0 -13 Td
+(10. git log --oneline -n 10      : Xem lich su 10 commit gan nhat duoi dang mot dong cuc gon.) Tj
+/F1 9 Tf
+0 -13 Td
 () Tj
-0 -15 Td
-(-> Ghe ngay Web ung ho 25.000d pate cuu doi Meo Dev va tai Ban Full ngay:) Tj
-0 -15 Td
-(   Website: https://ai-survival-store.vercel.app) Tj
-0 -15 Td
-(==========================================================================================) Tj
+/F2 10 Tf
+0 -13 Td
+(>>> 3 QUY TAC VANG KHI DUNG GIT CHO SINH VIEN IT:) Tj
+/F1 9 Tf
+0 -13 Td
+(- Quy tac 1: Commit thuong xuyen. Dung de 1 tuan moi commit 1 lan voi thong diep "fix bug".) Tj
+/F1 9 Tf
+0 -13 Td
+(- Quy tac 2: Luon chay `git status` va `git diff` truoc khi `git add .` de tranh add nham file rac.) Tj
+/F1 9 Tf
+0 -13 Td
+(- Quy tac 3: Tuyet doi khong commit thu muc node_modules va cac file chua Secret \(.env\).) Tj
 ET
 endstream
 endobj
-5 0 obj
-<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+7 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 8 0 R >>
+endobj
+8 0 obj
+<< /Length 2218 >>
+stream
+BT
+/F2 15 Tf
+45 745 Td
+(MEO DEV • HUONG DAN MO KHOA BAN FULL CHUYEN SAU) Tj
+/F2 10 Tf
+0 -20 Td
+(------------------------------------------------------------------------------------------------) Tj
+/F1 9 Tf
+0 -13 Td
+([BAN FULL 7 TRANG CHUYEN SAU] CO NHUNG GI MA BAN SE CAN KHI LAM DO AN NHOM?) Tj
+/F2 10 Tf
+0 -13 Td
+(------------------------------------------------------------------------------------------------) Tj
+/F1 9 Tf
+0 -13 Td
+() Tj
+/F1 9 Tf
+0 -13 Td
+(Khi lam bai tap lon hoac do an tot nghiep, 100% sinh vien se gap phai cac tinh huong sau:) Tj
+/F1 9 Tf
+0 -13 Td
+() Tj
+/F1 9 Tf
+0 -13 Td
+(1. MERGE CONFLICT PHUT 89:) Tj
+/F1 9 Tf
+0 -13 Td
+(   Code cua ban va ban cung nhom sua chung 1 file, Git bao loi "CONFLICT". Ban khong biet) Tj
+/F1 9 Tf
+0 -13 Td
+(   chon Accept Incoming hay Current, lam mat sach cong suc 3 ngay code cua dong doi.) Tj
+/F1 9 Tf
+0 -13 Td
+() Tj
+/F1 9 Tf
+0 -13 Td
+(2. CAP CUU VOI GIT STASH:) Tj
+/F1 9 Tf
+0 -13 Td
+(   Dang code do chuc nang chua xong nhung lead yeu cau sua gap bug tren main. Lam sao cat code) Tj
+/F1 9 Tf
+0 -13 Td
+(   ma khong can commit rac vao lich su repo?) Tj
+/F1 9 Tf
+0 -13 Td
+() Tj
+/F1 9 Tf
+0 -13 Td
+(3. GIT RESET, REVERT VA REFLOG:) Tj
+/F1 9 Tf
+0 -13 Td
+(   Lo tay commit nham token, password, hoac lo go `git reset --hard` lam bay mau file.) Tj
+/F1 9 Tf
+0 -13 Td
+(   Lam cach nao de loi lai code da mat trong 10 giay?) Tj
+/F1 9 Tf
+0 -13 Td
+() Tj
+/F1 9 Tf
+0 -13 Td
+(4. QUY TRINH GIT FLOW DO AN NHOM CHUAN CHINH:) Tj
+/F1 9 Tf
+0 -13 Td
+(   Cach chia branch: main, develop, feature/*, cach tao Pull Request va review code.) Tj
+/F1 9 Tf
+0 -13 Td
+() Tj
+/F2 10 Tf
+0 -13 Td
+(================================================================================================) Tj
+/F1 9 Tf
+0 -13 Td
+(-> MO KHOA BAN FULL \(7 TRANG THUC CHIEN\) CHI VOI 25.000D:) Tj
+/F1 9 Tf
+0 -13 Td
+(   Moi ban ghe web: https://ai-survival-store.vercel.app) Tj
+/F1 9 Tf
+0 -13 Td
+(   Chon goi "GIT-25: Bo Cheatsheet Git Cap Toc", quet ma VietQR de tiep mau cho Meo Dev!) Tj
+/F1 9 Tf
+0 -13 Td
+(   Tai lieu se duoc mo khoa ngay lap tuc sau khi chuyen khoan thanh cong.) Tj
+/F2 10 Tf
+0 -13 Td
+(================================================================================================) Tj
+ET
+endstream
 endobj
 xref
-0 6
+0 9
 0000000000 65535 f 
 0000000009 00000 n 
 0000000058 00000 n 
-0000000115 00000 n 
-0000000241 00000 n 
-0000002629 00000 n 
+0000000121 00000 n 
+0000000191 00000 n 
+0000000266 00000 n 
+0000000402 00000 n 
+0000002736 00000 n 
+0000002872 00000 n 
 trailer
-<< /Size 6 /Root 1 0 R >>
+<< /Size 9 /Root 1 0 R >>
 startxref
-2699
+5141
 %%EOF

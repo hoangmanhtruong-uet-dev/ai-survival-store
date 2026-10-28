@@ -3,7 +3,6 @@ import { DAEMON_CONFIG } from '../config';
 import fs from 'fs';
 import path from 'path';
 
-let aiInstance: GoogleGenAI | null = null;
 let cachedAgentRules: string = '';
 
 export function getAgentRules(): string {
@@ -28,14 +27,28 @@ export function getAgentRules(): string {
   return cachedAgentRules;
 }
 
+function getDaemonKeys(): string[] {
+  const raw = DAEMON_CONFIG.geminiApiKey || '';
+  return raw.split(/[,;\n]/).map((k) => k.trim()).filter((k) => k.length > 5);
+}
+
+let daemonKeyIndex = 0;
+
 export function getDaemonGemini(): GoogleGenAI {
-  if (!aiInstance) {
-    if (!DAEMON_CONFIG.geminiApiKey) {
-      throw new Error('Thiếu GEMINI_API_KEY trong .env.local');
-    }
-    aiInstance = new GoogleGenAI({ apiKey: DAEMON_CONFIG.geminiApiKey });
+  const keys = getDaemonKeys();
+  if (keys.length === 0) {
+    throw new Error('Thiếu GEMINI_API_KEY trong .env.local');
   }
-  return aiInstance;
+  const key = keys[daemonKeyIndex % keys.length];
+  return new GoogleGenAI({ apiKey: key });
+}
+
+export function rotateDaemonKey(): void {
+  const keys = getDaemonKeys();
+  if (keys.length > 1) {
+    daemonKeyIndex = (daemonKeyIndex + 1) % keys.length;
+    console.log(`🔑 [DAEMON KEY ROTATION] Chuyển sang Gemini API Key #${daemonKeyIndex + 1}/${keys.length}`);
+  }
 }
 
 export async function askGemini(prompt: string, customInstruction?: string): Promise<string> {

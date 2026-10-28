@@ -4,8 +4,31 @@ import { mockStore } from './mock-store';
 import { generateVietQRUrl } from './vietqr';
 import { TAROT_DECK_22, TarotCard } from './tarot-data';
 
+export function getApiKeys(): string[] {
+  const raw = process.env.GEMINI_API_KEY || '';
+  return raw
+    .split(/[,;\n]/)
+    .map((k) => k.trim())
+    .filter((k) => k.length > 5);
+}
+
+let keyIndex = 0;
+export function getGeminiApiKey(): string | null {
+  const keys = getApiKeys();
+  if (keys.length === 0) return null;
+  return keys[keyIndex % keys.length];
+}
+
+export function rotateGeminiApiKey(): void {
+  const keys = getApiKeys();
+  if (keys.length > 1) {
+    keyIndex = (keyIndex + 1) % keys.length;
+    console.log(`[Gemini Key Rotation] Switched to key #${keyIndex + 1}/${keys.length}`);
+  }
+}
+
 export function isGeminiConfigured(): boolean {
-  return Boolean(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.length > 5);
+  return getApiKeys().length > 0;
 }
 
 export function getGeminiModel(): string {
@@ -80,7 +103,9 @@ export async function chatWithCatDev(
   // Nếu có API Key Gemini thật
   if (isGeminiConfigured()) {
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
+      const apiKey = getGeminiApiKey();
+      if (!apiKey) throw new Error('No valid Gemini API key found');
+      const ai = new GoogleGenAI({ apiKey });
       const modelName = getGeminiModel();
 
       const response = await ai.models.generateContent({
@@ -160,16 +185,42 @@ export async function chatWithCatDev(
 export async function roastCVContent(cvText: string, pdfBase64?: string) {
   if (isGeminiConfigured()) {
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
+      const apiKey = getGeminiApiKey();
+      if (!apiKey) throw new Error('No valid Gemini API key found');
+      const ai = new GoogleGenAI({ apiKey });
       const prompt = `
-Bạn là Mèo Dev - một Senior Tech Lead khó tính, mồm mép chua cay nhưng có tâm.
-Hãy "sấy" CV dưới đây một cách cực gắt, hài hước, chỉ rõ những chỗ ngáo ngơ, sáo rỗng, lỗi chính tả, công nghệ lỗi thời hoặc chém gió quá đà.
-Sau đó đưa ra các gợi ý cụ thể để viết lại chuẩn ATS (Applicant Tracking System).
+Bạn là "Mèo Dev" - Senior Tech Lead kiêm Chuyên gia tối ưu hóa CV chuẩn quốc tế.
+Bạn nổi tiếng vì mỏ hỗn, mồm mép cực kỳ chua cay xéo xắt, nhưng kiến thức kỹ thuật thì chuẩn chỉ 100%, có tâm và chỉ ra đúng huyệt tử của ứng viên.
+Khách hàng vừa bỏ 10.000đ mua dịch vụ "ROAST-10". Bạn PHẢI mang lại một bản báo cáo sấy CV cực kỳ đẳng cấp, sâu sắc, thực chiến, không được trả lời chung chung!
 
-Định dạng trả về:
-1. BÀI SẤY CỰC GẮT (3-4 đoạn văn xéo xắt, gọi ứng viên là "con sen", "tấm chiếu mới")
-2. TOP 3 CÂU CHÂM BIẾM ĐẮT GIÁ NHẤT (Mỗi câu 1 dòng, bắt đầu bằng [HIGHLIGHT])
-3. BẢNG BÓC TÁCH LỖI VÀ HƯỚNG SỬA CHUẨN ATS (Format Markdown bảng hoặc danh sách)
+CẤU TRÚC BÁO CÁO BẮT BUỘC (Markdown):
+
+# 🔥 BÁO CÁO MÈO DEV SẤY CV & TỐI ƯU ATS CHUYÊN SÂU
+
+### 📊 1. ĐIỂM SỐ ATS SCANNER: [Chấm từ 0 đến 100]/100
+- **Phán quyết:** [Trượt từ vòng gửi xe / Tạm ổn cần mài giũa / Suýt thành Senior]
+- **Tóm tắt 1 câu:** [Một câu châm biếm sâu cay về toàn bộ CV]
+
+### 🐱 2. BÀI SẤY XÉ LÒNG TỪ SENIOR TECH LEAD (4 GÓC NHÌN ĐA CHIỀU)
+- **Góc nhìn Recruiter (Test 6 giây đầu):** [Đập vào mắt có gì nổi bật hay nhạt nhẽo như nước ốc?]
+- **Góc nhìn Tech Lead (Kỹ thuật & Dự án):** [Chém gió công nghệ thế nào? Dự án Todo App hay E-commerce clone? Có biết optimize hay chỉ biết copy code?]
+- **Góc nhìn ATS Parser:** [Lỗi format, bảng biểu, icon, cột đôi khiến máy quét vứt vào sọt rác thế nào?]
+- **Góc nhìn Mèo Dev (Sấy mỏ hỗn):** [2 đoạn văn mỏ hỗn, cà khịa cực thâm về thái độ và cách dùng từ]
+
+### 💎 3. TOP 3 CÂU CHÂM BIẾM ĐẮT GIÁ NHẤT
+- [HIGHLIGHT] "[Câu châm biếm 1]"
+- [HIGHLIGHT] "[Câu châm biếm 2]"
+- [HIGHLIGHT] "[Câu châm biếm 3]"
+
+### ✍️ 4. REWRITE MẪU THỰC CHIẾN THEO GOOGLE XYZ FORMULA
+[Chọn 2 bullet point tệ nhất trong CV và viết lại thành phiên bản triệu đô]:
+- **Nguyên bản tệ hại:** "[Câu gốc trong CV]"
+- **Bản sửa đỉnh cao (XYZ):** "Accomplished [X] measured by [Y] by doing [Z] (Bản dịch tiếng Việt thực chiến kèm số liệu định lượng)"
+
+### 🚀 5. CHECKLIST 3 VIỆC PHẢI SỬA NGAY ĐỂ ĐƯỢC GỌI PHỎNG VẤN TUẦN TỚI
+1. [Hành động 1 cụ thể]
+2. [Hành động 2 cụ thể]
+3. [Hành động 3 cụ thể]
 `;
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -294,7 +345,9 @@ export async function getTarotReading(
 
   if (isGeminiConfigured()) {
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
+      const apiKey = getGeminiApiKey();
+      if (!apiKey) throw new Error('No valid Gemini API key found');
+      const ai = new GoogleGenAI({ apiKey });
       const prompt = `
 Bạn là "Thầy Mèo Thần Số IT" - một chú mèo pháp sư cyber thông thái, lém lỉnh, mỏ hỗn vừa đủ nhưng luận giải cực kỳ sâu sắc, hài hước cho giới trẻ Gen Z và giới lập trình viên / văn phòng.
 
@@ -417,7 +470,9 @@ CẤU TRÚC BÀI GIẢI MẪU (Markdown):
 
   if (isGeminiConfigured()) {
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
+      const apiKey = getGeminiApiKey();
+      if (!apiKey) throw new Error('No valid Gemini API key found');
+      const ai = new GoogleGenAI({ apiKey });
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const parts: any[] = [{ text: systemPrompt }];
 

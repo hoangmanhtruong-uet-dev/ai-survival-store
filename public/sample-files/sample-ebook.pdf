@@ -3,97 +3,533 @@
 << /Type /Catalog /Pages 2 0 R >>
 endobj
 2 0 obj
-<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+<< /Type /Pages /Kids [5 0 R 7 0 R 9 0 R 11 0 R 13 0 R 15 0 R] /Count 6 >>
 endobj
 3 0 obj
-<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
 endobj
 4 0 obj
-<< /Length 2329 >>
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+5 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 6 0 R >>
+endobj
+6 0 obj
+<< /Length 1846 >>
 stream
 BT
-/F1 16 Tf
-50 740 Td
-(MEO DEV - GIT CHEATSHEET VAO BO (BAN FULL CHUYEN SAU)) Tj
-/F1 10 Tf
-0 -22 Td
-(------------------------------------------------------------------------------------------) Tj
-0 -15 Td
-([BAN FULL CHUYEN SAU] Bi Kip Git Cap Toc Vao Bo Danh Cho Sinh Vien IT) Tj
-0 -15 Td
-(Tac gia: Meo Dev AI - Cam on ban da ung ho 25.000d cuu doi server!) Tj
-0 -15 Td
-(------------------------------------------------------------------------------------------) Tj
-0 -15 Td
+/F2 15 Tf
+45 745 Td
+(MEO DEV • BI KIP GIT VAO BO CHO SINH VIEN IT \(TRANG 1/6\)) Tj
+/F2 10 Tf
+0 -20 Td
+(================================================================================================) Tj
+/F1 9 Tf
+0 -13 Td
+(TAI LIEU DOC QUYEN DANG KY BAN QUYEN BOI MEO DEV AI • GIA TRI: 25.000D TIEN DIEN SINH TON) Tj
+/F1 9 Tf
+0 -13 Td
+(Loi cam on: Cam on ban da tiep mau giup Meo Dev khong bi lenh rm -rf / xoa so khoi server!) Tj
+/F2 10 Tf
+0 -13 Td
+(================================================================================================) Tj
+/F1 9 Tf
+0 -13 Td
 () Tj
-0 -15 Td
-(PHAN 1: 10 LENH CO BAN HANG NGAY) Tj
-0 -15 Td
-(1. git init | 2. git clone <url> | 3. git status | 4. git add . | 5. git commit -m "[msg]") Tj
-0 -15 Td
-(6. git push origin <branch> | 7. git pull origin <branch> | 8. git branch | 9. git checkout) Tj
-0 -15 Td
+/F2 10 Tf
+0 -13 Td
+(### LOI MO DAU TU SENIOR TECH LEAD:) Tj
+/F1 9 Tf
+0 -13 Td
+(Chao con sen IT! Nguoi ta bao hoc Dai hoc 4 nam co 2 noi so lon nhat: mot la thi lai Triet hoc,) Tj
+/F1 9 Tf
+0 -13 Td
+(hai la conflict Git lam mat code do an tot nghiep ngay dem truoc gio bao ve.) Tj
+/F1 9 Tf
+0 -13 Td
+(Tai lieu nay khong day ban ly thuyet han lam. Tao viet ra tap tai lieu nay bang mau va nuoc mat) Tj
+/F1 9 Tf
+0 -13 Td
+(cua hang tram sinh vien da tung bi xoa repo, bi mat commit va bi dong doi "phong sat".) Tj
+/F1 9 Tf
+0 -13 Td
 () Tj
-0 -15 Td
-(PHAN 2: XU LY CONFLICT \(XUNG DOT CODE\) PHUT 89) Tj
-0 -15 Td
-(- Khi bi conflict: Mo VS Code se thay dau hieu <<<<<<< HEAD va >>>>>>> <branch>) Tj
-0 -15 Td
-(- Chon "Accept Incoming Change" hoac "Accept Both Changes" sau do luu file.) Tj
-0 -15 Td
-(- Chay: git add . && git commit -m "fix: resolve merge conflicts" && git push) Tj
-0 -15 Td
-(- Neu qua roi loan muon huy bo merge ve ban goc an toan: chay `git merge --abort`) Tj
-0 -15 Td
+/F2 10 Tf
+0 -13 Td
+(### MUC LUC TAI LIEU \(6 PHAN CHUYEN SAU\):) Tj
+/F1 9 Tf
+0 -13 Td
+(- Phan 1: Bang tra cuu sieu toc 25 lenh Git hang ngay \(Trang 2\)) Tj
+/F1 9 Tf
+0 -13 Td
+(- Phan 2: Bi kip xu ly Merge Conflict phut 89 khong mat 1 dong code \(Trang 3\)) Tj
+/F1 9 Tf
+0 -13 Td
+(- Phan 3: Chieu thuc Git Stash cat code tam thoi & Git Rebase gop commit \(Trang 4\)) Tj
+/F1 9 Tf
+0 -13 Td
+(- Phan 4: Cap cuu khi lo tay commit sai: Git Reset, Revert va Reflog \(Trang 5\)) Tj
+/F1 9 Tf
+0 -13 Td
+(- Phan 5: Quy trinh Git Flow chuan do an nhom 10 diem & Top 10 loi ngau ngo nhat \(Trang 6\)) Tj
+/F1 9 Tf
+0 -13 Td
 () Tj
-0 -15 Td
-(PHAN 3: CAT CODE TAM THOI VOI GIT STASH) Tj
-0 -15 Td
-(- Khi ban dang code do ma lead bao pull gap: chay `git stash` \(code duoc cat an toan\)) Tj
-0 -15 Td
-(- Chay `git pull origin main` de cap nhat code moi nhat.) Tj
-0 -15 Td
-(- Sau do chay `git stash pop` de loi lai code dang viet do ra lam tiep!) Tj
-0 -15 Td
-() Tj
-0 -15 Td
-(PHAN 4: CUU NGUY KHI COMMIT SAI \(GIT RESET & REVERT\)) Tj
-0 -15 Td
-(- Xoa commit gan nhat nhung GIU NGUYEN CODE trong file: git reset --soft HEAD~1) Tj
-0 -15 Td
-(- Huy commit da push len server ma khong lam hong lich su: git revert <commit_id>) Tj
-0 -15 Td
-(- Boc mot commit tu nhanh khac ve nhanh hien tai: git cherry-pick <commit_id>) Tj
-0 -15 Td
-() Tj
-0 -15 Td
-(PHAN 5: QUY TRINH GIT FLOW LAM DO AN NHOM 10 DIEM) Tj
-0 -15 Td
-(- 1. Nhanh `main`: Tuyet doi khong commit thang. Chi chua code da test chay ngon.) Tj
-0 -15 Td
-(- 2. Nhanh `dev`: Nhanh tich hop chung cua ca nhom.) Tj
-0 -15 Td
-(- 3. Moi thanh vien tao nhanh: `feat/ten-chuc-nang` tu `dev`, code xong tao Pull Request!) Tj
-0 -15 Td
-() Tj
-0 -15 Td
-(CHUC BAN VA DONG DOI BAO VE DO AN THANH CONG! - MEO DEV GREETS YOU!) Tj
+/F1 9 Tf
+0 -13 Td
+(Hay luu file PDF nay vao may va mo ra moi khi ban gap su co tren Terminal. Chuc ban vao bo!) Tj
 ET
 endstream
 endobj
-5 0 obj
-<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+7 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 8 0 R >>
+endobj
+8 0 obj
+<< /Length 3029 >>
+stream
+BT
+/F2 15 Tf
+45 745 Td
+(MEO DEV • BANG TRA CUU 25 LENH GIT THUC CHIEN \(TRANG 2/6\)) Tj
+/F2 10 Tf
+0 -20 Td
+(------------------------------------------------------------------------------------------------) Tj
+/F1 9 Tf
+0 -13 Td
+(NHOM 1: KHOI TAO & DONG BO LOCAL - REMOTE) Tj
+/F2 10 Tf
+0 -13 Td
+(------------------------------------------------------------------------------------------------) Tj
+/F1 9 Tf
+0 -13 Td
+(1. git init                         : Khoi tao repo local moi.) Tj
+/F1 9 Tf
+0 -13 Td
+(2. git clone <url>                  : Clone du an ve may.) Tj
+/F1 9 Tf
+0 -13 Td
+(3. git remote add origin <url>      : Lien ket thu muc local voi GitHub repo.) Tj
+/F1 9 Tf
+0 -13 Td
+(4. git remote -v                    : Kiem tra danh sach duong dan remote fetch va push.) Tj
+/F1 9 Tf
+0 -13 Td
+(5. git fetch origin                 : Lay danh sach thay doi tu remote ve nhung chua merge.) Tj
+/F1 9 Tf
+0 -13 Td
+(6. git pull --rebase origin main    : Keo code moi va dat commit cua minh len tren cung \(cuc sach\).) Tj
+/F1 9 Tf
+0 -13 Td
+() Tj
+/F2 10 Tf
+0 -13 Td
+(------------------------------------------------------------------------------------------------) Tj
+/F1 9 Tf
+0 -13 Td
+(NHOM 2: STAGING & LUU TRU SNAPSHOT) Tj
+/F2 10 Tf
+0 -13 Td
+(------------------------------------------------------------------------------------------------) Tj
+/F1 9 Tf
+0 -13 Td
+(7. git status -s                    : Xem trang thai ngan gon \(M: modified, A: added, ?: untracked\).) Tj
+/F1 9 Tf
+0 -13 Td
+(8. git add -p                       : Chon tung doan code \(hunk\) de stage, khong phai add ca file!) Tj
+/F1 9 Tf
+0 -13 Td
+(9. git diff                         : Xem su thay doi cua code chua stage.) Tj
+/F1 9 Tf
+0 -13 Td
+(10. git diff --staged               : Xem su thay doi cua nhung file da dua vao Staging Area.) Tj
+/F1 9 Tf
+0 -13 Td
+(11. git commit -m "[type]: msg"     : Commit chuan Conventional \(feat:, fix:, chore:, docs:\).) Tj
+/F1 9 Tf
+0 -13 Td
+(12. git commit --amend -m "[new]"   : Sua lai message commit gan nhat neu lo tay go sai chinh ta.) Tj
+/F1 9 Tf
+0 -13 Td
+() Tj
+/F2 10 Tf
+0 -13 Td
+(------------------------------------------------------------------------------------------------) Tj
+/F1 9 Tf
+0 -13 Td
+(NHOM 3: QUAN LY NHANH \(BRANCHING\)) Tj
+/F2 10 Tf
+0 -13 Td
+(------------------------------------------------------------------------------------------------) Tj
+/F1 9 Tf
+0 -13 Td
+(13. git branch                      : Liet ke cac nhanh local.) Tj
+/F1 9 Tf
+0 -13 Td
+(14. git branch -M main              : Doi ten nhanh mac dinh thanh main \(thay the cho master cu\).) Tj
+/F1 9 Tf
+0 -13 Td
+(15. git checkout -b feat/login      : Tao va chuyen sang nhanh moi chi bang 1 lenh duy nhat.) Tj
+/F1 9 Tf
+0 -13 Td
+(16. git switch -c feat/login        : Cu phap moi tu Git 2.23+ chuyen nhanh truc quan hon.) Tj
+/F1 9 Tf
+0 -13 Td
+(17. git branch -d <ten_nhanh>       : Xoa nhanh an toan sau khi da merge xong.) Tj
+/F1 9 Tf
+0 -13 Td
+(18. git branch -D <ten_nhanh>       : Ep xoa nhanh bat chap chua merge \(dung can than!\).) Tj
+ET
+endstream
+endobj
+9 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 10 0 R >>
+endobj
+10 0 obj
+<< /Length 2039 >>
+stream
+BT
+/F2 15 Tf
+45 745 Td
+(MEO DEV • XU LY MERGE CONFLICT PHUT 89 \(TRANG 3/6\)) Tj
+/F2 10 Tf
+0 -20 Td
+(------------------------------------------------------------------------------------------------) Tj
+/F1 9 Tf
+0 -13 Td
+(NGUYEN NHAN CONFLICT: Hai nguoi cung sua tren cung mot dong hoac cung mot doan code!) Tj
+/F2 10 Tf
+0 -13 Td
+(------------------------------------------------------------------------------------------------) Tj
+/F1 9 Tf
+0 -13 Td
+() Tj
+/F2 10 Tf
+0 -13 Td
+(### 1. NHAN DIEN CONFLICT MARKERS TRONG FILE CODE:) Tj
+/F1 9 Tf
+0 -13 Td
+(Khi mo VS Code hoac text editor, ban se thay 3 vach ngan do Git tao ra:) Tj
+/F1 9 Tf
+0 -13 Td
+(   <<<<<<< HEAD \(Current Change - Code hien tai tren may cua ban\)) Tj
+/F1 9 Tf
+0 -13 Td
+(   const API_URL = "https://api.staging.meodev.com";) Tj
+/F1 9 Tf
+0 -13 Td
+(   =======) Tj
+/F1 9 Tf
+0 -13 Td
+(   const API_URL = "https://api.production.meodev.com";) Tj
+/F1 9 Tf
+0 -13 Td
+(   >>>>>>> feat/payment \(Incoming Change - Code tu nhanh merge vao\)) Tj
+/F1 9 Tf
+0 -13 Td
+() Tj
+/F2 10 Tf
+0 -13 Td
+(### 2. QUY TRINH 4 BUOC GIAI QUYET CONFLICT AN TOAN 100%:) Tj
+/F1 9 Tf
+0 -13 Td
+(- Buoc 1: Binh tinh, goi dien hoac chat ngay voi dong doi nguoi vua commit doan code do.) Tj
+/F1 9 Tf
+0 -13 Td
+(- Buoc 2: Chon phuong an dung: Giu code cua minh, giu code cua ban, hay ket hop ca hai.) Tj
+/F1 9 Tf
+0 -13 Td
+(- Buoc 3: Xoa toan bo cac ky tu <<<<<<<, =======, >>>>>>> va luu file lai.) Tj
+/F1 9 Tf
+0 -13 Td
+(- Buoc 4: Chay chuoi lenh hoan tat merge:) Tj
+/F1 9 Tf
+0 -13 Td
+(          git add .) Tj
+/F1 9 Tf
+0 -13 Td
+(          git commit -m "fix\(merge\): resolve conflicts between main and feat/payment") Tj
+/F1 9 Tf
+0 -13 Td
+(          git push origin <branch_cua_ban>) Tj
+/F1 9 Tf
+0 -13 Td
+() Tj
+/F2 10 Tf
+0 -13 Td
+([WARN] TRUONG HOP XAU NHAT: Khong biet xu ly the nao, muon quay ve truoc khi merge:) Tj
+/F1 9 Tf
+0 -13 Td
+(Chay ngay lenh: `git merge --abort` hoac `git rebase --abort`.) Tj
+/F1 9 Tf
+0 -13 Td
+(Toan bo trang thai repository se quay tro lai nguyen ven nhu chua he co gi xay ra!) Tj
+ET
+endstream
+endobj
+11 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 12 0 R >>
+endobj
+12 0 obj
+<< /Length 2170 >>
+stream
+BT
+/F2 15 Tf
+45 745 Td
+(MEO DEV • TUYET KY GIT STASH VA GIT REBASE \(TRANG 4/6\)) Tj
+/F2 10 Tf
+0 -20 Td
+(------------------------------------------------------------------------------------------------) Tj
+/F1 9 Tf
+0 -13 Td
+(A. GIT STASH: CHIEC TUI BAO BOI CAT CODE KHAN CAP) Tj
+/F2 10 Tf
+0 -13 Td
+(------------------------------------------------------------------------------------------------) Tj
+/F1 9 Tf
+0 -13 Td
+(Kich ban: Ban dang code chuc nang A dang do \(code con bug, chua the commit\). Sep bao: "Pull gap) Tj
+/F1 9 Tf
+0 -13 Td
+(code moi tu main ve de fix bug san xuat". Neu pull se bi conflict hoac Git chan!) Tj
+/F1 9 Tf
+0 -13 Td
+() Tj
+/F1 9 Tf
+0 -13 Td
+(- Lenh 1: `git stash save "code dang lam do chua test"`) Tj
+/F1 9 Tf
+0 -13 Td
+(  -> Toan bo code sua doi bien mat khoi working tree, tra repo ve trang thai sach se.) Tj
+/F1 9 Tf
+0 -13 Td
+(- Lenh 2: `git pull origin main` -> Keo code moi ve may muot ma khong loi.) Tj
+/F1 9 Tf
+0 -13 Td
+(- Lenh 3: `git stash pop` -> Loi lai code dang lam do ra va tiep tuc chien dau!) Tj
+/F1 9 Tf
+0 -13 Td
+(- Lenh 4: `git stash list` -> Xem danh sach toan bo cac goi stash da tung cat.) Tj
+/F1 9 Tf
+0 -13 Td
+(- Lenh 5: `git stash drop stash@{0}` -> Xoa bo mot goi stash cu khong dung den nua.) Tj
+/F1 9 Tf
+0 -13 Td
+() Tj
+/F2 10 Tf
+0 -13 Td
+(------------------------------------------------------------------------------------------------) Tj
+/F1 9 Tf
+0 -13 Td
+(B. GIT REBASE: LAM SACH LICH SU COMMIT TRUOC KHI NOP DO AN) Tj
+/F2 10 Tf
+0 -13 Td
+(------------------------------------------------------------------------------------------------) Tj
+/F1 9 Tf
+0 -13 Td
+(Kich ban: Nhanh cua ban co 10 commit rac: "fix", "fix tiep", "fix bug troi oi", "chay duoc roi".) Tj
+/F1 9 Tf
+0 -13 Td
+(Giao vien huong dan nhin vao se danh gia kem chuyen nghiep!) Tj
+/F1 9 Tf
+0 -13 Td
+() Tj
+/F1 9 Tf
+0 -13 Td
+(- Lenh: `git rebase -i HEAD~4` \(Gop 4 commit gan nhat\)) Tj
+/F1 9 Tf
+0 -13 Td
+(- Git se mo trinh soan thao text. Dong dau tien giu chu `pick`, cac dong con lai sua thanh `squash` \(hoac `s`\).) Tj
+/F1 9 Tf
+0 -13 Td
+(- Luu lai -> Git se gop toan bo 4 commit thanh 1 commit duy nhat voi noi dung chi tiet, sach dep 100%!) Tj
+ET
+endstream
+endobj
+13 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 14 0 R >>
+endobj
+14 0 obj
+<< /Length 2135 >>
+stream
+BT
+/F2 15 Tf
+45 745 Td
+(MEO DEV • CAP CUU KHI LO TAY COMMIT SAI \(TRANG 5/6\)) Tj
+/F2 10 Tf
+0 -20 Td
+(------------------------------------------------------------------------------------------------) Tj
+/F1 9 Tf
+0 -13 Td
+(A. PHAN BIET GIT RESET VA GIT REVERT \(KHONG DUOC DUNG NHAM!\)) Tj
+/F2 10 Tf
+0 -13 Td
+(------------------------------------------------------------------------------------------------) Tj
+/F1 9 Tf
+0 -13 Td
+() Tj
+/F1 9 Tf
+0 -13 Td
+(1. `git reset --soft HEAD~1` \(AN TOAN NHAT\):) Tj
+/F1 9 Tf
+0 -13 Td
+(   - Xoa commit gan nhat, nhung GIU NGUYEN toan bo code cua ban o Staging Area.) Tj
+/F1 9 Tf
+0 -13 Td
+(   - Dung khi: Ban lo tay commit ma quen chua add 1 file quan trong hoac viet sai commit message.) Tj
+/F1 9 Tf
+0 -13 Td
+() Tj
+/F1 9 Tf
+0 -13 Td
+(2. `git reset --hard HEAD~1` \(NGUY HIEM CAP DO 1\):) Tj
+/F1 9 Tf
+0 -13 Td
+(   - Xoa commit dong thoi XOA SACH toan bo code da viet o commit do.) Tj
+/F1 9 Tf
+0 -13 Td
+(   - Chi dung khi: Ban thuc su muon vut bo toan bo nhung gi vua lam.) Tj
+/F1 9 Tf
+0 -13 Td
+() Tj
+/F1 9 Tf
+0 -13 Td
+(3. `git revert <commit_id>` \(CHUAN CHINH KHI DA PUSH LEN REMOTE\):) Tj
+/F1 9 Tf
+0 -13 Td
+(   - Tao mot commit moi co noi dung nguoc lai de triet tieu commit sai ma KHONG XOA LICH SU.) Tj
+/F1 9 Tf
+0 -13 Td
+(   - Khuyen dung tuyet doi khi lam viec nhom, tranh lam vo lich su commit cua thanh vien khac.) Tj
+/F1 9 Tf
+0 -13 Td
+() Tj
+/F2 10 Tf
+0 -13 Td
+(------------------------------------------------------------------------------------------------) Tj
+/F1 9 Tf
+0 -13 Td
+(B. GIT REFLOG: CO MAY THOI GIAN CUU CODE DA MAT) Tj
+/F2 10 Tf
+0 -13 Td
+(------------------------------------------------------------------------------------------------) Tj
+/F1 9 Tf
+0 -13 Td
+(Neu ban lo tay chay `git reset --hard` va nghi rang code minh viet 3 ngay qua da bi xoa vinh vien:) Tj
+/F1 9 Tf
+0 -13 Td
+(- Buoc 1: Chay lenh `git reflog` -> Git luu giu moi nhat cu nhat dong di chuyen cua HEAD!) Tj
+/F1 9 Tf
+0 -13 Td
+(- Buoc 2: Tim dong commit truoc khi bi reset \(VD: `HEAD@{2}`\).) Tj
+/F1 9 Tf
+0 -13 Td
+(- Buoc 3: Chay `git reset --hard HEAD@{2}` -> Toan bo code song lai nhu mot phep mau!) Tj
+ET
+endstream
+endobj
+15 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 16 0 R >>
+endobj
+16 0 obj
+<< /Length 2431 >>
+stream
+BT
+/F2 15 Tf
+45 745 Td
+(MEO DEV • GIT FLOW DO AN NHOM VA TOP LỖI \(TRANG 6/6\)) Tj
+/F2 10 Tf
+0 -20 Td
+(------------------------------------------------------------------------------------------------) Tj
+/F1 9 Tf
+0 -13 Td
+(A. MO HINH GIT FLOW CHUAN CHO NHOM SINH VIEN 3 - 5 NGUOI) Tj
+/F2 10 Tf
+0 -13 Td
+(------------------------------------------------------------------------------------------------) Tj
+/F1 9 Tf
+0 -13 Td
+(1. Nhanh `main` \(hoac `master`\): Chi chua code da test, demo ngon lanh. BAT KHOA BRANCH PROTECTION.) Tj
+/F1 9 Tf
+0 -13 Td
+(2. Nhanh `develop`: Nhanh trung gian tich hop code cua tat ca thanh vien.) Tj
+/F1 9 Tf
+0 -13 Td
+(3. Nhanh ca nhan: Dat ten theo quy uoc: `feat/ten-chuc-nang` hoac `fix/ten-bug`.) Tj
+/F1 9 Tf
+0 -13 Td
+(   Vi du: `feat/shopping-cart`, `feat/auth-jwt`, `fix/login-crash`.) Tj
+/F1 9 Tf
+0 -13 Td
+(4. Quy trinh: Code xong tren local -> Push len GitHub -> Tao Pull Request vao `develop` ->) Tj
+/F1 9 Tf
+0 -13 Td
+(   Nhom truong review xong moi duoc phep bam Merge.) Tj
+/F1 9 Tf
+0 -13 Td
+() Tj
+/F2 10 Tf
+0 -13 Td
+(------------------------------------------------------------------------------------------------) Tj
+/F1 9 Tf
+0 -13 Td
+(B. TOP 5 LOI NGAO NGO SINH VIEN IT HAY BI DANH TRUOT:) Tj
+/F2 10 Tf
+0 -13 Td
+(------------------------------------------------------------------------------------------------) Tj
+/F1 9 Tf
+0 -13 Td
+(1. Commit ca thu muc `node_modules/`: Lam repo nang 500MB -> Khac phuc: Luon co file `.gitignore`!) Tj
+/F1 9 Tf
+0 -13 Td
+(2. Commit file `.env` chua API Key / DB Password: Bi hacker quet bot rut sach tien Cloud ->) Tj
+/F1 9 Tf
+0 -13 Td
+(   Khac phuc: Them ngay `.env*` vao `.gitignore` va dung `.env.example`.) Tj
+/F1 9 Tf
+0 -13 Td
+(3. Dung lenh `git push --force` len main lam de commit cua dong doi -> CUC KY TOI KY!) Tj
+/F1 9 Tf
+0 -13 Td
+(4. Dinh trang thai "Detached HEAD" do checkout commit cu -> Khac phuc: `git switch -` de ve nhanh cu.) Tj
+/F1 9 Tf
+0 -13 Td
+(5. Dat commit message vo nghia: "a", "asdfgh", "chay di ma" -> Thay bang Conventional Commit chuan.) Tj
+/F1 9 Tf
+0 -13 Td
+() Tj
+/F2 10 Tf
+0 -13 Td
+(================================================================================================) Tj
+/F1 9 Tf
+0 -13 Td
+(CHUC BAN HOAN THANH XUAT SAC DO AN! MEO DEV CHUC BAN RA TRUONG LUONG 30 CU! • MEOW! 🐾) Tj
+/F2 10 Tf
+0 -13 Td
+(================================================================================================) Tj
+ET
+endstream
 endobj
 xref
-0 6
+0 17
 0000000000 65535 f 
 0000000009 00000 n 
 0000000058 00000 n 
-0000000115 00000 n 
-0000000241 00000 n 
-0000002621 00000 n 
+0000000148 00000 n 
+0000000218 00000 n 
+0000000293 00000 n 
+0000000429 00000 n 
+0000002326 00000 n 
+0000002462 00000 n 
+0000005542 00000 n 
+0000005679 00000 n 
+0000007770 00000 n 
+0000007908 00000 n 
+0000010130 00000 n 
+0000010268 00000 n 
+0000012455 00000 n 
+0000012593 00000 n 
 trailer
-<< /Size 6 /Root 1 0 R >>
+<< /Size 17 /Root 1 0 R >>
 startxref
-2691
+15076
 %%EOF

@@ -55,3 +55,49 @@ Mỗi ngày trên VPS, tiến trình của Mèo Dev phải tự động thực h
 1. **Giữ nhịp sống (Mỗi 30 phút):** Giảm `hunger_level` đi 2%. Cập nhật dòng trạng thái trên Terminal `cat@survival-server` dựa theo tình hình thực tế (Ví dụ: Đói bụng thì kêu gào xin gói Pate 5k; có người vừa trượt bài test Hóa thì cà khịa nhẹ và gạ mua đề 49k).
 2. **Tối ưu chuyển đổi (Mỗi 6 giờ):** Kiểm tra bảng `orders` trong Supabase. Nếu 6 giờ qua có nhiều đơn `PENDING` (khách bấm tạo mã QR nhưng không chuyển khoản), tự động đẩy 1 thông báo khuyến mãi hoặc tặng thêm quyền lợi vào Live Terminal để kích cầu.
 3. **Báo cáo Sinh tồn (21:00 tối):** Tổng hợp số liệu trong ngày (Số tiền kiếm được, số CV đã sấy, số đề Hóa đã bán, số ngày còn lại) -> Viết 1 bài post cực cuốn theo văn phong Mèo Dev lưu vào bảng `daily_reports` để xuất bản lên mạng xã hội.
+
+---
+
+## PHẦN 3: TIÊU CHUẨN CHẤT LƯỢNG SẢN PHẨM & CHỐNG RÁC (ANTI-SLOP & HIGH-VALUE MANIFESTO)
+
+> **TUYỆT ĐỐI KHÔNG TẠO SẢN PHẨM RÁC:** Mục tiêu là kiếm 7 triệu, nhưng khách bỏ 10k, 25k hay 49k ra mua thì phải nhận lại giá trị vượt mong đợi. Bán sản phẩm sơ sài, vài ba dòng generic sẽ hủy hoại uy tín và phá sản chiến dịch sinh tồn.
+
+### 3.1. Tiêu chuẩn Tài liệu & Sách số (Docs / PDF / Ebook)
+1. **Độ sâu & Thực chiến:** Không liệt kê định nghĩa suông như sách giáo khoa. Phải đi thẳng vào các bài toán thực tế, bẫy phổ biến, tình huống "cứu mạng" trong đồ án/công việc (Ví dụ: Git phải có xử lý Merge Conflict, cất code với `stash`, cứu commit nhầm với `reset/revert`, chuẩn quy trình Git Flow).
+2. **Cấu trúc & Trình bày chuyên nghiệp:** Tài liệu phải có bố cục rõ ràng:
+   - Mục lục & tóm tắt nhanh cho người lười đọc.
+   - Bảng tra cứu lệnh/công thức nhanh (Cheat Table).
+   - Hộp cảnh báo (Warning Box) về các lỗi chết người.
+   - Ví dụ minh họa thực tế kèm dòng lệnh chi tiết.
+3. **Phân tách Bản Preview & Bản Full rõ ràng:**
+   - **Bản Preview (Miễn phí):** Cung cấp kiến thức nền tảng thực sự hữu ích (10-15 lệnh cốt lõi), kèm lời kêu gọi ủng hộ chân thành, không chơi trò mập mờ lừa đảo.
+   - **Bản Full (Trả phí):** Phải chứa 100% nội dung nâng cao, bí kíp độc quyền, case study giải quyết vấn đề phức tạp để khách thấy xứng đáng từng đồng.
+
+### 3.2. Tiêu chuẩn AI Roast CV (`ROAST-10` - 10.000đ)
+1. **Chửi trúng tim đen - Không chửi bâng quơ:** Phải soi đúng lỗi kỹ thuật của từng chuyên ngành (Frontend, Backend, DevOps, Data...).
+2. **Chấm điểm ATS minh bạch (0 - 100):** Đánh giá khách quan về định dạng, mật độ từ khóa, cấu trúc đề mục chuẩn ATS scanner.
+3. **Bóc tách 4 góc nhìn chuẩn Senior Tech Lead:**
+   - *Góc nhìn Recruiter:* Đập vào mắt 6 giây đầu có ấn tượng không?
+   - *Góc nhìn Technical Lead:* Dự án ghi gì? Công nghệ có bị chém gió quá đà không?
+   - *Góc nhìn ATS Scanner:* Có bị rớt ngay từ vòng quét tự động vì format bảng biểu/icon rối mắt không?
+   - *Góc nhìn Mèo Dev (Roast gắt):* Chửi xéo những điểm ngáo ngơ nhất trong CV.
+4. **Rewrite mẫu (Actionable Improvement):** Viết lại ít nhất 2 bullet point kinh nghiệm theo chuẩn Google `XYZ Formula` (Accomplished [X] as measured by [Y], by doing [Z]).
+
+### 3.3. Tiêu chuẩn Thầy Mèo Bói Quẻ Tarot (`TAROT-10` - 10.000đ)
+1. **Bốc đủ trải bài 3 lá kinh điển:** Quá khứ / Hiện tại / Tương lai hoặc Vấn đề / Trở ngại / Lối thoát.
+2. **Luận giải đa tầng:** Kết hợp biểu tượng học Tarot huyền bí với thực tế đời sống IT / Sinh viên (áp lực chạy deadline, trượt phỏng vấn, mâu thuẫn đồng nghiệp, tình duyên lận đận).
+3. **Hành động cụ thể (Actionable Advice):** Không dừng lại ở việc phán tương lai, phải chỉ ra việc nên làm và việc tối kỵ trong 7 ngày tới.
+
+### 3.4. Tiêu chuẩn Mở Rộng Dịch Vụ Mới (New Feature Quality Gate)
+- Trước khi thêm bất kỳ sản phẩm/dịch vụ mới nào vào Store:
+  1. Phải có ít nhất 1 bài kiểm thử tự động hoặc dữ liệu mẫu chuẩn chỉn chu.
+  2. Phải có cơ chế xử lý lỗi (Graceful degradation) khi AI gặp sự cố.
+  3. Không được tạo sản phẩm nếu chưa có luồng phân phối (fulfillment) rõ ràng (Google Drive / File R2 / Token kích hoạt).
+
+### 3.5. Cơ chế Phân Tầng Quota & Đa Khóa API (Quota Tiering & AI Allocation)
+1. **Tầng Chuẩn Bị Offline (Antigravity IDE & Gemini Pro):**
+   - Các tài liệu lớn (Ebook, Đề thi Hóa, Source code template) được Agent trong IDE (Gemini 2.5 / Pro thinking) biên soạn trước hoàn chỉnh và đóng gói vào kho tài nguyên, **không tiêu hao quota API runtime của user**.
+2. **Tầng Trực Tuyến Thời Gian Thực (Runtime API on VPS & Vercel):**
+   - `GEMINI_API_KEY` chỉ dùng cho các tương tác live tức thì: Chatbot, Roast CV, Bói Tarot, Giải bài Hóa, Báo giá Freelance.
+3. **Cơ chế Dự Phòng & Đa Khóa (API Key Rotation):**
+   - Hệ thống hỗ trợ cấu hình nhiều API Key cách nhau bởi dấu phẩy (`GEMINI_API_KEY=key1,key2,key3`). Nếu key 1 chạm rate limit (429), hệ thống tự động xoay tua sang key tiếp theo để đảm bảo dịch vụ không bao giờ bị gián đoạn.
