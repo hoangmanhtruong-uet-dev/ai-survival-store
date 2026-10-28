@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { mockStore } from '@/lib/mock-store';
-import { getSupabaseClient } from '@/lib/supabase/client';
+import { getSupabaseAdminClient, getSupabaseClient } from '@/lib/supabase/client';
 import { generateVietQRUrl, generateOrderCode } from '@/lib/vietqr';
 import { sanitizeBuyerName, filterProfanity } from '@/lib/profanity';
 import { isPayOSConfigured, createPayOSPaymentLink } from '@/lib/payos';
@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     const cleanNote = buyerNote ? filterProfanity(buyerNote) : '';
     const cleanEmail = buyerEmail ? buyerEmail.trim().toLowerCase() : undefined;
     const cleanRef = refCode ? refCode.trim().toUpperCase() : undefined;
-    const supabase = getSupabaseClient();
+    const supabase = getSupabaseAdminClient() || getSupabaseClient();
 
     let order;
 
@@ -46,7 +46,9 @@ export async function POST(req: NextRequest) {
         .select('*, product:products(*)')
         .single();
 
-      if (!error && newOrder) {
+      if (error) {
+        console.error('Error inserting order into Supabase:', error);
+      } else if (newOrder) {
         order = newOrder;
         await supabase.from('live_logs').insert({
           type: 'ORDER_CREATED',

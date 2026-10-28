@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { mockStore } from '@/lib/mock-store';
-import { getSupabaseClient } from '@/lib/supabase/client';
+import { getSupabaseAdminClient, getSupabaseClient } from '@/lib/supabase/client';
 
 export async function GET(
   req: NextRequest,
@@ -14,7 +14,7 @@ export async function GET(
       return NextResponse.json({ success: false, error: 'Thiếu mã đơn' }, { status: 400 });
     }
 
-    const supabase = getSupabaseClient();
+    const supabase = getSupabaseAdminClient() || getSupabaseClient();
     if (supabase) {
       const { data, error } = await supabase
         .from('orders')

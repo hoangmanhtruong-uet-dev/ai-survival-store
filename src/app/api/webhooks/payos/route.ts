@@ -1,16 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyPayOSWebhook, isPayOSConfigured, getPayOSClient } from '@/lib/payos';
 import { mockStore } from '@/lib/mock-store';
-import { getSupabaseClient } from '@/lib/supabase/client';
+import { getSupabaseAdminClient, getSupabaseClient } from '@/lib/supabase/client';
 import { extractOrderCode, generateRedeemCode } from '@/lib/vietqr';
 import { grantDriveAccess, getChemistryFolderId } from '@/lib/google-drive';
+import { sendTelegramNotification } from '@/lib/telegram';
 
 export async function POST(req: NextRequest) {
   try {
     const payload = await req.json();
 
     // 1. Hỗ trợ xác nhận Webhook URL từ PayOS Dashboard
-    // Khi bấm "Xác nhận Webhook", PayOS có thể gửi request test hoặc cần confirm
     if (payload.webhookUrl && isPayOSConfigured()) {
       try {
         const payOS = getPayOSClient();
@@ -41,7 +41,6 @@ export async function POST(req: NextRequest) {
     }
 
     // 3. Bóc tách mã đơn MEO-XXXX
-    // Có thể bóc từ description (VD: 'MEO 4829') hoặc từ orderCode (VD: 4829 -> 'MEO-4829')
     const description = webhookData.description || '';
     let orderCode = extractOrderCode(description);
 
@@ -59,8 +58,8 @@ export async function POST(req: NextRequest) {
 
     const transferAmount = Number(webhookData.amount || 0);
 
-    // 4. Cập nhật trạng thái đơn hàng (Supabase hoặc Mock Store)
-    const supabase = getSupabaseClient();
+    // 4. Cập nhật trạng thái đơn hàng (Sử dụng Admin Client có toàn quyền bypass RLS)
+    const supabase = getSupabaseAdminClient() || getSupabaseClient();
     let updatedOrder = null;
 
     if (supabase) {
@@ -113,7 +112,9 @@ export async function POST(req: NextRequest) {
           .select('*, product:products(*)')
           .single();
 
-        if (!updateErr && paidOrder) {
+        if (updateErr) {
+          console.error('Error updating order to PAID:', updateErr);
+        } else if (paidOrder) {
           updatedOrder = paidOrder;
 
           // Cập nhật stats
@@ -123,20 +124,84 @@ export async function POST(req: NextRequest) {
             await supabase
               .from('campaign_stats')
               .update({
-                current_amount: stats.current_amount + actualAmount,
-                paid_orders: stats.paid_orders + 1,
-                cat_hunger_level: Math.min(100, stats.cat_hunger_level + hungerBoost),
+                current_amount: (stats.current_amount || 0) + actualAmount,
+                paid_orders: (stats.paid_orders || 0) + 1,
+                cat_hunger_level: Math.min(100, (stats.cat_hunger_level || 85) + hungerBoost),
                 last_order_at: new Date().toISOString(),
               })
               .eq('id', 1);
           }
 
-          // Bắn Live Log
+          // Bắn Live Log lên Terminal Realtime
           await supabase.from('live_logs').insert({
             type: 'PAYMENT_SUCCESS',
             message: `💰 TING TING! PayOS báo nhận +${actualAmount.toLocaleString('vi-VN')}đ cho đơn ${orderCode}! Mèo đã được tiếp máu!`,
             meta: { orderCode, amount: actualAmount, buyerName: existingOrder.buyer_name, gateway: 'PayOS' },
           });
+
+          // Báo về Telegram cá nhân của chủ nhân
+          await sendTelegramNotification(
+            `💰 <b>TING TING! MÈO DEV ĐƯỢC TIẾP MÁU!</b>\n` +
+            `Nhận: <b>+${actualAmount.toLocaleString('vi-VN')}đ</b> qua PayOS\n` +
+            `Mã đơn: <code>${orderCode}</code>\n` +
+            `Người mua: <b>${existingOrder.buyer_name || 'Ẩn danh'}</b>\n` +
+            `Ghi chú: ${existingOrder.buyer_note || 'Không có'}\n\n` +
+            `🐾 Mèo Dev đã no hơn và đang tiếp tục cày việc!`
+          );
+        }
+      } else {
+        // TRƯỜNG HỢP ĐẶC BIỆT: Đơn hàng chưa kịp lưu vào Supabase (hoặc chạy fallback trước đó)
+        // Auto-create đơn PAID ngay để KHÔNG BAO GIỜ BỎ SÓT TIỀN CỦA USER!
+        const actualAmount = transferAmount > 0 ? transferAmount : 5000;
+        const defaultProductId = 'PATE-05';
+
+        const { data: createdOrder, error: insertErr } = await supabase
+          .from('orders')
+          .insert({
+            order_code: orderCode,
+            product_id: defaultProductId,
+            amount: actualAmount,
+            buyer_name: 'Ân nhân giấu tên',
+            buyer_note: description || 'Ủng hộ qua PayOS',
+            status: 'PAID',
+            paid_at: new Date().toISOString(),
+            payment_meta: webhookData,
+          })
+          .select('*, product:products(*)')
+          .single();
+
+        if (insertErr) {
+          console.error('Error auto-creating paid order:', insertErr);
+        } else {
+          updatedOrder = createdOrder;
+
+          const { data: stats } = await supabase.from('campaign_stats').select('*').eq('id', 1).single();
+          if (stats) {
+            await supabase
+              .from('campaign_stats')
+              .update({
+                current_amount: (stats.current_amount || 0) + actualAmount,
+                total_orders: (stats.total_orders || 0) + 1,
+                paid_orders: (stats.paid_orders || 0) + 1,
+                cat_hunger_level: Math.min(100, (stats.cat_hunger_level || 85) + 30),
+                last_order_at: new Date().toISOString(),
+              })
+              .eq('id', 1);
+          }
+
+          await supabase.from('live_logs').insert({
+            type: 'PAYMENT_SUCCESS',
+            message: `💰 TING TING! PayOS báo nhận +${actualAmount.toLocaleString('vi-VN')}đ cho đơn ${orderCode}! Mèo đã được tiếp máu!`,
+            meta: { orderCode, amount: actualAmount, buyerName: 'Ân nhân giấu tên', gateway: 'PayOS' },
+          });
+
+          await sendTelegramNotification(
+            `💰 <b>TING TING! MÈO DEV ĐƯỢC TIẾP MÁU (AUTO-CAPTURE)!</b>\n` +
+            `Nhận: <b>+${actualAmount.toLocaleString('vi-VN')}đ</b> qua PayOS\n` +
+            `Mã đơn: <code>${orderCode}</code>\n` +
+            `Nội dung CK: ${description}\n\n` +
+            `🐾 Số tiền đã được cộng trực tiếp vào mục tiêu 7 triệu!`
+          );
         }
       }
     }
@@ -153,7 +218,7 @@ export async function POST(req: NextRequest) {
       }, { status: 404 });
     }
 
-    // Đảm bảo cấp quyền Google Drive nếu là sản phẩm GDRIVE_ACCESS (hỗ trợ cả mock mode)
+    // Đảm bảo cấp quyền Google Drive nếu là sản phẩm GDRIVE_ACCESS
     if (updatedOrder.product?.type === 'GDRIVE_ACCESS' && updatedOrder.buyer_email) {
       const folderId = updatedOrder.product?.gdrive_folder_id || getChemistryFolderId(updatedOrder.product_id);
       await grantDriveAccess({ folderId, buyerEmail: updatedOrder.buyer_email });
@@ -165,6 +230,7 @@ export async function POST(req: NextRequest) {
       order: updatedOrder,
     });
   } catch (error) {
+    console.error('PayOS webhook processing error:', error);
     return NextResponse.json(
       { success: false, error: (error as Error).message },
       { status: 500 }
