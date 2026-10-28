@@ -83,55 +83,6 @@ export const OrderLookup: React.FC<OrderLookupProps> = ({
         </button>
       </form>
 
-      {/* QUICK TEST TOOLBAR - BỎ QUA THANH TOÁN */}
-      <div className="mt-4 pt-3.5 border-t border-zinc-800/80 flex flex-wrap items-center gap-2">
-        <span className="text-[11px] font-mono text-amber-400 font-bold flex items-center gap-1 mr-1">
-          <Zap className="w-3.5 h-3.5 fill-current" /> Dùng thử nhanh (Bỏ qua thanh toán):
-        </span>
-        <button
-          type="button"
-          onClick={() => onOpenRoastCV('RCV-FREE-TEST')}
-          className="px-3 py-1.5 rounded-xl bg-rose-950/80 hover:bg-rose-900 border border-rose-700/60 text-rose-300 font-bold font-mono text-xs flex items-center gap-1.5 transition shadow hover:scale-105"
-        >
-          <Flame className="w-3.5 h-3.5 text-rose-400" />
-          <span>🔥 Sấy CV Miễn Phí</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => onOpenTarot('TRT-FREE-TEST')}
-          className="px-3 py-1.5 rounded-xl bg-purple-950/80 hover:bg-purple-900 border border-purple-700/60 text-purple-300 font-bold font-mono text-xs flex items-center gap-1.5 transition shadow hover:scale-105"
-        >
-          <Sparkles className="w-3.5 h-3.5 text-purple-400" />
-          <span>🔮 Thầy Mèo Bói Quẻ</span>
-        </button>
-        {onOpenChemistryTutor && (
-          <button
-            type="button"
-            onClick={() => onOpenChemistryTutor('CHM-DEMO')}
-            className="px-3 py-1.5 rounded-xl bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-700/60 text-emerald-300 font-bold font-mono text-xs flex items-center gap-1.5 transition shadow hover:scale-105 cursor-pointer"
-          >
-            <span>🧪 Trợ Giảng Hóa AI</span>
-          </button>
-        )}
-        {onOpenChemistryQuiz && (
-          <button
-            type="button"
-            onClick={onOpenChemistryQuiz}
-            className="px-3 py-1.5 rounded-xl bg-amber-950/80 hover:bg-amber-900 border border-amber-700/60 text-amber-300 font-bold font-mono text-xs flex items-center gap-1.5 transition shadow hover:scale-105 cursor-pointer"
-          >
-            <span>🎯 Thi Thử 10 Câu Bẫy</span>
-          </button>
-        )}
-        <a
-          href="/api/download?code=TEST&key=chem-12-lo-trinh.pdf"
-          download
-          className="px-3 py-1.5 rounded-xl bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-700/60 text-emerald-300 font-bold font-mono text-xs flex items-center gap-1.5 transition shadow hover:scale-105"
-        >
-          <Download className="w-3.5 h-3.5 text-emerald-400" />
-          <span>🧪 Tải Đề Hóa 12 Mẫu</span>
-        </a>
-      </div>
-
       {/* ERROR */}
       {error && (
         <div className="mt-3 p-3 bg-rose-950/40 border border-rose-800/60 rounded-xl text-xs text-rose-300 font-mono flex items-center gap-2">
@@ -228,6 +179,27 @@ export const OrderLookup: React.FC<OrderLookupProps> = ({
                         <span>Mở Trợ Giảng AI</span>
                         <ArrowRight className="w-3.5 h-3.5" />
                       </button>
+                    )}
+                  </div>
+                )}
+
+                {(order.product_id === 'CUSTOM-TASK' || order.product?.type === 'CUSTOM_TASK') && (
+                  <div className="w-full space-y-2">
+                    {order.is_redeemed && (order.ai_result as Record<string, unknown>)?.solution_markdown ? (
+                      <div className="p-3 bg-zinc-900 border border-emerald-500/40 rounded-xl space-y-2">
+                        <div className="text-emerald-400 font-bold flex items-center gap-1.5">
+                          <CheckCircle2 className="w-4 h-4" />
+                          <span>Mèo Dev đã cày xong task của bạn:</span>
+                        </div>
+                        <div className="max-h-60 overflow-y-auto p-2.5 bg-zinc-950 rounded border border-zinc-800 text-[11px] text-zinc-300 font-mono whitespace-pre-wrap">
+                          {((order.ai_result as Record<string, unknown>)?.solution_markdown as string)}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="p-3 bg-amber-950/40 border border-amber-800/60 rounded-xl text-amber-300 flex items-center gap-2">
+                        <Clock className="w-4 h-4 animate-spin shrink-0" />
+                        <span>Mèo Dev trên VPS đang cày code giải pháp cho bạn (tự động trả hàng trong vài phút)...</span>
+                      </div>
                     )}
                   </div>
                 )}

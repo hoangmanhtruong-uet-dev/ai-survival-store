@@ -5,6 +5,7 @@ import { runHungerDecayTask } from './tasks/hunger-decay';
 import { runFlashSaleTask } from './tasks/flash-sale';
 import { runDailyContentGeneratorTask } from './tasks/content-generator';
 import { runProductGeneratorTask } from './tasks/product-generator';
+import { runCustomTaskWorker } from './tasks/custom-task-worker';
 
 const BANNER = `
 ==========================================================
@@ -49,6 +50,12 @@ async function main() {
   if (args.includes('--product')) {
     console.log('▶️ [CLI] Kích hoạt thủ công: Tự động mở rộng sản phẩm');
     await runProductGeneratorTask();
+    process.exit(0);
+  }
+
+  if (args.includes('--worker')) {
+    console.log('▶️ [CLI] Kích hoạt thủ công: Custom Task Worker (Cày việc cho khách)');
+    await runCustomTaskWorker();
     process.exit(0);
   }
 
@@ -112,6 +119,15 @@ async function main() {
       await runProductGeneratorTask();
     } catch (e) {
       console.error('❌ Lỗi cron product-generator:', (e as Error).message);
+    }
+  });
+
+  // Tác vụ 5: Mỗi 3 phút quét và cày thuê tự động các đơn hàng custom của khách
+  cron.schedule('*/3 * * * *', async () => {
+    try {
+      await runCustomTaskWorker();
+    } catch (e) {
+      console.error('❌ Lỗi cron custom-task-worker:', (e as Error).message);
     }
   });
 

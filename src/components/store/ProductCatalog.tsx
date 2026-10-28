@@ -11,6 +11,7 @@ interface ProductCatalogProps {
   onOpenTarot?: (code: string) => void;
   onOpenChemistryTutor?: (token?: string) => void;
   onOpenChemistryQuiz?: () => void;
+  onOpenCustomTask?: () => void;
 }
 
 export const ProductCatalog: React.FC<ProductCatalogProps> = ({
@@ -20,12 +21,15 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
   onOpenTarot,
   onOpenChemistryTutor,
   onOpenChemistryQuiz,
+  onOpenCustomTask,
 }) => {
   // Gom các gói Hóa học lại thành 1 thẻ duy nhất "CHEM-PACK", ẩn các gói con CHEM-49, CHEM-89, CHEM-149
   const displayProducts = React.useMemo(() => {
     const nonSubChem = products.filter((p) => !['CHEM-49', 'CHEM-89', 'CHEM-149'].includes(p.id));
 
-    if (!nonSubChem.some((p) => p.id === 'CHEM-PACK')) {
+    const list = [...nonSubChem];
+
+    if (!list.some((p) => p.id === 'CHEM-PACK')) {
       const chemPack: Product = {
         id: 'CHEM-PACK',
         name: 'Tổ hợp Đề thi & Lộ trình Hóa THPT',
@@ -37,12 +41,27 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
         is_active: true,
         sort_order: 3,
       };
-      // Chèn vào vị trí số 3
-      const nonChem = nonSubChem.filter((p) => !p.id.startsWith('CHEM-'));
-      return [...nonChem.slice(0, 2), chemPack, ...nonChem.slice(2)];
+      const nonChem = list.filter((p) => !p.id.startsWith('CHEM-'));
+      list.splice(0, list.length, ...nonChem.slice(0, 2), chemPack, ...nonChem.slice(2));
     }
 
-    return nonSubChem;
+    // Luôn đảm bảo có sản phẩm CUSTOM-TASK
+    if (!list.some((p) => p.id === 'CUSTOM-TASK')) {
+      const customTaskProd: Product = {
+        id: 'CUSTOM-TASK',
+        name: 'Giao Kèo Cày Thuê (Code Web, Script, Giải Bài)',
+        description: 'Nhập bất kỳ yêu cầu lập trình hay học tập, Mèo Dev tự định giá 19k - 49k, tự code và tự trả hàng qua Gmail!',
+        price: 29000,
+        type: 'CUSTOM_TASK',
+        icon: '⚡',
+        badge: 'Nhận việc 24/7',
+        is_active: true,
+        sort_order: 10,
+      };
+      list.push(customTaskProd);
+    }
+
+    return list;
   }, [products]);
 
   return (
@@ -100,6 +119,35 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
             </button>
           )}
         </div>
+      </div>
+
+      {/* Banner 2: Kèo Cày Thuê Tự Do Solopreneur */}
+      <div className="bg-gradient-to-r from-indigo-950/60 via-zinc-900 to-emerald-950/60 border border-indigo-500/30 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-xl shrink-0">
+            ⚡
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-bold text-white">Giao Kèo Cày Thuê Cho Mèo Dev (Custom Task)</h3>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                AI Solopreneur 24/7
+              </span>
+            </div>
+            <p className="text-xs text-zinc-400">
+              Cần code web, viết script Python, giải bài tập hay tool tự động? Nhập yêu cầu, Mèo tự định giá sinh viên (19k - 49k) và code gửi về Gmail!
+            </p>
+          </div>
+        </div>
+
+        {onOpenCustomTask && (
+          <button
+            onClick={onOpenCustomTask}
+            className="px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-500 to-emerald-500 hover:from-indigo-400 hover:to-emerald-400 text-zinc-950 font-bold text-xs transition shadow-md shadow-indigo-950/40 flex items-center gap-1.5 cursor-pointer shrink-0"
+          >
+            <span>🚀 Đặt Kèo Cho Mèo Ngay</span>
+          </button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -288,6 +336,17 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
                         )}
                       </div>
                     </>
+                  )}
+
+                  {/* 6. Nếu là Kèo Cày Thuê CUSTOM_TASK */}
+                  {p.type === 'CUSTOM_TASK' && (
+                    <button
+                      onClick={onOpenCustomTask}
+                      className="w-full py-2 px-3 rounded-xl font-bold font-mono text-xs flex items-center justify-center gap-1.5 bg-gradient-to-r from-indigo-500 to-emerald-500 hover:from-indigo-400 hover:to-emerald-400 text-zinc-950 shadow-lg shadow-indigo-950/40 transition cursor-pointer"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>⚡ Đặt Kèo Cho Mèo Làm</span>
+                    </button>
                   )}
                 </div>
 

@@ -15,6 +15,7 @@ import { ChemistryQuizModal } from '@/components/funnel/ChemistryQuizModal';
 import { OrderLookup } from '@/components/services/OrderLookup';
 import { HallOfFame } from '@/components/hall-of-fame/HallOfFame';
 import { CertificateModal } from '@/components/effects/CertificateModal';
+import { CustomTaskModal } from '@/components/services/CustomTaskModal';
 import { soundEngine } from '@/lib/audio';
 import { getSupabaseClient } from '@/lib/supabase/client';
 
@@ -41,6 +42,7 @@ export default function Home() {
   const [chemistryTutorToken, setChemistryTutorToken] = useState<string>('');
 
   const [isChemistryQuizOpen, setIsChemistryQuizOpen] = useState(false);
+  const [isCustomTaskOpen, setIsCustomTaskOpen] = useState(false);
 
   const [isCertModalOpen, setIsCertModalOpen] = useState(false);
   const [certOrder, setCertOrder] = useState<Order | null>(null);
@@ -278,6 +280,7 @@ export default function Home() {
           onOpenTarot={handleOpenTarot}
           onOpenChemistryTutor={handleOpenChemistryTutor}
           onOpenChemistryQuiz={handleOpenChemistryQuiz}
+          onOpenCustomTask={() => setIsCustomTaskOpen(true)}
         />
 
         {/* KHU VỰC 4: KHU THỰC THI DỊCH VỤ & TRA CỨU ĐƠN */}
@@ -356,6 +359,11 @@ export default function Home() {
           onClose={() => setIsCertModalOpen(false)}
         />
       )}
+
+      <CustomTaskModal
+        isOpen={isCustomTaskOpen}
+        onClose={() => setIsCustomTaskOpen(false)}
+      />
 
     </div>
   );
