@@ -10,7 +10,7 @@ interface TarotModalProps {
 }
 
 export const TarotModal: React.FC<TarotModalProps> = ({ initialCode = '', onClose }) => {
-  const [redeemCode, setRedeemCode] = useState(initialCode || 'TRT-');
+  const [redeemCode, setRedeemCode] = useState(initialCode || 'TRT-FREE-TEST');
   const [question, setQuestion] = useState('Chừng nào tao mới hết kiếp FA và giàu có?');
   const [birthDate, setBirthDate] = useState('2002-08-15');
   const [isLoading, setIsLoading] = useState(false);

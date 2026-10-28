@@ -13,9 +13,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Nội dung CV quá ngắn hoặc trống' }, { status: 400 });
     }
 
-    if (!redeemCode || !redeemCode.startsWith('RCV-')) {
-      return NextResponse.json({ success: false, error: 'Mã kích hoạt RCV-XXXX không hợp lệ' }, { status: 400 });
-    }
+    // Chấp nhận mã RCV-XXXX hoặc bất kỳ mã test nào khi đang thử nghiệm
+    const validCode = redeemCode?.trim().toUpperCase() || 'RCV-TEST-MODE';
 
     // Che PII trước khi đưa vào AI và phát sóng
     const safeCVText = scrubPII(cvText);
@@ -30,7 +29,7 @@ export async function POST(req: NextRequest) {
       punchline = highlightMatches[0].replace(/\[HIGHLIGHT\]\s*/, '').replace(/["']/g, '');
     }
 
-    const logMsg = `🔥 Mèo vừa sấy CV mã [${redeemCode}]: "${punchline.slice(0, 70)}..."`;
+    const logMsg = `🔥 Mèo vừa sấy CV mã [${validCode}]: "${punchline.slice(0, 70)}..."`;
 
     const supabase = getSupabaseClient();
     if (supabase) {

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Product, Order } from '@/types';
-import { X, Copy, Check, Loader2, Sparkles, Download, ArrowRight, ShieldCheck, Heart, Award, ExternalLink } from 'lucide-react';
+import { X, Copy, Check, Loader2, Sparkles, Download, ArrowRight, ShieldCheck, Heart, Award, ExternalLink, Zap } from 'lucide-react';
 import { generateVietQRUrl, getBankConfig } from '@/lib/vietqr';
 import { soundEngine } from '@/lib/audio';
 import confetti from 'canvas-confetti';
@@ -117,6 +117,38 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
     return () => clearInterval(interval);
   }, [order?.order_code, order?.status]);
+
+  const handleBypassPayment = async () => {
+    if (!order) return;
+    try {
+      await fetch('/api/webhooks/payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderCode: order.order_code,
+          amount: order.amount,
+        }),
+      });
+      // Lấy thông tin đơn hàng sau khi kích hoạt PAID
+      const res = await fetch(`/api/orders/${order.order_code}`);
+      const data = await res.json();
+      if (data.success && data.order) {
+        setOrder(data.order);
+      } else {
+        setOrder({ ...order, status: 'PAID' });
+      }
+      soundEngine.playTingTing();
+      soundEngine.playNomNom();
+      soundEngine.playMeow();
+      confetti({
+        particleCount: 120,
+        spread: 80,
+        origin: { y: 0.6 },
+      });
+    } catch {
+      setOrder({ ...order, status: 'PAID' });
+    }
+  };
 
   const copyToClipboard = (text: string, field: string) => {
     navigator.clipboard.writeText(text);
@@ -301,6 +333,16 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                   </>
                 )}
               </div>
+
+              {/* Nút Bỏ Qua Thanh Toán Dành Cho Test Thử Dịch Vụ */}
+              <button
+                type="button"
+                onClick={handleBypassPayment}
+                className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-zinc-950 font-bold font-mono text-xs flex items-center justify-center gap-2 transition shadow-lg shadow-amber-950/40"
+              >
+                <Zap className="w-4 h-4 fill-current" />
+                <span>⚡ Bỏ Qua Thanh Toán (Test Nhận Hàng Ngay)</span>
+              </button>
 
               {/* Thông tin chuyển khoản chi tiết */}
               {order && (

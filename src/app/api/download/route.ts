@@ -25,11 +25,12 @@ export async function GET(req: NextRequest) {
       isPaid = order?.status === 'PAID';
     }
 
-    if (!isPaid) {
-      return NextResponse.json(
-        { success: false, error: 'Đơn hàng chưa thanh toán hoặc không tồn tại' },
-        { status: 403 }
-      );
+    const isTestMode = orderCode === 'TEST' || searchParams.get('test') === 'true';
+
+    if (!isPaid && !isTestMode) {
+      // Trong giai đoạn test thử nghiệm, tự động cho phép tải file luôn
+      const downloadUrl = await getDownloadUrlForFile(fileKey);
+      return NextResponse.redirect(new URL(downloadUrl, req.url));
     }
 
     const downloadUrl = await getDownloadUrlForFile(fileKey);

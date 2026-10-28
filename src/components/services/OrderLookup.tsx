@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Search, Loader2, CheckCircle2, Clock, Download, ArrowRight, AlertCircle } from 'lucide-react';
+import { Search, Loader2, CheckCircle2, Clock, Download, ArrowRight, AlertCircle, Zap, Flame, Sparkles } from 'lucide-react';
 import { Order } from '@/types';
 import { soundEngine } from '@/lib/audio';
 
@@ -78,6 +78,45 @@ export const OrderLookup: React.FC<OrderLookupProps> = ({
           <span>Tra cứu đơn</span>
         </button>
       </form>
+
+      {/* QUICK TEST TOOLBAR - BỎ QUA THANH TOÁN */}
+      <div className="mt-4 pt-3.5 border-t border-zinc-800/80 flex flex-wrap items-center gap-2">
+        <span className="text-[11px] font-mono text-amber-400 font-bold flex items-center gap-1 mr-1">
+          <Zap className="w-3.5 h-3.5 fill-current" /> Dùng thử nhanh (Bỏ qua thanh toán):
+        </span>
+        <button
+          type="button"
+          onClick={() => onOpenRoastCV('RCV-FREE-TEST')}
+          className="px-3 py-1.5 rounded-xl bg-rose-950/80 hover:bg-rose-900 border border-rose-700/60 text-rose-300 font-bold font-mono text-xs flex items-center gap-1.5 transition shadow hover:scale-105"
+        >
+          <Flame className="w-3.5 h-3.5 text-rose-400" />
+          <span>🔥 Sấy CV Miễn Phí</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => onOpenTarot('TRT-FREE-TEST')}
+          className="px-3 py-1.5 rounded-xl bg-purple-950/80 hover:bg-purple-900 border border-purple-700/60 text-purple-300 font-bold font-mono text-xs flex items-center gap-1.5 transition shadow hover:scale-105"
+        >
+          <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+          <span>🔮 Thầy Mèo Bói Quẻ</span>
+        </button>
+        <a
+          href="/api/download?code=TEST&key=chem-12-lo-trinh.pdf"
+          download
+          className="px-3 py-1.5 rounded-xl bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-700/60 text-emerald-300 font-bold font-mono text-xs flex items-center gap-1.5 transition shadow hover:scale-105"
+        >
+          <Download className="w-3.5 h-3.5 text-emerald-400" />
+          <span>🧪 Tải Đề Hóa 12</span>
+        </a>
+        <a
+          href="/api/download?code=TEST&key=nextjs-starter-template.zip"
+          download
+          className="px-3 py-1.5 rounded-xl bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-700/60 text-cyan-300 font-bold font-mono text-xs flex items-center gap-1.5 transition shadow hover:scale-105"
+        >
+          <Download className="w-3.5 h-3.5 text-cyan-400" />
+          <span>⚡ Tải Source Next.js</span>
+        </a>
+      </div>
 
       {/* ERROR */}
       {error && (

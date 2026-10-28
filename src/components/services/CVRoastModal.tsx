@@ -10,7 +10,7 @@ interface CVRoastModalProps {
 }
 
 export const CVRoastModal: React.FC<CVRoastModalProps> = ({ initialCode = '', onClose }) => {
-  const [redeemCode, setRedeemCode] = useState(initialCode || 'RCV-');
+  const [redeemCode, setRedeemCode] = useState(initialCode || 'RCV-FREE-TEST');
   const [cvText, setCvText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [report, setReport] = useState<string | null>(null);
