@@ -284,11 +284,11 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
                         <span>Mua Ngay (QR)</span>
                       </button>
                       <a
-                        href={`/api/download?code=TEST&key=${p.r2_file_key}`}
+                        href={`/api/download?preview=true&key=${p.id === 'GIT-25' ? 'git-cheatsheet-preview.pdf' : (p.r2_file_key || 'chem-12-lo-trinh.pdf')}`}
                         download
-                        className="block text-center py-1 text-[11px] font-mono text-emerald-400 hover:underline"
+                        className="block text-center py-1 text-[11px] font-mono text-emerald-400 hover:text-emerald-300 hover:underline"
                       >
-                        ⚡ Tải thử ngay miễn phí
+                        ⚡ Tải bản Preview mẫu (Miễn phí)
                       </a>
                     </>
                   )}

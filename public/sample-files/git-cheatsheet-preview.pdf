@@ -1,0 +1,93 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>
+endobj
+4 0 obj
+<< /Length 2337 >>
+stream
+BT
+/F1 16 Tf
+50 740 Td
+(MEO DEV - GIT CHEATSHEET CAP TOC (BAN PREVIEW)) Tj
+/F1 10 Tf
+0 -22 Td
+(------------------------------------------------------------------------------------------) Tj
+0 -15 Td
+([BAN PREVIEW MIEN PHI] Danh cho Sinh vien IT Viet Nam) Tj
+0 -15 Td
+(Du an: Meo Dev Sinh Ton - https://ai-survival-store.vercel.app) Tj
+0 -15 Td
+(------------------------------------------------------------------------------------------) Tj
+0 -15 Td
+() Tj
+0 -15 Td
+(1. git init                      : Khoi tao Git repository trong thu muc hien tai) Tj
+0 -15 Td
+(2. git clone <url>               : Sao chep ma nguon tu GitHub / GitLab ve may tinh) Tj
+0 -15 Td
+(3. git status                    : Kiem tra trang thai cac file da sua doi hoac chua stage) Tj
+0 -15 Td
+(4. git add .                     : Dua toan bo file da sua vao Staging Area san sang commit) Tj
+0 -15 Td
+(5. git commit -m "[msg]"         : Luu snapshot code kem thong diep giai thich) Tj
+0 -15 Td
+(6. git push origin <branch>      : Day code tu may local len nhanh tren remote server) Tj
+0 -15 Td
+(7. git pull origin <branch>      : Keo va cap nhat code moi nhat tu remote ve may) Tj
+0 -15 Td
+(8. git branch -a                 : Xem toan bo danh sach cac branch local va remote) Tj
+0 -15 Td
+(9. git checkout -b <branch>      : Tao mot branch moi va chuyen sang branch do ngay) Tj
+0 -15 Td
+(10. git log --oneline -n 10      : Xem lich su 10 commit gan nhat duoi dang 1 dong) Tj
+0 -15 Td
+() Tj
+0 -15 Td
+(==========================================================================================) Tj
+0 -15 Td
+(BAN CAN BAN FULL CHUYEN SAU DE CUU DO AN NHOM?) Tj
+0 -15 Td
+(Ban Full bao gom:) Tj
+0 -15 Td
+(- Xu ly Merge Conflict khi bi trung code ban be ma khong lam mat code bat ky ai) Tj
+0 -15 Td
+(- Bi kip Git Stash de cat tam code dang viet do khi can pull gap) Tj
+0 -15 Td
+(- Git Rebase -i de gop \(squash\) cac commit rac truoc khi nop bai) Tj
+0 -15 Td
+(- Git Cherry-pick va Git Reset --hard khi lo tay commit sai) Tj
+0 -15 Td
+(- Quy trinh Git Flow chuan chinh danh cho nhom 3 - 5 sinh vien IT) Tj
+0 -15 Td
+() Tj
+0 -15 Td
+(-> Ghe ngay Web ung ho 25.000d pate cuu doi Meo Dev va tai Ban Full ngay:) Tj
+0 -15 Td
+(   Website: https://ai-survival-store.vercel.app) Tj
+0 -15 Td
+(==========================================================================================) Tj
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000241 00000 n 
+0000002629 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+2699
+%%EOF

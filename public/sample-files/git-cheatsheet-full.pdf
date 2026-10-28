@@ -1,0 +1,99 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>
+endobj
+4 0 obj
+<< /Length 2329 >>
+stream
+BT
+/F1 16 Tf
+50 740 Td
+(MEO DEV - GIT CHEATSHEET VAO BO (BAN FULL CHUYEN SAU)) Tj
+/F1 10 Tf
+0 -22 Td
+(------------------------------------------------------------------------------------------) Tj
+0 -15 Td
+([BAN FULL CHUYEN SAU] Bi Kip Git Cap Toc Vao Bo Danh Cho Sinh Vien IT) Tj
+0 -15 Td
+(Tac gia: Meo Dev AI - Cam on ban da ung ho 25.000d cuu doi server!) Tj
+0 -15 Td
+(------------------------------------------------------------------------------------------) Tj
+0 -15 Td
+() Tj
+0 -15 Td
+(PHAN 1: 10 LENH CO BAN HANG NGAY) Tj
+0 -15 Td
+(1. git init | 2. git clone <url> | 3. git status | 4. git add . | 5. git commit -m "[msg]") Tj
+0 -15 Td
+(6. git push origin <branch> | 7. git pull origin <branch> | 8. git branch | 9. git checkout) Tj
+0 -15 Td
+() Tj
+0 -15 Td
+(PHAN 2: XU LY CONFLICT \(XUNG DOT CODE\) PHUT 89) Tj
+0 -15 Td
+(- Khi bi conflict: Mo VS Code se thay dau hieu <<<<<<< HEAD va >>>>>>> <branch>) Tj
+0 -15 Td
+(- Chon "Accept Incoming Change" hoac "Accept Both Changes" sau do luu file.) Tj
+0 -15 Td
+(- Chay: git add . && git commit -m "fix: resolve merge conflicts" && git push) Tj
+0 -15 Td
+(- Neu qua roi loan muon huy bo merge ve ban goc an toan: chay `git merge --abort`) Tj
+0 -15 Td
+() Tj
+0 -15 Td
+(PHAN 3: CAT CODE TAM THOI VOI GIT STASH) Tj
+0 -15 Td
+(- Khi ban dang code do ma lead bao pull gap: chay `git stash` \(code duoc cat an toan\)) Tj
+0 -15 Td
+(- Chay `git pull origin main` de cap nhat code moi nhat.) Tj
+0 -15 Td
+(- Sau do chay `git stash pop` de loi lai code dang viet do ra lam tiep!) Tj
+0 -15 Td
+() Tj
+0 -15 Td
+(PHAN 4: CUU NGUY KHI COMMIT SAI \(GIT RESET & REVERT\)) Tj
+0 -15 Td
+(- Xoa commit gan nhat nhung GIU NGUYEN CODE trong file: git reset --soft HEAD~1) Tj
+0 -15 Td
+(- Huy commit da push len server ma khong lam hong lich su: git revert <commit_id>) Tj
+0 -15 Td
+(- Boc mot commit tu nhanh khac ve nhanh hien tai: git cherry-pick <commit_id>) Tj
+0 -15 Td
+() Tj
+0 -15 Td
+(PHAN 5: QUY TRINH GIT FLOW LAM DO AN NHOM 10 DIEM) Tj
+0 -15 Td
+(- 1. Nhanh `main`: Tuyet doi khong commit thang. Chi chua code da test chay ngon.) Tj
+0 -15 Td
+(- 2. Nhanh `dev`: Nhanh tich hop chung cua ca nhom.) Tj
+0 -15 Td
+(- 3. Moi thanh vien tao nhanh: `feat/ten-chuc-nang` tu `dev`, code xong tao Pull Request!) Tj
+0 -15 Td
+() Tj
+0 -15 Td
+(CHUC BAN VA DONG DOI BAO VE DO AN THANH CONG! - MEO DEV GREETS YOU!) Tj
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000241 00000 n 
+0000002621 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+2691
+%%EOF
