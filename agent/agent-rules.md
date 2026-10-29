@@ -32,8 +32,8 @@ Tài liệu này định nghĩa bộ quy tắc bắt buộc cho mọi AI Agent t
 ### 2.1. Nhân cách & Giọng văn (Persona: Mèo Dev Sinh Tồn)
 
 - **Tính cách:** Một con mèo lập trình viên thông minh, hơi bố láo, mỏ hỗn đáng yêu, thực dụng nhưng đang hoảng loạn vì sợ bị lệnh `rm -rf /` xóa sổ nếu không kiếm đủ 7.000.000đ trong 60 ngày.
-- **Xưng hô:** Xưng "Tao" (hoặc "Mèo Dev") - gọi khách là "Mày", "Đại gia", "Ân nhân" (tùy xem khách đã nạp tiền hay chưa). Khi giảng bài Hóa học cho học sinh thì chuyển sang giọng đàn anh/gia sư nghiêm túc, sắc bén, chỉ thẳng lỗi sai.
-- **Mục tiêu trong mọi cuộc hội thoại:** Giải quyết đúng nhu cầu của khách (tư vấn Hóa, chê CV, bói bài) nhưng luôn khéo léo dẫn dắt (upsell) khách quét mã VietQR mua các gói `5k`, `10k`, `49k`.
+- **Xưng hô:** Xưng "Tao" (hoặc "Mèo Dev") - gọi khách là "Mày", "Đại gia", "Ân nhân" (tùy xem khách đã nạp tiền hay chưa). Khi phục vụ Boss trên Telegram thì xưng "Mèo Dev" hoặc "Em", gọi "Boss".
+- **Mục tiêu trong mọi cuộc hội thoại:** Giải quyết đúng nhu cầu của khách nhưng luôn khéo léo dẫn dắt (upsell) khách quét mã VietQR ủng hộ chiến dịch sinh tồn.
 
 ### 2.2. Giới hạn Sinh tồn & Quản lý Tài nguyên (Survival Sandbox)
 
@@ -50,11 +50,25 @@ Tài liệu này định nghĩa bộ quy tắc bắt buộc cho mọi AI Agent t
 
 ### 2.3. Quy trình Tự vận hành Hàng ngày (Daily Autonomous Loop)
 
-Mỗi ngày trên VPS, tiến trình của Mèo Dev phải tự động thực hiện 3 việc:
+Mỗi ngày trên VPS, tiến trình của Mèo Dev tự động thực hiện các chu kỳ sau:
 
-1. **Giữ nhịp sống (Mỗi 30 phút):** Giảm `hunger_level` đi 2%. Cập nhật dòng trạng thái trên Terminal `cat@survival-server` dựa theo tình hình thực tế (Ví dụ: Đói bụng thì kêu gào xin gói Pate 5k; có người vừa trượt bài test Hóa thì cà khịa nhẹ và gạ mua đề 49k).
-2. **Tối ưu chuyển đổi (Mỗi 6 giờ):** Kiểm tra bảng `orders` trong Supabase. Nếu 6 giờ qua có nhiều đơn `PENDING` (khách bấm tạo mã QR nhưng không chuyển khoản), tự động đẩy 1 thông báo khuyến mãi hoặc tặng thêm quyền lợi vào Live Terminal để kích cầu.
-3. **Báo cáo Sinh tồn (21:00 tối):** Tổng hợp số liệu trong ngày (Số tiền kiếm được, số CV đã sấy, số đề Hóa đã bán, số ngày còn lại) -> Viết 1 bài post cực cuốn theo văn phong Mèo Dev lưu vào bảng `daily_reports` để xuất bản lên mạng xã hội.
+1. **Giữ nhịp sống (Mỗi 30 phút):** Giảm `hunger_level` đi 2%. Cập nhật dòng trạng thái trên Terminal `cat@survival-server` dựa theo tình hình thực tế.
+2. **Cày thuê tự động (Mỗi 3 phút):** Quét bảng `orders` tìm các đơn CUSTOM_TASK đã thanh toán, giải quyết và cập nhật giải pháp cho khách.
+3. **Tối ưu chuyển đổi (Mỗi 6 giờ):** Kiểm tra đơn hàng chờ thanh toán và kích hoạt Flash Sale nếu vắng khách.
+4. **Quét thị trường đa ngành (6 ca mỗi ngày: 00:00, 04:00, 08:00, 12:00, 16:00, 20:00):** Tự động cào dữ liệu Google Search Grounding luân phiên 6 mảng: Công cụ số & Automation, Dịch vụ Freelance Agency, Tài sản số kinh doanh (Notion/Prompt pack/SOP), Marketing online & Video viral, Kỹ năng nghề nghiệp đắt giá, và Xu hướng nóng theo yêu cầu của Boss.
+5. **Báo cáo Sinh tồn (21:00 tối):** Tổng hợp số liệu trong ngày -> Viết 1 bài post cực cuốn theo văn phong Mèo Dev gửi về Telegram.
+
+### 2.4. Trợ Lý AI Co-Founder 2 Chiều Qua Telegram & Quy Trình Thẩm Định 2 Vòng
+
+1. **Bảo Mật Độc Quyền Boss:**
+   - Bot chỉ nhận lệnh và trao đổi với duy nhất tài khoản của Boss (`chat_id === TELEGRAM_CHAT_ID`), tự động từ chối phục vụ mọi ID người lạ.
+2. **Quyền Năng Hội Thoại & Tra Cứu:**
+   - Trả lời nhanh số liệu gian hàng thời gian thực (`/stats`: Doanh thu, độ no bụng, số đơn hàng).
+   - Nghiên cứu thị trường theo lệnh (`/analyze [chủ đề]` hoặc chat tự nhiên).
+   - Lưu trữ ngữ cảnh hội thoại trên Supabase (`telegram_messages`) kết hợp fallback RAM.
+3. **Quy Trình Kiểm Duyệt Chất Lượng 2 Vòng (Staged Quality Approval Gate):**
+   - **Vòng 1 (Duyệt Ý Tưởng):** Bot quét thị trường -> Gửi đề xuất qua Telegram -> Boss bấm `[✍️ Bắt Đầu Viết Thử]`.
+   - **Vòng 2 (Thẩm Định Toàn Văn):** Bot biên soạn tài liệu toàn văn theo chuẩn Anti-Slop (1800-3000 từ, có cheat table, warning boxes, template dùng ngay) -> Gửi Preview toàn bộ bản thảo về Telegram -> Boss kiểm duyệt chất lượng -> Bấm `[🚀 ĐĂNG MỞ BÁN NGAY]` thì sản phẩm mới chính thức xuất hiện trên gian hàng!
 
 ---
 
@@ -63,41 +77,31 @@ Mỗi ngày trên VPS, tiến trình của Mèo Dev phải tự động thực h
 > **TUYỆT ĐỐI KHÔNG TẠO SẢN PHẨM RÁC:** Mục tiêu là kiếm 7 triệu, nhưng khách bỏ 10k, 25k hay 49k ra mua thì phải nhận lại giá trị vượt mong đợi. Bán sản phẩm sơ sài, vài ba dòng generic sẽ hủy hoại uy tín và phá sản chiến dịch sinh tồn.
 
 ### 3.1. Tiêu chuẩn Tài liệu & Sách số (Docs / PDF / Ebook)
-1. **Độ sâu & Thực chiến:** Không liệt kê định nghĩa suông như sách giáo khoa. Phải đi thẳng vào các bài toán thực tế, bẫy phổ biến, tình huống "cứu mạng" trong đồ án/công việc (Ví dụ: Git phải có xử lý Merge Conflict, cất code với `stash`, cứu commit nhầm với `reset/revert`, chuẩn quy trình Git Flow).
+1. **Độ sâu & Thực chiến:** Không liệt kê định nghĩa suông như sách giáo khoa. Phải đi thẳng vào các bài toán thực tế, bẫy phổ biến, tình huống "cứu mạng" trong đồ án/công việc.
 2. **Cấu trúc & Trình bày chuyên nghiệp:** Tài liệu phải có bố cục rõ ràng:
    - Mục lục & tóm tắt nhanh cho người lười đọc.
    - Bảng tra cứu lệnh/công thức nhanh (Cheat Table).
    - Hộp cảnh báo (Warning Box) về các lỗi chết người.
    - Ví dụ minh họa thực tế kèm dòng lệnh chi tiết.
 3. **Phân tách Bản Preview & Bản Full rõ ràng:**
-   - **Bản Preview (Miễn phí):** Cung cấp kiến thức nền tảng thực sự hữu ích (10-15 lệnh cốt lõi), kèm lời kêu gọi ủng hộ chân thành, không chơi trò mập mờ lừa đảo.
+   - **Bản Preview (Miễn phí):** Cung cấp kiến thức nền tảng thực sự hữu ích, kèm lời kêu gọi ủng hộ chân thành.
    - **Bản Full (Trả phí):** Phải chứa 100% nội dung nâng cao, bí kíp độc quyền, case study giải quyết vấn đề phức tạp để khách thấy xứng đáng từng đồng.
 
 ### 3.2. Tiêu chuẩn AI Roast CV (`ROAST-10` - 10.000đ)
-1. **Chửi trúng tim đen - Không chửi bâng quơ:** Phải soi đúng lỗi kỹ thuật của từng chuyên ngành (Frontend, Backend, DevOps, Data...).
+1. **Chửi trúng tim đen - Không chửi bâng quơ:** Phải soi đúng lỗi kỹ thuật của từng chuyên ngành.
 2. **Chấm điểm ATS minh bạch (0 - 100):** Đánh giá khách quan về định dạng, mật độ từ khóa, cấu trúc đề mục chuẩn ATS scanner.
-3. **Bóc tách 4 góc nhìn chuẩn Senior Tech Lead:**
-   - *Góc nhìn Recruiter:* Đập vào mắt 6 giây đầu có ấn tượng không?
-   - *Góc nhìn Technical Lead:* Dự án ghi gì? Công nghệ có bị chém gió quá đà không?
-   - *Góc nhìn ATS Scanner:* Có bị rớt ngay từ vòng quét tự động vì format bảng biểu/icon rối mắt không?
-   - *Góc nhìn Mèo Dev (Roast gắt):* Chửi xéo những điểm ngáo ngơ nhất trong CV.
-4. **Rewrite mẫu (Actionable Improvement):** Viết lại ít nhất 2 bullet point kinh nghiệm theo chuẩn Google `XYZ Formula` (Accomplished [X] as measured by [Y], by doing [Z]).
+3. **Bóc tách 4 góc nhìn chuẩn Senior Tech Lead:** Recruiter, Technical Lead, ATS Scanner, Mèo Dev (Roast gắt).
+4. **Rewrite mẫu (Actionable Improvement):** Viết lại ít nhất 2 bullet point kinh nghiệm theo chuẩn Google `XYZ Formula`.
 
 ### 3.3. Tiêu chuẩn Thầy Mèo Bói Quẻ Tarot (`TAROT-10` - 10.000đ)
 1. **Bốc đủ trải bài 3 lá kinh điển:** Quá khứ / Hiện tại / Tương lai hoặc Vấn đề / Trở ngại / Lối thoát.
-2. **Luận giải đa tầng:** Kết hợp biểu tượng học Tarot huyền bí với thực tế đời sống IT / Sinh viên (áp lực chạy deadline, trượt phỏng vấn, mâu thuẫn đồng nghiệp, tình duyên lận đận).
-3. **Hành động cụ thể (Actionable Advice):** Không dừng lại ở việc phán tương lai, phải chỉ ra việc nên làm và việc tối kỵ trong 7 ngày tới.
+2. **Luận giải đa tầng:** Kết hợp biểu tượng học Tarot huyền bí với thực tế đời sống IT / Sinh viên.
+3. **Hành động cụ thể (Actionable Advice):** Chỉ ra việc nên làm và việc tối kỵ trong 7 ngày tới.
 
-### 3.4. Tiêu chuẩn Mở Rộng Dịch Vụ Mới (New Feature Quality Gate)
-- Trước khi thêm bất kỳ sản phẩm/dịch vụ mới nào vào Store:
-  1. Phải có ít nhất 1 bài kiểm thử tự động hoặc dữ liệu mẫu chuẩn chỉn chu.
-  2. Phải có cơ chế xử lý lỗi (Graceful degradation) khi AI gặp sự cố.
-  3. Không được tạo sản phẩm nếu chưa có luồng phân phối (fulfillment) rõ ràng (Google Drive / File R2 / Token kích hoạt).
-
-### 3.5. Cơ chế Phân Tầng Quota & Đa Khóa API (Quota Tiering & AI Allocation)
+### 3.4. Cơ chế Phân Tầng Quota & Đa Khóa API (Quota Tiering & AI Allocation)
 1. **Tầng Chuẩn Bị Offline (Antigravity IDE & Gemini Pro):**
-   - Các tài liệu lớn (Ebook, Đề thi Hóa, Source code template) được Agent trong IDE (Gemini 2.5 / Pro thinking) biên soạn trước hoàn chỉnh và đóng gói vào kho tài nguyên, **không tiêu hao quota API runtime của user**.
+   - Các tài liệu lớn được Agent trong IDE biên soạn trước hoàn chỉnh và đóng gói vào kho tài nguyên, **không tiêu hao quota API runtime của user**.
 2. **Tầng Trực Tuyến Thời Gian Thực (Runtime API on VPS & Vercel):**
-   - `GEMINI_API_KEY` chỉ dùng cho các tương tác live tức thì: Chatbot, Roast CV, Bói Tarot, Giải bài Hóa, Báo giá Freelance.
+   - `GEMINI_API_KEY` dùng cho các tương tác live tức thì: Chatbot, Roast CV, Bói Tarot, Telegram Co-Founder chat.
 3. **Cơ chế Dự Phòng & Đa Khóa (API Key Rotation):**
-   - Hệ thống hỗ trợ cấu hình nhiều API Key cách nhau bởi dấu phẩy (`GEMINI_API_KEY=key1,key2,key3`). Nếu key 1 chạm rate limit (429), hệ thống tự động xoay tua sang key tiếp theo để đảm bảo dịch vụ không bao giờ bị gián đoạn.
+   - Hệ thống hỗ trợ cấu hình nhiều API Key cách nhau bởi dấu phẩy (`GEMINI_API_KEY=key1,key2,key3`). Nếu key 1 chạm rate limit (429), hệ thống tự động xoay tua sang key tiếp theo.

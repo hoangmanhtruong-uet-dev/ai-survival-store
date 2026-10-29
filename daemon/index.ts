@@ -1,18 +1,20 @@
 import cron from 'node-cron';
 import { validateDaemonConfig, DAEMON_CONFIG } from './config';
-import { sendTelegramNotification, fetchTelegramUpdates, answerTelegramCallback } from './telegram';
+import { sendTelegramNotification, fetchTelegramUpdates, answerTelegramCallback, TelegramMessage } from './telegram';
 import { getDaemonSupabase } from './services/supabase';
 import { runHungerDecayTask } from './tasks/hunger-decay';
 import { runFlashSaleTask } from './tasks/flash-sale';
 import { runDailyContentGeneratorTask } from './tasks/content-generator';
-import { runProductGeneratorTask, authorAndPublishProduct } from './tasks/product-generator';
+import { runProductGeneratorTask, authorProductDraft, publishProductFromDraft } from './tasks/product-generator';
 import { runMarketAnalyzerTask } from './tasks/market-analyzer';
 import { runCustomTaskWorker } from './tasks/custom-task-worker';
+import { handleTelegramIncomingMessage } from './tasks/telegram-chat';
 
 const BANNER = `
 ==========================================================
-🐱 MÈO DEV SURVIVAL AUTONOMOUS DAEMON 24/7
+🐱 MÈO DEV SURVIVAL AUTONOMOUS DAEMON 24/7 & AI CO-FOUNDER
 Target: 7.000.000 VNĐ | Deadline: 60 Ngày | Script: rm -rf /
+Telegram: Chat 2 chiều + Thẩm định chất lượng 2 vòng
 ==========================================================
 `;
 
@@ -55,15 +57,34 @@ async function main() {
     process.exit(0);
   }
 
-  // Hàm xử lý chung các lệnh bấm nút từ Telegram
+  if (args.includes('--worker')) {
+    console.log('▶️ [CLI] Kích hoạt thủ công: Custom Task Worker (Cày việc cho khách)');
+    await runCustomTaskWorker();
+    process.exit(0);
+  }
+
+  // Hàm xử lý chung các lệnh bấm nút từ Telegram (Inline Keyboard Callbacks)
   const processTelegramCallback = async (cb: { id: string; data?: string }) => {
     if (!cb.data) return;
 
     if (cb.data.startsWith('approve:')) {
       const insightId = cb.data.replace('approve:', '');
-      console.log(`\n🛎️ [TELEGRAM APPROVE] Boss vừa bấm [✅ DUYỆT] ý tưởng: ${insightId}!`);
-      await answerTelegramCallback(cb.id, 'Đã nhận lệnh Duyệt! Mèo Dev bắt đầu biên soạn...');
-      await authorAndPublishProduct(insightId);
+      console.log(`\n🛎️ [TELEGRAM VÒNG 1] Boss duyệt ý tưởng ${insightId}! Mèo Dev bắt đầu biên soạn bản thảo chất lượng cao...`);
+      await answerTelegramCallback(cb.id, 'Đã nhận lệnh! Mèo Dev bắt đầu biên soạn bản thảo chuẩn Anti-Slop...');
+      await authorProductDraft(insightId);
+    } else if (cb.data.startsWith('publish:')) {
+      const insightId = cb.data.replace('publish:', '');
+      console.log(`\n🚀 [TELEGRAM VÒNG 2] Boss duyệt mở bán chính thức sản phẩm: ${insightId}!`);
+      await answerTelegramCallback(cb.id, 'Đang chính thức đẩy sản phẩm lên gian hàng web...');
+      await publishProductFromDraft(insightId);
+    } else if (cb.data.startsWith('revise:')) {
+      const insightId = cb.data.replace('revise:', '');
+      console.log(`\n✏️ [TELEGRAM REVISE] Boss yêu cầu sửa lại sản phẩm: ${insightId}!`);
+      await answerTelegramCallback(cb.id, 'Boss hãy nhắn tin trực tiếp qua Telegram những điểm cần sửa nhé!');
+      await sendTelegramNotification(
+        `✏️ <b>Boss muốn sửa điểm nào ở sản phẩm này?</b>\n` +
+        `<i>Hãy nhắn tin trực tiếp vào khung chat này (VD: "Sửa phần 2 thêm ví dụ thực tế...", "Đổi giá xuống 25k"), Mèo Dev sẽ cập nhật lại ngay!</i>`
+      );
     } else if (cb.data.startsWith('reroll:')) {
       const insightId = cb.data.replace('reroll:', '');
       console.log(`\n🔄 [TELEGRAM REROLL] Boss yêu cầu đổi ý tưởng: ${insightId}!`);
@@ -83,26 +104,35 @@ async function main() {
     }
   };
 
-  if (args.includes('--worker')) {
-    console.log('▶️ [CLI] Kích hoạt thủ công: Custom Task Worker (Cày việc cho khách)');
-    await runCustomTaskWorker();
-    process.exit(0);
-  }
+  // Hàm xử lý tin nhắn văn bản Boss chat qua Telegram
+  const processTelegramMessage = async (msg: TelegramMessage) => {
+    try {
+      await handleTelegramIncomingMessage(msg);
+    } catch (err) {
+      console.error('❌ Lỗi khi xử lý tin nhắn Telegram:', (err as Error).message);
+    }
+  };
 
-  if (args.includes('--listen')) {
-    console.log('📡 [CLI] Bắt đầu lắng nghe Telegram Bot (Nhấn Ctrl+C để dừng)...');
+  if (args.includes('--listen') || args.includes('--chat')) {
+    console.log('📡 [CLI] Bắt đầu lắng nghe Telegram Bot 2 chiều (Nhấn Ctrl+C để dừng)...');
+    console.log('👉 Boss có thể mở Telegram và chat trực tiếp với Mèo Dev ngay bây giờ!\n');
     let offset = 0;
     while (true) {
       try {
-        const { nextOffset, callbacks } = await fetchTelegramUpdates(offset);
+        const { nextOffset, callbacks, messages } = await fetchTelegramUpdates(offset);
         offset = nextOffset;
+
         for (const cb of callbacks) {
           await processTelegramCallback(cb);
+        }
+
+        for (const msg of messages) {
+          await processTelegramMessage(msg);
         }
       } catch {
         // Ignore
       }
-      await new Promise((r) => setTimeout(r, 1000));
+      await new Promise((r) => setTimeout(r, 1200));
     }
   }
 
@@ -110,19 +140,20 @@ async function main() {
     console.log('▶️ [CLI] Kích hoạt thủ công: Market Intelligence Analyzer (Quét xu hướng thị trường)');
     await runMarketAnalyzerTask('CLI');
     console.log('\n📡 [CLI LISTENER] Mèo Dev đang online lắng nghe phản hồi từ Telegram...');
-    console.log('👉 Boss hãy mở Telegram và bấm nút [✅ Duyệt], [🔄 Đổi ý tưởng] hoặc [❌ Hủy] để xem kết quả! (Nhấn Ctrl+C để thoát)\n');
+    console.log('👉 Boss hãy mở Telegram để chat hoặc bấm duyệt ý tưởng! (Nhấn Ctrl+C để thoát)\n');
 
     let offset = 0;
     while (true) {
       try {
-        const { nextOffset, callbacks } = await fetchTelegramUpdates(offset);
+        const { nextOffset, callbacks, messages } = await fetchTelegramUpdates(offset);
         offset = nextOffset;
+
         for (const cb of callbacks) {
           await processTelegramCallback(cb);
-          if (cb.data?.startsWith('approve:')) {
-            console.log('\n🎉 [HOÀN TẤT] Boss đã duyệt mở bán thành công! Tiến trình kết thúc.');
-            process.exit(0);
-          }
+        }
+
+        for (const msg of messages) {
+          await processTelegramMessage(msg);
         }
       } catch {
         // Ignore
@@ -144,12 +175,12 @@ async function main() {
   // 3. Chế độ chạy nền 24/7 (Daemon Mode)
   console.log('🚀 [DAEMON ONLINE] Mèo Dev đang chạy ngầm 24/7 trên VPS...\n');
   console.log('⏰ Lịch trình tự động:');
-  console.log('   - Mỗi 30 phút:       Trừ 2% độ no bụng & Kêu cứu nếu đói (< 35%)');
-  console.log('   - Mỗi 3 phút:        Quét & giải quyết đơn hàng Custom Task của khách');
-  console.log('   - Mỗi 6 tiếng:       Kiểm tra đơn hàng & Kích hoạt Flash Sale nếu ế');
-  console.log('   - 08:00, 14:00, 20:00: Gemini Search cào dữ liệu thị trường & đề xuất ý tưởng qua Telegram');
-  console.log('   - 21:00 mỗi ngày:    AI viết bài Viral Threads/FB & Kịch bản TikTok bắt trend gửi về Telegram');
-  console.log('   - 24/7 Listener:     Lắng nghe nút duyệt [✅ Duyệt Mở Bán] từ Telegram của Boss\n');
+  console.log('   - Mỗi 30 phút:                  Trừ 2% độ no bụng & Kêu cứu nếu đói (< 35%)');
+  console.log('   - Mỗi 3 phút:                   Quét & giải quyết đơn hàng Custom Task của khách');
+  console.log('   - Mỗi 6 tiếng:                  Kiểm tra đơn hàng & Kích hoạt Flash Sale nếu ế');
+  console.log('   - 00:00, 04:00, 08:00, 12:00, 16:00, 20:00: Quét 6 mảng thị trường đa ngành & gửi đề xuất qua Telegram');
+  console.log('   - 21:00 mỗi ngày:               AI viết bài Viral Threads/FB & Kịch bản TikTok bắt trend');
+  console.log('   - 24/7 Telegram AI Co-Founder:  Lắng nghe chat 2 chiều & thẩm định chất lượng 2 vòng trước khi đăng\n');
 
   // Bắn thông báo khởi động lên Telegram
   await sendTelegramNotification(
@@ -157,7 +188,12 @@ async function main() {
     `• <b>Mục tiêu:</b> <code>7.000.000đ trong 60 ngày</code>\n` +
     `• <b>Hạ tầng:</b> Node.js Daemon 24/7 + Gemini Search Grounding\n` +
     `• <b>Website:</b> <a href="${DAEMON_CONFIG.siteUrl}">${DAEMON_CONFIG.siteUrl}</a>\n\n` +
-    `<i>Mèo Dev sẽ tự động quét xu hướng thị trường 3 lần/ngày và báo cáo để Boss duyệt mở bán!</i>`
+    `💬 <b>CHẾ ĐỘ CO-FOUNDER 2 CHIỀU ĐÃ KÍCH HOẠT:</b>\n` +
+    `Boss có thể nhắn tin trực tiếp vào khung chat này để:\n` +
+    `1. Bàn ý tưởng kinh doanh / hỏi đáp thị trường\n` +
+    `2. Gõ <code>/stats</code> xem doanh thu thời gian thực\n` +
+    `3. Gõ <code>/analyze [chủ đề]</code> để ra lệnh quét ngành bất kỳ\n` +
+    `4. Thẩm định nội dung toàn văn trước khi bấm ĐĂNG MỞ BÁN!`
   );
 
   // Tác vụ 1: Mỗi 30 phút giảm đói
@@ -178,8 +214,8 @@ async function main() {
     }
   });
 
-  // Tác vụ 3: 08:00, 14:00, 20:00 cào dữ liệu thị trường & đề xuất ý tưởng sản phẩm mới
-  cron.schedule('0 8,14,20 * * *', async () => {
+  // Tác vụ 3: Tăng lên 6 lần/ngày (00:00, 04:00, 08:00, 12:00, 16:00, 20:00) quét 6 mảng thị trường đa ngành
+  cron.schedule('0 0,4,8,12,16,20 * * *', async () => {
     try {
       const hour = new Date().getHours();
       await runMarketAnalyzerTask(`${hour}:00`);
@@ -206,25 +242,29 @@ async function main() {
     }
   });
 
-  // 4. Lắng nghe phản hồi từ Telegram (Inline Keyboard Buttons)
+  // 4. Lắng nghe phản hồi từ Telegram (Inline Buttons & Trò chuyện 2 chiều với Boss)
   let isPollingActive = true;
   const startTelegramPollingLoop = async () => {
-    console.log('📡 [TELEGRAM BOT] Bắt đầu lắng nghe lệnh duyệt từ Boss...');
+    console.log('📡 [TELEGRAM BOT] Bắt đầu lắng nghe chat 2 chiều & lệnh duyệt từ Boss...');
     let offset = 0;
     while (isPollingActive) {
       try {
-        const { nextOffset, callbacks } = await fetchTelegramUpdates(offset);
+        const { nextOffset, callbacks, messages } = await fetchTelegramUpdates(offset);
         offset = nextOffset;
 
         for (const cb of callbacks) {
           await processTelegramCallback(cb);
         }
-      } catch (err) {
+
+        for (const msg of messages) {
+          await processTelegramMessage(msg);
+        }
+      } catch {
         // Tạm nghỉ nếu gặp sự cố mạng
         await new Promise((res) => setTimeout(res, 5000));
       }
-      // Nghỉ 1.5 giây giữa các lượt long polling
-      await new Promise((res) => setTimeout(res, 1500));
+      // Nghỉ 1.2 giây giữa các lượt long polling
+      await new Promise((res) => setTimeout(res, 1200));
     }
   };
 
@@ -249,4 +289,3 @@ main().catch((err) => {
   console.error('💥 Lỗi không xác định:', err);
   process.exit(1);
 });
-

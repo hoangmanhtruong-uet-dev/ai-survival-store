@@ -15,6 +15,7 @@
     "daemon:product": "tsx daemon/index.ts --product",
     "daemon:market": "tsx daemon/index.ts --market",
     "daemon:listen": "tsx daemon/index.ts --listen",
+    "daemon:chat": "tsx daemon/index.ts --chat",
     "daemon:worker": "tsx daemon/index.ts --worker"
   },
   "dependencies": {
