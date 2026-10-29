@@ -181,17 +181,42 @@ export async function handleTelegramIncomingMessage(message: TelegramMessage): P
   }
 
   // Lệnh lập trình tự động từ xa bằng Antigravity CLI (Headless Pro Agent)
-  if (
+  const isDirectCodeCommand =
     lowerText.startsWith('/code') ||
     lowerText.startsWith('/dev') ||
     lowerText.startsWith('code cho tao') ||
     lowerText.startsWith('viết code') ||
-    lowerText.startsWith('code tính năng')
-  ) {
-    const requirement = text
-      .replace(/^\/code|^\/dev|^code cho tao|^viết code|^code tính năng/i, '')
-      .replace(/^[:\-\s]+/, '')
-      .trim();
+    lowerText.startsWith('code tính năng') ||
+    lowerText.startsWith('code đi') ||
+    lowerText.startsWith('triển khai code') ||
+    lowerText.startsWith('triển khai tính năng') ||
+    lowerText.startsWith('thực hiện code');
+
+  const isFollowupDeployCommand =
+    lowerText === 'triển khai đi em' ||
+    lowerText === 'triển khai đi' ||
+    lowerText === 'triển khai' ||
+    lowerText === 'làm luôn đi em' ||
+    lowerText === 'code luôn đi' ||
+    lowerText === 'triển khai luôn';
+
+  if (isDirectCodeCommand || isFollowupDeployCommand) {
+    let requirement = '';
+
+    if (isFollowupDeployCommand) {
+      // Tìm lại tin nhắn ý tưởng gần nhất mà Boss vừa trao đổi
+      const previousUserMsg = [...memoryChatHistory].reverse().find(
+        (m) => m.role === 'user' && m.content !== text && m.content.length > 5
+      );
+      requirement = previousUserMsg
+        ? previousUserMsg.content
+        : 'Nâng cấp và cải tiến tính năng dịch vụ theo kế hoạch vừa bàn bạc';
+    } else {
+      requirement = text
+        .replace(/^\/code|^\/dev|^code cho tao|^viết code|^code tính năng|^code đi|^triển khai code|^triển khai tính năng|^thực hiện code/i, '')
+        .replace(/^[:\-\s]+/, '')
+        .trim();
+    }
 
     if (!requirement || requirement.length < 3) {
       const missingMsg =
@@ -199,12 +224,12 @@ export async function handleTelegramIncomingMessage(message: TelegramMessage): P
         `<i>Boss hãy dùng cú pháp:</i>\n` +
         `<code>/code [yêu cầu chi tiết tính năng]</code>\n\n` +
         `<i>Ví dụ:</i>\n` +
-        `<code>/code Viết API lươn gpt và giao diện thu 10k</code>`;
+        `<code>/code Nâng cấp giao diện Roast CV và backend 4 tầng</code>`;
       await sendTelegramNotification(missingMsg, { parseMode: 'HTML' }, chatId);
       return;
     }
 
-    // Kích hoạt tác vụ code trong background
+    // Kích hoạt tác vụ code trong background bằng Antigravity CLI Pro
     executeCodingTask(chatId, requirement).catch((err) => {
       console.error('❌ Lỗi uncaught trong executeCodingTask:', err);
     });
