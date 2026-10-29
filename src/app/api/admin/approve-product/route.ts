@@ -167,7 +167,7 @@ ${insight.proposed_outline}
 Yêu cầu: Có bảng tra cứu nhanh, hộp cảnh báo > [!WARNING] và ví dụ cụ thể.
 `;
         const response = await ai.models.generateContent({
-          model: process.env.GEMINI_MODEL || 'gemini-2.0-flash',
+          model: process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite',
           contents: prompt,
         });
         if (response.text) {

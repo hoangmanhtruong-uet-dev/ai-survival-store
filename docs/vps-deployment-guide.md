@@ -82,7 +82,7 @@ SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOi...<YOUR_SUPABASE_SERVICE_ROLE_KEY>
 
 # 2. Google Gemini API (AI Studio miễn phí)
 GEMINI_API_KEY=<YOUR_GEMINI_API_KEY>
-GEMINI_MODEL=gemini-2.0-flash
+GEMINI_MODEL=gemini-3.5-flash-lite
 
 # 3. Telegram Bot (Đã lấy ở Bước 2)
 TELEGRAM_BOT_TOKEN=<YOUR_TELEGRAM_BOT_TOKEN>
