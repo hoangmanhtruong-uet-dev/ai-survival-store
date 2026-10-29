@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useRef } from 'react';
-import { X, Award, Share2, Download, Check, Sparkles } from 'lucide-react';
+import { X, Award, Share2, Check } from 'lucide-react';
 import { Order } from '@/types';
 import { soundEngine } from '@/lib/audio';
 

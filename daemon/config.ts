@@ -12,7 +12,7 @@ export const DAEMON_CONFIG = {
 
   // Gemini AI
   geminiApiKey: process.env.GEMINI_API_KEY || '',
-  geminiModel: process.env.GEMINI_MODEL?.trim() || 'gemini-3.5-flash-lite',
+  geminiModel: process.env.GEMINI_MODEL?.trim() || 'gemini-2.0-flash',
 
   // Telegram Notifications
   telegramBotToken: process.env.TELEGRAM_BOT_TOKEN || '',

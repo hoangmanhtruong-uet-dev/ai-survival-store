@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getTarotReading } from '@/lib/gemini';
 import { mockStore } from '@/lib/mock-store';
-import { getSupabaseClient } from '@/lib/supabase/client';
+import { getSupabaseAdminClient, getSupabaseClient } from '@/lib/supabase/client';
 import { filterProfanity } from '@/lib/profanity';
 
 export async function POST(req: NextRequest) {
@@ -17,11 +17,13 @@ export async function POST(req: NextRequest) {
     const cleanBirthDate = birthDate || '2000-01-01';
     const validCode = redeemCode?.trim().toUpperCase();
 
-    const supabase = getSupabaseClient();
-    if (supabase && process.env.NODE_ENV === 'production') {
+    const supabase = getSupabaseAdminClient() || getSupabaseClient();
+    if (supabase) {
       if (!validCode) {
         return NextResponse.json({ success: false, error: 'Vui lòng quét mã 10k để nhận mã bốc quẻ Tarot từ Thầy Mèo!' }, { status: 403 });
       }
+
+      const isDevBypass = process.env.NODE_ENV === 'development' && validCode === 'TRT-FREE-TEST';
 
       const { data: order } = await supabase
         .from('orders')
@@ -30,11 +32,21 @@ export async function POST(req: NextRequest) {
         .eq('status', 'PAID')
         .single();
 
-      if (!order) {
+      if (!order && !isDevBypass) {
         return NextResponse.json(
           { success: false, error: 'Mã bói quẻ không hợp lệ hoặc đơn hàng chưa thanh toán! Vui lòng quét mã 10k ủng hộ Mèo.' },
           { status: 403 }
         );
+      }
+
+      // SEC-08: Kiểm tra chống tái sử dụng token (Trả về kết quả quẻ trước đó nếu có)
+      if (order && order.is_redeemed && order.ai_result) {
+        return NextResponse.json({
+          success: true,
+          ...order.ai_result,
+          cached: true,
+          message: 'Quẻ Tarot trước đó đã được tải lại thành công.',
+        });
       }
     }
 
@@ -47,8 +59,11 @@ export async function POST(req: NextRequest) {
         type: 'TASK_DONE',
         message: logMsg,
       });
-      if (redeemCode) {
-        await supabase.from('orders').update({ is_redeemed: true, ai_result: result }).eq('redeem_code', redeemCode);
+      if (validCode) {
+        await supabase
+          .from('orders')
+          .update({ is_redeemed: true, ai_result: result })
+          .or(`redeem_code.eq.${validCode},order_code.eq.${validCode}`);
       }
     } else {
       mockStore.addLog('TASK_DONE', logMsg);

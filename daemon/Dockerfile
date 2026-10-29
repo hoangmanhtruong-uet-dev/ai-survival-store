@@ -2,8 +2,8 @@ FROM node:22-alpine
 
 WORKDIR /app
 
-# Cài đặt timezone Việt Nam (ICT / UTC+7) để các mốc cron 21:00 khớp giờ VN
-RUN apk add --no-cache tzdata
+# Cài đặt timezone Việt Nam (ICT / UTC+7) và các công cụ cần thiết cho daemon (git, bash, curl)
+RUN apk add --no-cache tzdata git bash curl
 ENV TZ=Asia/Ho_Chi_Minh
 
 # Copy package files

@@ -13,7 +13,20 @@ export async function GET() {
         .select('*')
         .order('created_at', { ascending: false })
         .limit(25);
-      logs = (data || []).reverse();
+      
+      // SEC-10: Mask PII email nếu có trong meta của log
+      logs = (data || []).map((log: { meta?: { buyerEmail?: string } }) => {
+        if (log.meta && log.meta.buyerEmail) {
+          return {
+            ...log,
+            meta: {
+              ...log.meta,
+              buyerEmail: log.meta.buyerEmail.replace(/(.{2})(.*)(@.*)/, '$1***$3'),
+            },
+          };
+        }
+        return log;
+      }).reverse();
     } else {
       logs = mockStore.getLiveLogs(25);
     }

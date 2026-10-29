@@ -80,18 +80,6 @@ export default function Home() {
     }
   }, []);
 
-  const fetchProducts = useCallback(async () => {
-    try {
-      const res = await fetch('/api/products');
-      const data = await res.json();
-      if (data.success && data.products) {
-        setProducts(data.products);
-      }
-    } catch {
-      // Ignore
-    }
-  }, []);
-
   const fetchLiveFeed = useCallback(async () => {
     try {
       const res = await fetch('/api/live-feed');
@@ -106,10 +94,30 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    // 1. Fetch dữ liệu khởi tạo 1 lần duy nhất khi mount
-    fetchStats();
-    fetchProducts();
-    fetchLiveFeed();
+    let active = true;
+
+    // 1. Fetch dữ liệu khởi tạo bất đồng bộ khi mount
+    async function loadInitialData() {
+      try {
+        const [statsData, prodData, feedData] = await Promise.all([
+          fetch('/api/stats').then((r) => r.json()).catch(() => null),
+          fetch('/api/products').then((r) => r.json()).catch(() => null),
+          fetch('/api/live-feed').then((r) => r.json()).catch(() => null),
+        ]);
+
+        if (!active) return;
+        if (statsData?.success && statsData.stats) setStats(statsData.stats);
+        if (prodData?.success && prodData.products) setProducts(prodData.products);
+        if (feedData?.success) {
+          if (feedData.logs) setLogs(feedData.logs);
+          if (feedData.viewerCount) setViewerCount(feedData.viewerCount);
+        }
+      } catch {
+        // Ignore
+      }
+    }
+
+    void loadInitialData();
 
     // 2. Kết nối Supabase Realtime Channel (Zero Polling HTTP GET)
     const supabase = getSupabaseClient();
@@ -148,6 +156,7 @@ export default function Home() {
         .subscribe();
 
       return () => {
+        active = false;
         supabase.removeChannel(channel);
       };
     } else {
@@ -156,9 +165,12 @@ export default function Home() {
         fetchStats();
         fetchLiveFeed();
       }, 60000);
-      return () => clearInterval(fallbackInterval);
+      return () => {
+        active = false;
+        clearInterval(fallbackInterval);
+      };
     }
-  }, [fetchStats, fetchProducts, fetchLiveFeed]);
+  }, [fetchStats, fetchLiveFeed]);
 
   // Giả lập số mắt xem dao động tự nhiên trong bộ nhớ client (không gọi HTTP request)
   useEffect(() => {
@@ -339,6 +351,7 @@ export default function Home() {
           product={selectedProduct}
           initialOrderCode={activeOrderCode}
           onClose={() => setIsPaymentModalOpen(false)}
+          onPaymentSuccess={handlePaymentSuccess}
           onOpenRoastCV={handleOpenRoastCV}
           onOpenTarot={handleOpenTarot}
           onOpenCertificate={handleOpenCertificate}

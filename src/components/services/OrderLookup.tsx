@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Search, Loader2, CheckCircle2, Clock, Download, ArrowRight, AlertCircle, Zap, Flame, Sparkles, Copy, Check, BookOpen } from 'lucide-react';
+import { Search, Loader2, CheckCircle2, Clock, Download, ArrowRight, AlertCircle, Copy, Check, BookOpen } from 'lucide-react';
 import { Order } from '@/types';
 import { soundEngine } from '@/lib/audio';
 
@@ -19,7 +19,6 @@ export const OrderLookup: React.FC<OrderLookupProps> = ({
   onOpenRoastCV,
   onOpenTarot,
   onOpenChemistryTutor,
-  onOpenChemistryQuiz,
   onOpenEbookReader,
 }) => {
   const [orderCode, setOrderCode] = useState('');

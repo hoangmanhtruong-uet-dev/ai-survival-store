@@ -1,8 +1,9 @@
 // Gemini AI Service with Tool Calling & Fallback Mock Engine
 import { GoogleGenAI } from '@google/genai';
 import { mockStore } from './mock-store';
-import { generateVietQRUrl } from './vietqr';
+import { generateVietQRUrl, generateOrderCode } from './vietqr';
 import { TAROT_DECK_22, TarotCard } from './tarot-data';
+import { getSupabaseAdminClient, getSupabaseClient } from './supabase/client';
 
 export function getApiKeys(): string[] {
   const raw = process.env.GEMINI_API_KEY || '';
@@ -33,7 +34,41 @@ export function isGeminiConfigured(): boolean {
 
 export function getGeminiModel(): string {
   const model = process.env.GEMINI_MODEL?.trim();
-  return model || 'gemini-3.5-flash-lite';
+  return model || 'gemini-2.0-flash';
+}
+
+async function createChatOrder(productId: string, buyerName = 'Khách Chat AI', buyerNote = 'Mua qua chat') {
+  const supabase = getSupabaseAdminClient() || getSupabaseClient();
+  if (supabase) {
+    try {
+      const { data: prodData } = await supabase.from('products').select('*').eq('id', productId).single();
+      const amount = prodData?.price || 5000;
+      const orderCode = generateOrderCode();
+      const { data: newOrder, error } = await supabase
+        .from('orders')
+        .insert({
+          order_code: orderCode,
+          product_id: productId,
+          amount,
+          buyer_name: buyerName,
+          buyer_note: buyerNote,
+          status: 'PENDING',
+        })
+        .select('*, product:products(*)')
+        .single();
+
+      if (!error && newOrder) {
+        return {
+          order_code: orderCode,
+          amount,
+          product: newOrder.product || prodData,
+        };
+      }
+    } catch (e) {
+      console.error('Error persisting chat order to Supabase:', e);
+    }
+  }
+  return mockStore.createOrder(productId, buyerName, buyerNote);
 }
 
 export const CAT_DEV_SYSTEM_PROMPT = `
@@ -122,10 +157,10 @@ export async function chatWithCatDev(
 
       const replyText = response.text || 'Meo meo! Tao bận fix bug xíu, mày hỏi lại xem nào!';
 
-      // Tạo tool call ném QR nếu AI hoặc user muốn chốt đơn
+      // Tạo tool call ném QR nếu AI hoặc user muốn chốt đơn (ARCH-01: Persist to Supabase)
       let toolCallData = undefined;
       if (directProductMatch) {
-        const order = mockStore.createOrder(directProductMatch, 'Khách Chat AI', 'Mua qua chat');
+        const order = await createChatOrder(directProductMatch, 'Khách Chat AI', 'Mua qua chat');
         const qrUrl = generateVietQRUrl(order.amount, order.order_code);
         toolCallData = {
           product_id: directProductMatch,
@@ -161,7 +196,7 @@ export async function chatWithCatDev(
 
   let toolCallData = undefined;
   if (targetProduct && (cleanMsg.includes('mua') || cleanMsg.includes('chốt') || cleanMsg.includes('tạo đơn') || cleanMsg.includes('qr') || cleanMsg.includes('cứu'))) {
-    const order = mockStore.createOrder(targetProduct, 'Khách Chat AI', 'Mua qua chat Mèo Dev');
+    const order = await createChatOrder(targetProduct, 'Khách Chat AI', 'Mua qua chat Mèo Dev');
     const qrUrl = generateVietQRUrl(order.amount, order.order_code);
     toolCallData = {
       product_id: targetProduct,
@@ -505,10 +540,10 @@ CẤU TRÚC BÀI GIẢI MẪU (Markdown):
   }
 
   // Fallback Mock giải bài nếu chưa có API key hoặc lỗi
-  return getMockChemistrySolution(questionText);
+  return getMockChemistrySolution();
 }
 
-function getMockChemistrySolution(question: string): string {
+function getMockChemistrySolution(): string {
   return `### 🐱 1. LỜI PHÁN & BÓC TÁCH BẪY ĐỀ
 Meo meo! Đề bài mày ném cho tao thuộc dạng **Bài toán Thủy phân Este Vận dụng cao (Mục tiêu 8.5 - 9.0+)**.
 - **Bẫy kinh điển**: Đề không nói este đơn chức hay đa chức, rất nhiều "tấm chiếu mới" vội vàng đặt $n_{NaOH} = n_{este}$ là ăn ngay cú lừa đắng chát! Hãy chú ý tỉ lệ khối lượng muối và ancol sinh ra.

@@ -21,13 +21,29 @@ export async function POST(req: NextRequest) {
     const cleanNote = buyerNote ? filterProfanity(buyerNote) : '';
     const cleanEmail = buyerEmail ? buyerEmail.trim().toLowerCase() : undefined;
     const cleanRef = refCode ? refCode.trim().toUpperCase() : undefined;
+
+    // SEC-11: Khử nguy cơ Stored XSS trong buyer_social_link
+    let cleanSocialLink = '';
+    if (typeof buyerSocialLink === 'string' && buyerSocialLink.trim()) {
+      const trimmed = buyerSocialLink.trim();
+      if (/^https:\/\/(www\.)?(facebook|threads|github|t\.me|zalo\.me)\.com?\//i.test(trimmed)) {
+        cleanSocialLink = trimmed;
+      }
+    }
+
     const supabase = getSupabaseAdminClient() || getSupabaseClient();
 
     let order;
 
     if (supabase) {
       const { data: prodData } = await supabase.from('products').select('*').eq('id', targetProductId).single();
-      const productPrice = customAmount || prodData?.price || 5000;
+      
+      // SEC-09: Ngăn chặn sửa đổi giá tùy ý qua customAmount (chỉ áp dụng cho gói DONATE / PATE-05)
+      const isDonation = prodData?.type === 'DONATE' || targetProductId === 'PATE-05';
+      const productPrice = isDonation
+        ? Math.max(5000, Number(customAmount) || prodData?.price || 5000)
+        : (prodData?.price || 5000);
+
       const orderCode = generateOrderCode();
 
       const { data: newOrder, error } = await supabase
@@ -39,7 +55,7 @@ export async function POST(req: NextRequest) {
           buyer_name: cleanName,
           buyer_email: cleanEmail || null,
           buyer_note: cleanNote,
-          buyer_social_link: buyerSocialLink || '',
+          buyer_social_link: cleanSocialLink,
           ref_code: cleanRef || null,
           status: 'PENDING',
         })
@@ -50,10 +66,11 @@ export async function POST(req: NextRequest) {
         console.error('Error inserting order into Supabase:', error);
       } else if (newOrder) {
         order = newOrder;
+        const maskedEmail = cleanEmail ? cleanEmail.replace(/(.{2})(.*)(@.*)/, '$1***$3') : undefined;
         await supabase.from('live_logs').insert({
           type: 'ORDER_CREATED',
           message: `🧾 Đã tạo đơn ${orderCode} (${prodData?.name || targetProductId} - ${productPrice.toLocaleString('vi-VN')}đ) - Chờ thanh toán...`,
-          meta: { orderCode, amount: productPrice, productId: targetProductId, buyerEmail: cleanEmail },
+          meta: { orderCode, amount: productPrice, productId: targetProductId, buyerEmail: maskedEmail },
         });
       }
     }

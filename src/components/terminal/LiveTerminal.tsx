@@ -12,10 +12,11 @@ interface LiveTerminalProps {
 export const LiveTerminal: React.FC<LiveTerminalProps> = ({ logs, viewerCount = 18 }) => {
   const terminalContainerRef = useRef<HTMLDivElement>(null);
   const [filterType, setFilterType] = useState<string>('ALL');
-  const [currentTime, setCurrentTime] = useState<string>('00:00:00');
+  const [currentTime, setCurrentTime] = useState<string>(() =>
+    typeof window !== 'undefined' ? new Date().toTimeString().split(' ')[0] : '00:00:00'
+  );
 
   useEffect(() => {
-    setCurrentTime(new Date().toTimeString().split(' ')[0]);
     const timer = setInterval(() => {
       setCurrentTime(new Date().toTimeString().split(' ')[0]);
     }, 1000);

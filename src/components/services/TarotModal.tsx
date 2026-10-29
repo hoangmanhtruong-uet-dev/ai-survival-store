@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import {
   X,
   Sparkles,
@@ -9,7 +9,6 @@ import {
   Eye,
   RotateCcw,
   Share2,
-  Bookmark,
   ChevronRight,
   Flame,
   Volume2,
@@ -96,23 +95,18 @@ export const TarotModal: React.FC<TarotModalProps> = ({ initialCode = '', onClos
   const [showStoryModal, setShowStoryModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [historyList, setHistoryList] = useState<TarotResultData[]>([]);
-  const [isMuted, setIsMuted] = useState(false);
-
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-
-  // Sync mute state & load history
-  useEffect(() => {
-    setIsMuted(soundEngine.getMuted());
-    try {
-      const saved = localStorage.getItem('meo_tarot_history');
-      if (saved) {
-        setHistoryList(JSON.parse(saved));
+  const [historyList, setHistoryList] = useState<TarotResultData[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('meo_tarot_history');
+        if (saved) return JSON.parse(saved);
+      } catch {
+        // ignore
       }
-    } catch {
-      // ignore
     }
-  }, []);
+    return [];
+  });
+  const [isMuted, setIsMuted] = useState(() => soundEngine.getMuted());
 
   const toggleSound = () => {
     const next = soundEngine.toggleMute();

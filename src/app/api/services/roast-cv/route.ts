@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { roastCVContent } from '@/lib/gemini';
 import { mockStore } from '@/lib/mock-store';
-import { getSupabaseClient } from '@/lib/supabase/client';
+import { getSupabaseAdminClient, getSupabaseClient } from '@/lib/supabase/client';
 import { scrubPII } from '@/lib/profanity';
 
 export async function POST(req: NextRequest) {
@@ -19,8 +19,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Vui lòng nhập mã kích hoạt hoặc quét mã đơn hàng 10.000đ để sấy CV' }, { status: 400 });
     }
 
-    const supabase = getSupabaseClient();
-    if (supabase && process.env.NODE_ENV === 'production') {
+    const supabase = getSupabaseAdminClient() || getSupabaseClient();
+    if (supabase) {
+      const isDevBypass = process.env.NODE_ENV === 'development' && validCode === 'RCV-FREE-TEST';
+      
       const { data: order } = await supabase
         .from('orders')
         .select('*')
@@ -28,11 +30,21 @@ export async function POST(req: NextRequest) {
         .eq('status', 'PAID')
         .single();
 
-      if (!order) {
+      if (!order && !isDevBypass) {
         return NextResponse.json(
           { success: false, error: 'Mã kích hoạt không hợp lệ hoặc đơn hàng chưa thanh toán! Vui lòng quét mã 10k để ủng hộ Mèo Dev.' },
           { status: 403 }
         );
+      }
+
+      // SEC-08: Kiểm tra chống tái sử dụng token (Trả về kết quả đã sấy trước đó nếu có)
+      if (order && order.is_redeemed && order.ai_result?.roastReport) {
+        return NextResponse.json({
+          success: true,
+          report: order.ai_result.roastReport,
+          cached: true,
+          message: 'Báo cáo sấy CV trước đó đã được tải lại thành công.',
+        });
       }
     }
 
@@ -56,8 +68,11 @@ export async function POST(req: NextRequest) {
         type: 'TASK_DONE',
         message: logMsg,
       });
-      // Đánh dấu mã đã dùng
-      await supabase.from('orders').update({ is_redeemed: true, ai_result: { roastReport } }).eq('redeem_code', redeemCode);
+      // Đánh dấu mã đã dùng (SEC-08)
+      await supabase
+        .from('orders')
+        .update({ is_redeemed: true, ai_result: { roastReport } })
+        .or(`redeem_code.eq.${validCode},order_code.eq.${validCode}`);
     } else {
       mockStore.addLog('TASK_DONE', logMsg);
     }

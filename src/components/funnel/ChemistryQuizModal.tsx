@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, CheckCircle2, XCircle, ArrowRight, ArrowLeft, RefreshCw, Trophy, AlertTriangle, Sparkles, Loader2 } from 'lucide-react';
+import { X, CheckCircle2, XCircle, ArrowRight, ArrowLeft, RefreshCw, Trophy, Sparkles, Loader2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { playSound } from '@/lib/audio';
 
@@ -53,57 +53,36 @@ export const ChemistryQuizModal: React.FC<ChemistryQuizModalProps> = ({
 
   // Nạp 10 câu hỏi từ API khi mở modal
   useEffect(() => {
-    if (isOpen) {
-      loadQuestions();
-      setTimeLeft(300);
-      setAnswers({});
-      setResult(null);
-      setCurrentIndex(0);
+    if (!isOpen) return;
+    let active = true;
+
+    async function loadQuizQuestions() {
+      setIsLoading(true);
+      try {
+        const res = await fetch('/api/services/chemistry-quiz');
+        const data = await res.json();
+        if (active && data?.success && data.questions) {
+          setQuestions(data.questions);
+          setTimeLeft(300);
+          setAnswers({});
+          setResult(null);
+          setCurrentIndex(0);
+        }
+      } catch (err) {
+        console.error('Failed to load quiz questions', err);
+      } finally {
+        if (active) setIsLoading(false);
+      }
     }
+
+    void loadQuizQuestions();
+
+    return () => {
+      active = false;
+    };
   }, [isOpen]);
 
-  // Bộ đếm thời gian 5 phút
-  useEffect(() => {
-    if (!isOpen || result || timeLeft <= 0) return;
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          handleSubmitQuiz();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [isOpen, result, timeLeft]);
-
-  const loadQuestions = async () => {
-    setIsLoading(true);
-    try {
-      const res = await fetch('/api/services/chemistry-quiz');
-      const data = await res.json();
-      if (data.success && data.questions) {
-        setQuestions(data.questions);
-      }
-    } catch (err) {
-      console.error('Failed to load quiz questions', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleSelectOption = (optionIndex: number) => {
-    const currentQ = questions[currentIndex];
-    if (!currentQ) return;
-    setAnswers((prev) => ({
-      ...prev,
-      [currentQ.id.toString()]: optionIndex,
-    }));
-    playSound('keyClick');
-  };
-
-  const handleSubmitQuiz = async () => {
+  const handleSubmitQuiz = React.useCallback(async () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
     try {
@@ -130,6 +109,34 @@ export const ChemistryQuizModal: React.FC<ChemistryQuizModalProps> = ({
     } finally {
       setIsSubmitting(false);
     }
+  }, [answers, isSubmitting]);
+
+  // Bộ đếm thời gian 5 phút & tự động nộp bài khi hết giờ
+  useEffect(() => {
+    if (!isOpen || result || timeLeft <= 0) return;
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          setTimeout(() => {
+            void handleSubmitQuiz();
+          }, 0);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [isOpen, result, timeLeft, handleSubmitQuiz]);
+
+  const handleSelectOption = (optionIndex: number) => {
+    const currentQ = questions[currentIndex];
+    if (!currentQ) return;
+    setAnswers((prev) => ({
+      ...prev,
+      [currentQ.id.toString()]: optionIndex,
+    }));
+    playSound('keyClick');
   };
 
   if (!isOpen) return null;

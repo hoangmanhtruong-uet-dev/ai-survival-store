@@ -8,6 +8,9 @@ export const CHEMISTRY_LAUNCH_DATE = '2026-11-01T06:00:00+07:00';
  * Kiểm tra xem Gói Đề Hóa có đang trong thời gian hoàn thiện (chưa mở bán) hay không
  */
 export function isChemistryComingSoon(): boolean {
+  if (typeof window === 'undefined') {
+    return true;
+  }
   return Date.now() < new Date(CHEMISTRY_LAUNCH_DATE).getTime();
 }
 
@@ -21,7 +24,8 @@ export function getChemistryCountdown(): {
   seconds: number;
   isExpired: boolean;
 } {
-  const diff = new Date(CHEMISTRY_LAUNCH_DATE).getTime() - Date.now();
+  const now = typeof window !== 'undefined' ? Date.now() : new Date('2026-10-29T00:00:00+07:00').getTime();
+  const diff = new Date(CHEMISTRY_LAUNCH_DATE).getTime() - now;
   if (diff <= 0) {
     return { days: 0, hours: 0, minutes: 0, seconds: 0, isExpired: true };
   }

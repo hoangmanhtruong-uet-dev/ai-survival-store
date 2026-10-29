@@ -222,6 +222,9 @@ Yêu cầu phân tích và trả về ĐÚNG định dạng JSON hợp lệ (kh�
       ? `\n⚠️ <i>(Lưu ý: Ý tưởng ca trước "${existingPending.proposed_product_name}" đã được cập nhật sang ý tưởng mới này)</i>\n`
       : '';
 
+    const adminToken = process.env.ADMIN_SECRET_KEY || process.env.PAYMENT_WEBHOOK_SECRET || '';
+    const tokenQuery = adminToken ? `&token=${encodeURIComponent(adminToken)}` : '';
+
     const message =
       `💡 <b>[MÈO DEV MARKET RADAR - CA ${cycle}]</b>\n` +
       `📁 <b>Mảng:</b> <code>${selectedDomain.title}</code>\n\n` +
@@ -238,7 +241,7 @@ Yêu cầu phân tích và trả về ĐÚNG định dạng JSON hợp lệ (kh�
       reminderText +
       `\n👇 <b>Quy trình kiểm duyệt 2 vòng:</b>\n` +
       `Bấm [✍️ Bắt Đầu Viết Thử] để Mèo Dev biên soạn toàn văn chất lượng cao và gửi lại cho Boss xem trước trước khi đăng lên web!\n` +
-      `<i>(Hoặc duyệt qua Web: <a href="${DAEMON_CONFIG.siteUrl}/api/admin/approve-product?id=${insightId}&action=approve">Bấm Vào Đây</a>)</i>`;
+      `<i>(Hoặc duyệt qua Web: <a href="${DAEMON_CONFIG.siteUrl}/api/admin/approve-product?id=${insightId}${tokenQuery}">Bấm Vào Đây</a>)</i>`;
 
     await sendTelegramNotification(message, {
       parseMode: 'HTML',

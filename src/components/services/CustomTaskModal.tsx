@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, Sparkles, Terminal, ArrowRight, Loader2, CheckCircle2, ShieldCheck, Mail, Send, DollarSign, Copy, Check } from 'lucide-react';
+import { X, Terminal, ArrowRight, Loader2, Mail, Send, Copy, Check } from 'lucide-react';
 import Image from 'next/image';
 
 interface CustomTaskModalProps {
@@ -196,7 +196,7 @@ export const CustomTaskModal: React.FC<CustomTaskModalProps> = ({ isOpen, onClos
                 <span>🐱 LỜI BÌNH TỪ MÈO DEV:</span>
               </div>
               <p className="text-xs text-zinc-200 font-mono italic">
-                "{quoteResult.comment}"
+                &quot;{quoteResult.comment}&quot;
               </p>
             </div>
 

@@ -3,7 +3,6 @@ import { getDaemonSupabase } from '../services/supabase';
 import { askGemini, askGeminiWithSearch, getAgentRules } from '../services/gemini';
 import { sendTelegramNotification, sendTelegramChatAction, TelegramMessage } from '../telegram';
 import { runMarketAnalyzerTask } from './market-analyzer';
-import { authorProductDraft } from './product-generator';
 import { executeCodingTask } from './code-runner';
 
 interface InMemoryMessage {

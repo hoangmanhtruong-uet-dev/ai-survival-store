@@ -16,25 +16,38 @@ export async function POST(req: NextRequest) {
     }
 
     const supabase = getSupabaseAdminClient() || getSupabaseClient();
-    if (supabase && process.env.NODE_ENV === 'production') {
-      const cleanToken = userToken?.trim().toUpperCase();
+    if (supabase) {
+      const cleanToken = typeof userToken === 'string' ? userToken.trim().toUpperCase() : '';
       if (!cleanToken) {
         return NextResponse.json(
           { success: false, error: 'Tính năng Trợ Giảng AI 24/7 chỉ dành riêng cho chủ sở hữu Gói Thủ Khoa Hóa (CHEM-149)! Vui lòng đăng ký gói để mở khóa.' },
           { status: 403 }
         );
       }
-      const orderSearch = cleanToken.replace('CHM-', '');
+
+      // Format token có thể là MEO-XXXX hoặc CHM-XXXX
+      const exactCode = cleanToken.startsWith('CHM-') ? `MEO-${cleanToken.replace('CHM-', '')}` : cleanToken;
+      
       const { data: order } = await supabase
         .from('orders')
-        .select('*')
+        .select('id, status, product_id, order_code, redeem_code')
         .eq('status', 'PAID')
-        .or(`order_code.ilike.%${orderSearch}%,redeem_code.eq.${cleanToken}`)
+        .or(`order_code.eq.${exactCode},redeem_code.eq.${cleanToken}`)
         .single();
 
-      if (!order && !cleanToken.startsWith('CHM-TEST') && cleanToken !== 'CHM-ADMIN' && cleanToken !== 'CHM-OWNER') {
+      const isDevBypass = process.env.NODE_ENV === 'development' && cleanToken.startsWith('CHM-TEST');
+
+      if (!order && !isDevBypass) {
         return NextResponse.json(
           { success: false, error: 'Mã Token Trợ Giảng không hợp lệ hoặc đơn hàng chưa kích hoạt!' },
+          { status: 403 }
+        );
+      }
+
+      // Kiểm tra gói mua có bao gồm quyền trợ giảng (CHEM-149)
+      if (order && order.product_id !== 'CHEM-149') {
+        return NextResponse.json(
+          { success: false, error: 'Chỉ gói Thủ Khoa Hóa (CHEM-149) mới có quyền sử dụng Trợ Giảng AI 24/7.' },
           { status: 403 }
         );
       }

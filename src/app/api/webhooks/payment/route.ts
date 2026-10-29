@@ -4,7 +4,7 @@ import { getSupabaseAdminClient, getSupabaseClient } from '@/lib/supabase/client
 import { extractOrderCode, generateRedeemCode } from '@/lib/vietqr';
 import { grantDriveAccess, getChemistryFolderId } from '@/lib/google-drive';
 import { sendTelegramNotification } from '@/lib/telegram';
-import { isPayOSConfigured, getPayOSClient } from '@/lib/payos';
+import { isPayOSConfigured, getPayOSClient, verifyPayOSWebhook } from '@/lib/payos';
 
 export async function POST(req: NextRequest) {
   try {
@@ -23,17 +23,35 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 1. Kiểm tra chữ ký bảo mật nếu có cấu hình (bỏ qua nếu là PayOS payload tự ký)
-    const isPayOSPayload = Boolean(payload.signature || (payload.data && payload.data.orderCode));
-    if (!isPayOSPayload) {
+    // 1. Xác thực chữ ký và token bảo mật (SEC-06 & ENV-03)
+    const isPayOSPayload = Boolean(payload.signature || (payload.data && typeof payload.data === 'object' && !Array.isArray(payload.data) && payload.data.orderCode));
+    
+    if (isPayOSPayload) {
+      if (isPayOSConfigured()) {
+        const verified = await verifyPayOSWebhook(payload);
+        if (!verified) {
+          return NextResponse.json({ success: false, error: 'Chữ ký PayOS không hợp lệ' }, { status: 400 });
+        }
+      } else if (process.env.NODE_ENV !== 'development') {
+        return NextResponse.json({ success: false, error: 'PayOS chưa được cấu hình' }, { status: 500 });
+      }
+    } else if (payload.orderCode && !payload.data && !payload.content && !payload.transferAmount) {
+      // Trường hợp Dev Simulator: Tuyệt đối chỉ cho phép trên local dev
+      if (process.env.NODE_ENV !== 'development') {
+        return NextResponse.json({ success: false, error: 'Dev Simulator bị vô hiệu hóa trên môi trường production' }, { status: 403 });
+      }
+    } else {
+      // Trường hợp SePay / Casso: Bắt buộc xác thực bí mật PAYMENT_WEBHOOK_SECRET
       const authHeader = req.headers.get('authorization') || req.headers.get('x-api-key') || '';
       const configuredSecret = process.env.PAYMENT_WEBHOOK_SECRET;
+      const token = authHeader.replace(/^Apikey\s+/i, '').replace(/^Bearer\s+/i, '').trim();
 
-      if (configuredSecret && configuredSecret !== 'meo_dev_secret_token_2026') {
-        const token = authHeader.replace(/^Apikey\s+/i, '').replace(/^Bearer\s+/i, '').trim();
+      if (configuredSecret) {
         if (token !== configuredSecret) {
           return NextResponse.json({ success: false, error: 'Unauthorized webhook call' }, { status: 401 });
         }
+      } else if (process.env.NODE_ENV === 'production') {
+        return NextResponse.json({ success: false, error: 'PAYMENT_WEBHOOK_SECRET chưa được cấu hình' }, { status: 500 });
       }
     }
 
@@ -44,8 +62,11 @@ export async function POST(req: NextRequest) {
     let paymentMeta = payload;
     let gatewayName = 'VietQR';
 
-    // Trường hợp 1: Dev Simulator trực tiếp
-    if (payload.orderCode) {
+    // Trường hợp 1: Dev Simulator trực tiếp (chỉ trên dev)
+    if (payload.orderCode && !payload.data && !payload.content && !payload.transferAmount) {
+      if (process.env.NODE_ENV !== 'development') {
+        return NextResponse.json({ success: false, error: 'Dev Simulator bị vô hiệu hóa trên môi trường production' }, { status: 403 });
+      }
       rawOrderCode = payload.orderCode;
       transferAmount = Number(payload.amount || 0);
       gatewayName = 'Simulator';

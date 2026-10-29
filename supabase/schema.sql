@@ -108,10 +108,10 @@ ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE live_logs ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Cho phép đọc công khai campaign_stats" ON campaign_stats FOR SELECT USING (true);
-CREATE POLICY "Cho phép cập nhật campaign_stats" ON campaign_stats FOR UPDATE USING (true) WITH CHECK (true);
+CREATE POLICY "Chỉ cho phép service_role cập nhật campaign_stats" ON campaign_stats FOR UPDATE TO service_role USING (true) WITH CHECK (true);
 CREATE POLICY "Cho phép đọc công khai products" ON products FOR SELECT USING (true);
-CREATE POLICY "Cho phép đọc công khai orders" ON orders FOR SELECT USING (true);
-CREATE POLICY "Cho phép tạo đơn hàng anon" ON orders FOR INSERT WITH CHECK (true);
-CREATE POLICY "Cho phép cập nhật orders" ON orders FOR UPDATE USING (true) WITH CHECK (true);
+CREATE POLICY "Cho phép đọc đơn hàng orders" ON orders FOR SELECT USING (true);
+CREATE POLICY "Cho phép tạo đơn hàng orders" ON orders FOR INSERT WITH CHECK (true);
+CREATE POLICY "Chỉ cho phép service_role cập nhật orders" ON orders FOR UPDATE TO service_role USING (true) WITH CHECK (true);
 CREATE POLICY "Cho phép đọc công khai live_logs" ON live_logs FOR SELECT USING (true);
-CREATE POLICY "Cho phép chèn live_logs anon" ON live_logs FOR INSERT WITH CHECK (true);
+CREATE POLICY "Chỉ cho phép service_role chèn live_logs" ON live_logs FOR INSERT TO service_role WITH CHECK (true);

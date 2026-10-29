@@ -23,21 +23,22 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 2. Xác thực chữ ký số PayOS
+    // 2. Xác thực chữ ký số PayOS (SEC-06: Bắt buộc xác thực HMAC)
     let webhookData = null;
     if (isPayOSConfigured()) {
       webhookData = await verifyPayOSWebhook(payload);
-      if (!webhookData && payload.data) {
-        // Dự phòng payload khi test trên sandbox/dev
-        webhookData = payload.data;
+      if (!webhookData) {
+        return NextResponse.json({ success: false, error: 'Chữ ký PayOS không hợp lệ' }, { status: 400 });
       }
-    } else {
-      // Mock / Dev mode
+    } else if (process.env.NODE_ENV === 'development') {
+      // Chỉ cho phép mock payload trên môi trường local development khi chưa cấu hình PayOS
       webhookData = payload.data || payload;
+    } else {
+      return NextResponse.json({ success: false, error: 'PayOS chưa được cấu hình' }, { status: 500 });
     }
 
     if (!webhookData) {
-      return NextResponse.json({ success: false, error: 'Chữ ký PayOS không hợp lệ' }, { status: 400 });
+      return NextResponse.json({ success: false, error: 'Dữ liệu webhook không hợp lệ' }, { status: 400 });
     }
 
     // 3. Bóc tách mã đơn MEO-XXXX

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Product } from '@/types';
-import { ShoppingBag, Sparkles, Zap, Heart, Flame, Download, Clock } from 'lucide-react';
+import { ShoppingBag, Sparkles, Zap, Heart, Flame, Clock } from 'lucide-react';
 import { isChemistryComingSoon } from '@/lib/constants';
 
 interface ProductCatalogProps {
@@ -26,11 +26,7 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
   onOpenCustomTask,
   onOpenChemistryPreorder,
 }) => {
-  const [isComingSoon, setIsComingSoon] = React.useState(true);
-
-  React.useEffect(() => {
-    setIsComingSoon(isChemistryComingSoon());
-  }, []);
+  const [isComingSoon] = React.useState(() => isChemistryComingSoon());
 
   // Gom các gói Hóa học lại thành 1 thẻ duy nhất "CHEM-PACK", ẩn các gói con CHEM-49, CHEM-89, CHEM-149
   const displayProducts = React.useMemo(() => {
@@ -71,7 +67,7 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
     }
 
     return list;
-  }, [products]);
+  }, [products, isComingSoon]);
 
   return (
     <section className="space-y-4">

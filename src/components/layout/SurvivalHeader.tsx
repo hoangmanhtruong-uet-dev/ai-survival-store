@@ -16,11 +16,9 @@ export const SurvivalHeader: React.FC<SurvivalHeaderProps> = ({ stats }) => {
     minutes: 59,
     seconds: 59,
   });
-  const [isMuted, setIsMuted] = useState(false);
+  const [isMuted, setIsMuted] = useState(() => soundEngine.getMuted());
 
   useEffect(() => {
-    setIsMuted(soundEngine.getMuted());
-
     // Cập nhật đồng hồ đếm ngược mỗi giây
     const interval = setInterval(() => {
       if (!stats?.end_date) return;

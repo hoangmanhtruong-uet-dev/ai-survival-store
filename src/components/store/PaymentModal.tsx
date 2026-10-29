@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Product, Order } from '@/types';
-import { X, Copy, Check, Loader2, Sparkles, Download, ArrowRight, ShieldCheck, Heart, Award, ExternalLink, Flame, BookOpen, Clock } from 'lucide-react';
+import { X, Copy, Check, Loader2, Sparkles, Download, ArrowRight, ShieldCheck, Award, ExternalLink, BookOpen, Clock } from 'lucide-react';
 import { generateVietQRUrl, getBankConfig } from '@/lib/vietqr';
 import { soundEngine } from '@/lib/audio';
 import { getSupabaseClient } from '@/lib/supabase/client';
@@ -14,6 +14,7 @@ interface PaymentModalProps {
   product: Product | null;
   initialOrderCode?: string;
   onClose: () => void;
+  onPaymentSuccess?: () => void;
   onOpenRoastCV?: (code: string) => void;
   onOpenTarot?: (code: string) => void;
   onOpenCertificate?: (order: Order) => void;
@@ -64,6 +65,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   product,
   initialOrderCode,
   onClose,
+  onPaymentSuccess,
   onOpenRoastCV,
   onOpenTarot,
   onOpenCertificate,
@@ -72,21 +74,27 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   onOpenChemistryPreorder,
 }) => {
   const [order, setOrder] = useState<Order | null>(null);
-  const [buyerName, setBuyerName] = useState('');
-  const [buyerEmail, setBuyerEmail] = useState('');
-  const [refCode, setRefCode] = useState('');
-  const [buyerNote, setBuyerNote] = useState('');
+  const [buyerName] = useState('');
+  const [buyerEmail, setBuyerEmail] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('buyer_email') || '';
+    }
+    return '';
+  });
+  const [refCode] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('ref') || '';
+    }
+    return '';
+  });
+  const [buyerNote] = useState('');
   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
-  const [isPolling, setIsPolling] = useState(false);
   const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
   const [directQrUrl, setDirectQrUrl] = useState<string | null>(null);
   const [payosAccount, setPayosAccount] = useState<{ bankId: string; accountNo: string; accountName?: string } | null>(null);
-  const [isComingSoon, setIsComingSoon] = useState(true);
-
-  useEffect(() => {
-    setIsComingSoon(isChemistryComingSoon());
-  }, []);
+  const [isComingSoon] = useState(() => isChemistryComingSoon());
 
   // Xác định gói mặc định cho sản phẩm Hóa học
   const initialTier =
@@ -95,22 +103,13 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
       : 'CHEM-149';
   const [selectedTierId, setSelectedTierId] = useState<string>(initialTier);
 
-  useEffect(() => {
+  const [prevProductId, setPrevProductId] = useState(product?.id);
+  if (product?.id !== prevProductId) {
+    setPrevProductId(product?.id);
     if (product?.id && ['CHEM-49', 'CHEM-89', 'CHEM-149'].includes(product.id)) {
       setSelectedTierId(product.id);
     }
-  }, [product?.id]);
-
-  // Đọc ref_code và buyer_email từ localStorage hoặc URL search param
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const urlRef = params.get('ref');
-      if (urlRef) setRefCode(urlRef);
-      const savedEmail = localStorage.getItem('buyer_email');
-      if (savedEmail) setBuyerEmail(savedEmail);
-    }
-  }, []);
+  }
 
   const bankConfig = getBankConfig();
 
@@ -180,7 +179,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     return () => {
       active = false;
     };
-  }, [product, initialOrderCode, selectedTierId]);
+  }, [product, initialOrderCode, selectedTierId, buyerEmail, buyerName, buyerNote, refCode]);
 
   const handleSelectTier = async (newTierId: string) => {
     if (newTierId === (order?.product_id || selectedTierId) && order) return;
@@ -223,11 +222,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   useEffect(() => {
     if (!order || order.status === 'PAID') return;
 
-    setIsPolling(true);
-
     const handleSuccess = (paidOrder: Order) => {
       setOrder(paidOrder);
-      setIsPolling(false);
       soundEngine.playTingTing();
       soundEngine.playNomNom();
       soundEngine.playMeow();
@@ -236,6 +232,9 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
         spread: 80,
         origin: { y: 0.6 },
       });
+      if (onPaymentSuccess) {
+        onPaymentSuccess();
+      }
     };
 
     const supabase = getSupabaseClient();
@@ -282,7 +281,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
       }
       clearInterval(fallbackInterval);
     };
-  }, [order?.order_code, order?.status]);
+  }, [order?.order_code, order?.status, onPaymentSuccess]);
 
   const copyToClipboard = (text: string, field: string) => {
     navigator.clipboard.writeText(text);

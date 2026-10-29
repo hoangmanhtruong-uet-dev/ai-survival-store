@@ -88,7 +88,6 @@ export const INITIAL_PRODUCTS: Product[] = [
 
 // Singleton storage in memory
 declare global {
-  // eslint-disable-next-line no-var
   var __mockStoreData: {
     stats: CampaignStats;
     products: Product[];

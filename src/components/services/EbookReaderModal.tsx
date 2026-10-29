@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, BookOpen, Download, Copy, Check, Printer, Sparkles, Share2 } from 'lucide-react';
+import { X, BookOpen, Download, Copy, Check, Printer, Sparkles } from 'lucide-react';
 import { soundEngine } from '@/lib/audio';
 
 interface EbookReaderModalProps {

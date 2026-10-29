@@ -95,10 +95,9 @@ export async function executeCodingTask(chatId: string | number, taskDescription
     fs.writeFileSync(promptFilePath, systemBrief, 'utf-8');
 
     console.log(`[DEV AGENT] Kích hoạt Antigravity CLI: ${agyBin}...`);
-    const agyCmd = `${agyBin} --print "$(Get-Content -Raw '${promptFilePath}')" --dangerously-skip-permissions --mode auto`;
     
     // Chạy CLI
-    const { stdout, stderr, code } = await runCommand(
+    const { stdout, stderr } = await runCommand(
       process.platform === 'win32'
         ? `powershell -Command "${agyBin} --print (Get-Content -Raw '${promptFilePath}') --dangerously-skip-permissions --mode auto"`
         : `${agyBin} --print "$(cat '${promptFilePath}')" --dangerously-skip-permissions --mode auto`

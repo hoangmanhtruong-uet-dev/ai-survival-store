@@ -20,20 +20,17 @@ export const AIChatbot: React.FC<AIChatbotProps> = ({ onSelectOrderForPayment })
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [guestId, setGuestId] = useState('8921');
-  const chatContainerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    // Khởi tạo guestId ngẫu nhiên lưu trong localStorage
-    const saved = localStorage.getItem('meo_dev_guest_id');
-    if (saved) {
-      setGuestId(saved);
-    } else {
+  const [guestId] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('meo_dev_guest_id');
+      if (saved) return saved;
       const newId = Math.floor(1000 + Math.random() * 9000).toString();
       localStorage.setItem('meo_dev_guest_id', newId);
-      setGuestId(newId);
+      return newId;
     }
-  }, []);
+    return '8921';
+  });
+  const chatContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // Chỉ cuộn nội bộ bên trong khung chat, không làm cuộn màn hình trang web
@@ -42,15 +39,16 @@ export const AIChatbot: React.FC<AIChatbotProps> = ({ onSelectOrderForPayment })
     }
   }, [messages, isLoading]);
 
-  const handleSend = async (textToSend?: string) => {
+  const handleSend = React.useCallback(async (textToSend?: string) => {
     const text = (textToSend || input).trim();
     if (!text || isLoading) return;
 
     soundEngine.playKeyClick();
     setInput('');
 
+    const timestamp = Date.now();
     const userMsg: ChatMessage = {
-      id: `user-${Date.now()}`,
+      id: `user-${timestamp}`,
       role: 'user',
       content: text,
       created_at: new Date().toISOString(),
@@ -105,7 +103,7 @@ export const AIChatbot: React.FC<AIChatbotProps> = ({ onSelectOrderForPayment })
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [input, isLoading, messages, guestId]);
 
   const quickPrompts = [
     { label: 'Cứu 5k pate 🐟', text: 'Tao muốn mua gói Pate 5k cứu mạng mày!' },

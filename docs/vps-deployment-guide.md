@@ -76,20 +76,22 @@ nano .env.local
 Dán nội dung cấu hình vào file `.env.local` (Điền key thực tế của bạn):
 ```env
 # 1. Supabase Database & Realtime
-NEXT_PUBLIC_SUPABASE_URL=https://ciwioaaxgmuoqkalnwyo.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOi...
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOi...
+NEXT_PUBLIC_SUPABASE_URL=https://<your-project-ref>.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOi...<YOUR_SUPABASE_ANON_KEY>
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOi...<YOUR_SUPABASE_SERVICE_ROLE_KEY>
 
 # 2. Google Gemini API (AI Studio miễn phí)
-GEMINI_API_KEY=AQ.Ab8RN6JS...
-GEMINI_MODEL=gemini-3.5-flash-lite
+GEMINI_API_KEY=<YOUR_GEMINI_API_KEY>
+GEMINI_MODEL=gemini-2.0-flash
 
 # 3. Telegram Bot (Đã lấy ở Bước 2)
-TELEGRAM_BOT_TOKEN=7123456789:AAHqW...
-TELEGRAM_CHAT_ID=123456789
+TELEGRAM_BOT_TOKEN=<YOUR_TELEGRAM_BOT_TOKEN>
+TELEGRAM_CHAT_ID=<YOUR_TELEGRAM_CHAT_ID>
 
-# 4. Website Domain
-NEXT_PUBLIC_SITE_URL=https://meo-dev-store.vercel.app
+# 4. Website Domain & Admin Secret
+NEXT_PUBLIC_SITE_URL=https://<your-site-domain>.vercel.app
+ADMIN_SECRET_KEY=<YOUR_ADMIN_SECRET_KEY>
+PAYMENT_WEBHOOK_SECRET=<YOUR_PAYMENT_WEBHOOK_SECRET>
 ```
 *(Bấm `Ctrl + O` để lưu, `Enter`, rồi `Ctrl + X` để thoát nano).*
 

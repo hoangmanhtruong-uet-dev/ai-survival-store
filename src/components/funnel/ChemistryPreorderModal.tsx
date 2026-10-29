@@ -17,13 +17,7 @@ export const ChemistryPreorderModal: React.FC<ChemistryPreorderModalProps> = ({
   onClose,
   selectedTierId = 'CHEM-PACK',
 }) => {
-  const [countdown, setCountdown] = useState({
-    days: 3,
-    hours: 0,
-    minutes: 0,
-    seconds: 0,
-    isExpired: false,
-  });
+  const [countdown, setCountdown] = useState(() => getChemistryCountdown());
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -33,7 +27,6 @@ export const ChemistryPreorderModal: React.FC<ChemistryPreorderModalProps> = ({
 
   useEffect(() => {
     if (!isOpen) return;
-    setCountdown(getChemistryCountdown());
     const timer = setInterval(() => {
       setCountdown(getChemistryCountdown());
     }, 1000);

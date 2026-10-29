@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Trophy, Heart, Sparkles, ExternalLink } from 'lucide-react';
 import { Order } from '@/types';
 import { getSupabaseClient } from '@/lib/supabase/client';
@@ -11,26 +11,35 @@ interface HallOfFameProps {
 
 export const HallOfFame: React.FC<HallOfFameProps> = ({ onOpenCertificate }) => {
   const [donors, setDonors] = useState<Order[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [now, setNow] = useState<number | null>(() =>
+    typeof window !== 'undefined' ? Date.now() : null
+  );
 
-  const fetchDonors = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const res = await fetch('/api/hall-of-fame');
-      const data = await res.json();
-      if (data.success && data.donors) {
-        setDonors(data.donors);
-      }
-    } catch {
-      // Ignore
-    } finally {
-      setIsLoading(false);
-    }
+  useEffect(() => {
+    const clockTimer = setInterval(() => setNow(Date.now()), 30000);
+    return () => clearInterval(clockTimer);
   }, []);
 
   useEffect(() => {
+    let active = true;
+
+    async function loadDonors() {
+      try {
+        const res = await fetch('/api/hall-of-fame');
+        const data = await res.json();
+        if (active && data?.success && data.donors) {
+          setDonors(data.donors);
+        }
+      } catch {
+        // Ignore
+      } finally {
+        if (active) setIsLoading(false);
+      }
+    }
+
     // 1. Fetch 1 lần duy nhất khi mount
-    fetchDonors();
+    void loadDonors();
 
     // 2. Lắng nghe Realtime qua Supabase WebSocket (Zero HTTP GET Polling)
     const supabase = getSupabaseClient();
@@ -43,27 +52,32 @@ export const HallOfFame: React.FC<HallOfFameProps> = ({ onOpenCertificate }) => 
           (payload) => {
             const updated = payload.new as Order;
             if (updated && updated.status === 'PAID') {
-              fetchDonors();
+              void loadDonors();
             }
           }
         )
         .subscribe();
 
       return () => {
+        active = false;
         supabase.removeChannel(channel);
       };
     } else {
       // Fallback nếu không có Supabase (chu kỳ rất chậm 60s)
-      const interval = setInterval(fetchDonors, 60000);
-      return () => clearInterval(interval);
+      const interval = setInterval(() => void loadDonors(), 60000);
+      return () => {
+        active = false;
+        clearInterval(interval);
+      };
     }
-  }, [fetchDonors]);
+  }, []);
 
   const formatRelativeTime = (isoString?: string | null) => {
     if (!isoString) return 'Vừa xong';
+    if (!now) return 'Gần đây';
     try {
-      const diffSec = Math.floor((Date.now() - new Date(isoString).getTime()) / 1000);
-      if (diffSec < 60) return `${diffSec} giây trước`;
+      const diffSec = Math.floor((now - new Date(isoString).getTime()) / 1000);
+      if (diffSec < 60) return `${Math.max(1, diffSec)} giây trước`;
       const diffMin = Math.floor(diffSec / 60);
       if (diffMin < 60) return `${diffMin} phút trước`;
       const diffHour = Math.floor(diffMin / 60);
@@ -148,7 +162,7 @@ export const HallOfFame: React.FC<HallOfFameProps> = ({ onOpenCertificate }) => 
                       Chứng chỉ
                     </button>
                   )}
-                  {d.buyer_social_link && (
+                  {d.buyer_social_link && d.buyer_social_link.startsWith('http') && (
                     <a
                       href={d.buyer_social_link}
                       target="_blank"
