@@ -4,6 +4,7 @@ import { askGemini, askGeminiWithSearch, getAgentRules } from '../services/gemin
 import { sendTelegramNotification, sendTelegramChatAction, TelegramMessage } from '../telegram';
 import { runMarketAnalyzerTask } from './market-analyzer';
 import { authorProductDraft } from './product-generator';
+import { executeCodingTask } from './code-runner';
 
 interface InMemoryMessage {
   role: 'user' | 'assistant' | 'system';
@@ -147,6 +148,7 @@ export async function handleTelegramIncomingMessage(message: TelegramMessage): P
       `Tôi đã sẵn sàng nhận lệnh và đồng hành cùng Boss cày KPI 7.000.000 VNĐ. Boss có thể chat tự do hoặc dùng các lệnh nhanh:\n\n` +
       `📌 <b>CÁC KHẢ NĂNG CỐT LÕI:</b>\n` +
       `• <b>Chat tự do:</b> Bàn bạc ý tưởng kinh doanh, hỏi ý kiến, tư vấn giải pháp dịch vụ số.\n` +
+      `• <b>Lập trình từ xa (Antigravity Pro):</b> Gõ <code>/code [yêu cầu]</code> (VD: <i>/code Viết tính năng Lươn GPT thu 10k</i>) ➜ Mèo Dev sẽ chạy Antigravity CLI trên server để viết code trên nhánh riêng và gửi nút Duyệt Merge về đây!\n` +
       `• <b>Báo cáo gian hàng:</b> Gõ <code>/stats</code> hoặc hỏi <i>"doanh thu thế nào", "tình hình đơn hàng"</i>.\n` +
       `• <b>Nghiên cứu thị trường theo lệnh:</b> Gõ <code>/analyze [chủ đề]</code> hoặc chat <i>"quét mảng dropshipping", "tìm cơ hội AI chatbot"</i> ➜ Tôi sẽ Google Search và đề xuất ngay ý tưởng kèm nút duyệt!\n` +
       `• <b>Thẩm định chất lượng:</b> Khi tôi soạn xong sản phẩm, tôi sẽ gửi bản preview toàn văn qua đây để Boss duyệt trước khi mở bán!\n\n` +
@@ -154,6 +156,37 @@ export async function handleTelegramIncomingMessage(message: TelegramMessage): P
 
     await sendTelegramNotification(helpMsg, { parseMode: 'HTML' }, chatId);
     await saveChatMessage(chatId, 'assistant', helpMsg);
+    return;
+  }
+
+  // Lệnh lập trình tự động từ xa bằng Antigravity CLI (Headless Pro Agent)
+  if (
+    lowerText.startsWith('/code') ||
+    lowerText.startsWith('/dev') ||
+    lowerText.startsWith('code cho tao') ||
+    lowerText.startsWith('viết code') ||
+    lowerText.startsWith('code tính năng')
+  ) {
+    const requirement = text
+      .replace(/^\/code|^\/dev|^code cho tao|^viết code|^code tính năng/i, '')
+      .replace(/^[:\-\s]+/, '')
+      .trim();
+
+    if (!requirement || requirement.length < 3) {
+      const missingMsg =
+        `⚠️ <b>Thiếu nội dung yêu cầu code!</b>\n\n` +
+        `<i>Boss hãy dùng cú pháp:</i>\n` +
+        `<code>/code [yêu cầu chi tiết tính năng]</code>\n\n` +
+        `<i>Ví dụ:</i>\n` +
+        `<code>/code Viết API lươn gpt và giao diện thu 10k</code>`;
+      await sendTelegramNotification(missingMsg, { parseMode: 'HTML' }, chatId);
+      return;
+    }
+
+    // Kích hoạt tác vụ code trong background
+    executeCodingTask(chatId, requirement).catch((err) => {
+      console.error('❌ Lỗi uncaught trong executeCodingTask:', err);
+    });
     return;
   }
 

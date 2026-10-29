@@ -18,6 +18,12 @@ export const DAEMON_CONFIG = {
   telegramBotToken: process.env.TELEGRAM_BOT_TOKEN || '',
   telegramChatId: process.env.TELEGRAM_CHAT_ID || '',
 
+  // Meta Social Publishing (Facebook Fanpage & Threads API)
+  facebookPageId: process.env.FB_PAGE_ID || '',
+  facebookPageAccessToken: process.env.FB_PAGE_ACCESS_TOKEN || '',
+  threadsUserId: process.env.THREADS_USER_ID || '',
+  threadsAccessToken: process.env.THREADS_ACCESS_TOKEN || '',
+
   // Website & Info
   siteUrl: process.env.NEXT_PUBLIC_SITE_URL || 'https://ai-survival-store.vercel.app',
   targetAmount: 7000000,

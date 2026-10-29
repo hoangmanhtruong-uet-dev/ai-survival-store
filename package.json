@@ -10,6 +10,7 @@
     "daemon": "tsx daemon/index.ts",
     "daemon:test": "tsx daemon/index.ts --test",
     "daemon:content": "tsx daemon/index.ts --content",
+    "daemon:social-test": "tsx daemon/index.ts --social-test",
     "daemon:hunger": "tsx daemon/index.ts --hunger",
     "daemon:sale": "tsx daemon/index.ts --sale",
     "daemon:product": "tsx daemon/index.ts --product",

@@ -9,6 +9,7 @@ import { runProductGeneratorTask, authorProductDraft, publishProductFromDraft } 
 import { runMarketAnalyzerTask } from './tasks/market-analyzer';
 import { runCustomTaskWorker } from './tasks/custom-task-worker';
 import { handleTelegramIncomingMessage } from './tasks/telegram-chat';
+import { handleApproveMerge, handleDiscardCode } from './tasks/code-runner';
 
 const BANNER = `
 ==========================================================
@@ -48,6 +49,22 @@ async function main() {
   if (args.includes('--content')) {
     console.log('▶️ [CLI] Kích hoạt thủ công: AI Marketing Content Generator');
     await runDailyContentGeneratorTask();
+    process.exit(0);
+  }
+
+  if (args.includes('--social-test')) {
+    console.log('▶️ [CLI] Kích hoạt kiểm tra kết nối Facebook Fanpage & Threads API...');
+    const { publishToFacebookPage } = await import('./services/facebook');
+    const { publishToThreads } = await import('./services/threads');
+
+    console.log('\n--- 1. Kiểm tra Facebook Fanpage ---');
+    const fbRes = await publishToFacebookPage('🐱 [Test Connection] Mèo Dev Sinh Tồn kết nối Facebook Fanpage thành công!');
+    console.log('Kết quả FB:', fbRes);
+
+    console.log('\n--- 2. Kiểm tra Threads API ---');
+    const thRes = await publishToThreads('🐱 [Test Connection] Mèo Dev Sinh Tồn kết nối Threads API thành công! #MeoDev');
+    console.log('Kết quả Threads:', thRes);
+
     process.exit(0);
   }
 
@@ -101,6 +118,12 @@ async function main() {
       }
       await answerTelegramCallback(cb.id, 'Đã hủy ý tưởng này!');
       await sendTelegramNotification('🗑️ <i>Đã hủy ý tưởng. Hẹn Boss ở ca phân tích tiếp theo!</i>');
+    } else if (cb.data.startsWith('merge_code:')) {
+      const branchName = cb.data.replace('merge_code:', '');
+      await handleApproveMerge(cb.id, branchName);
+    } else if (cb.data.startsWith('discard_code:')) {
+      const branchName = cb.data.replace('discard_code:', '');
+      await handleDiscardCode(cb.id, branchName);
     }
   };
 

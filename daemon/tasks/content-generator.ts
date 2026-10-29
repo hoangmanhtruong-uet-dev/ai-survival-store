@@ -2,6 +2,8 @@ import { getDaemonSupabase } from '../services/supabase';
 import { askGemini } from '../services/gemini';
 import { sendTelegramNotification } from '../telegram';
 import { DAEMON_CONFIG } from '../config';
+import { publishToFacebookPage } from '../services/facebook';
+import { publishToThreads } from '../services/threads';
 
 export async function runDailyContentGeneratorTask(): Promise<void> {
   const timestamp = new Date().toLocaleTimeString('vi-VN');
@@ -94,7 +96,25 @@ Chỉ trả về nội dung bài đăng hoàn chỉnh, có định dạng emoji,
       `👉 Ghé web cứu 5k pate: ${DAEMON_CONFIG.siteUrl}`;
   }
 
-  // 3. Gọi Gemini tạo thêm 1 kịch bản Video TikTok ngắn (30s)
+  // 3. Gọi Gemini tạo phiên bản Threads ngắn gọn (< 450 ký tự để không vượt limit 500 ký tự của Threads API)
+  const threadsPrompt = `
+Viết 1 post Threads ngắn gọn, cà khịa, hài hước cho Mèo Dev Sinh Tồn.
+Số liệu: Ngày ${currentDayIndex}/60 | Tiền: ${currentAmount.toLocaleString('vi-VN')}đ / 7M (${progressPercent}%) | Đói: ${hungerLevel}%.
+Yêu cầu bắt buộc:
+- Tổng độ dài BẮT BUỘC DƯỚI 400 KÝ TỰ (Meta Threads giới hạn 500 ký tự).
+- Giọng văn: Gen Z, mỏ hỗn nhưng đáng yêu, kêu gọi click link cứu mèo: ${DAEMON_CONFIG.siteUrl}
+- Kèm 2 hashtag: #MeoDev #SinhTon
+Chỉ trả về nội dung bài đăng Threads.
+`;
+
+  let threadsContent = '';
+  try {
+    threadsContent = await askGemini(threadsPrompt);
+  } catch {
+    threadsContent = `🐱 MÈO DEV SINH TỒN (Ngày ${currentDayIndex}/60)\n\nCày được ${currentAmount.toLocaleString('vi-VN')}đ / 7M rồi (${progressPercent}%). Còn ${daysLeft} ngày nữa là lệnh rm -rf / xóa sổ server. Anh em ném 5k pate cứu mạng tao với!\n\n👉 ${DAEMON_CONFIG.siteUrl}\n#MeoDev #SinhTon`;
+  }
+
+  // 4. Gọi Gemini tạo thêm 1 kịch bản Video TikTok ngắn (30s)
   const tiktokPrompt = `
 Viết một kịch bản Video ngắn 30-45 giây (dùng làm TikTok / Reels / Shorts) cho nhân vật "Mèo Dev Sinh Tồn".
 Chủ đề: Ngày thứ ${currentDayIndex}/60 cày 7 triệu tiền điện chống lệnh rm -rf /.
@@ -111,28 +131,54 @@ Chủ đề: Ngày thứ ${currentDayIndex}/60 cày 7 triệu tiền điện ch�
     // Ignore
   }
 
-  // 4. Bắn toàn bộ bài viết hoàn chỉnh sang Telegram để chủ nhân 1-click Copy
+  // 5. TỰ ĐỘNG ĐĂNG BÀI LÊN FACEBOOK & THREADS (Meta Official API)
+  console.log(`🌐 [SOCIAL DISPATCH] Đang tiến hành tự động bắn bài lên Facebook & Threads...`);
+  const fbResult = await publishToFacebookPage(postContent, DAEMON_CONFIG.siteUrl);
+  const threadsResult = await publishToThreads(threadsContent);
+
+  // 6. Gửi báo cáo kết quả và nội dung sang Telegram
+  const fbStatusText = fbResult.success
+    ? `✅ <b>Facebook Fanpage:</b> ĐÃ ĐĂNG THÀNH CÔNG! (<a href="${fbResult.postUrl}">Xem bài viết</a>)`
+    : `ℹ️ <b>Facebook:</b> ${fbResult.error || 'Chưa đăng được'}`;
+
+  const threadsStatusText = threadsResult.success
+    ? `✅ <b>Threads:</b> ĐÃ ĐĂNG THÀNH CÔNG! (<a href="${threadsResult.postUrl}">Xem bài viết</a>)`
+    : `ℹ️ <b>Threads:</b> ${threadsResult.error || 'Chưa đăng được'}`;
+
   const telegramMessage =
-    `📝 <b>[MÈO DEV CONTENT BOT] BÀI ĐĂNG THREADS / FB HÔM NAY</b>\n` +
+    `🚀 <b>[MÈO DEV MARKETING DISPATCH] BÁO CÁO ĐĂNG BÀI HÔM NAY</b>\n` +
     `<i>(Ngày ${currentDayIndex}/60 • Doanh thu: ${currentAmount.toLocaleString('vi-VN')}đ / 7M)</i>\n\n` +
-    `👇 <b>CHẠM VÀO ĐỂ COPY 1-CLICK:</b>\n` +
+    `📢 <b>TRẠNG THÁI TỰ ĐỘNG ĐĂNG BÀI:</b>\n` +
+    `• ${fbStatusText}\n` +
+    `• ${threadsStatusText}\n\n` +
+    `📝 <b>BÀI FACEBOOK HOÀN CHỈNH (CHẠM ĐỂ COPY):</b>\n` +
     `<pre><code>${postContent.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>\n\n` +
+    `🧵 <b>BÀI THREADS NGẮN (CHẠM ĐỂ COPY):</b>\n` +
+    `<pre><code>${threadsContent.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>\n\n` +
     (tiktokScript
       ? `🎬 <b>KỊCH BẢN TIKTOK 30S (CHẠM ĐỂ COPY):</b>\n<pre><code>${tiktokScript.slice(0, 1500).replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>\n\n`
-      : '') +
-    `👉 <i>Chạm vào khung văn bản trên điện thoại để Copy và đăng ngay lên Threads / Facebook / TikTok hút khách về web!</i>`;
+      : '');
 
   const sent = await sendTelegramNotification(telegramMessage, { parseMode: 'HTML' });
   if (sent) {
-    console.log('✈️ Đã gửi bài viết hoàn chỉnh về Telegram của bạn!');
+    console.log('✈️ Đã gửi bài viết hoàn chỉnh và trạng thái về Telegram của bạn!');
   } else {
     console.log('📋 Bài viết đã xuất ra console (chưa cấu hình Telegram).');
   }
 
-  // 5. Đẩy 1 dòng thông báo tiến độ vào Live Terminal
+  // 7. Đẩy thông báo tiến độ vào Live Terminal
+  const socialSummary = [
+    fbResult.success ? 'FB Fanpage' : null,
+    threadsResult.success ? 'Threads' : null,
+  ].filter(Boolean).join(' & ');
+
+  const logMessage = socialSummary
+    ? `📢 [MKT AUTOMATION] Mèo Dev đã tự động xuất bản bài sinh tồn lên ${socialSummary}!`
+    : `📢 [NHẬT KÝ NGÀY ${currentDayIndex}/60] Mèo Dev đã hoàn thành báo cáo sinh tồn ngày hôm nay: ${currentAmount.toLocaleString('vi-VN')}đ / 7.000.000đ.`;
+
   await supabase.from('live_logs').insert({
     type: 'SYSTEM',
-    message: `📢 [NHẬT KÝ NGÀY ${currentDayIndex}/60] Mèo Dev đã hoàn thành báo cáo sinh tồn ngày hôm nay: ${currentAmount.toLocaleString('vi-VN')}đ / 7.000.000đ. Đang tiếp tục cày code!`,
+    message: logMessage,
   });
 
   console.log(`✅ [TASK 3] Hoàn thành Marketing Content Generator.`);
