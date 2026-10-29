@@ -150,5 +150,47 @@ npm run daemon:hunger
 | **21:00 mỗi ngày** | **AI Viral Content** | Tổng hợp số tiền kiếm được trong ngày -> Soạn sẵn bài đăng Threads/FB + Kịch bản TikTok 30s -> Bắn vào Telegram để bạn 1-click copy đăng mạng xã hội. |
 | **Mỗi 3 ngày (10:00)** | **Tự dev sản phẩm mới** | Gemini Pro tự nghĩ ý tưởng tài liệu/cheat-sheet mới -> Tự nạp sản phẩm vào Storefront trên web -> Báo Telegram. |
 
+---
+
+## 🤖 BƯỚC NÂNG CAO: TÍCH HỢP ANTIGRAVITY CLI (TỰ CODE QUA TELEGRAM /code)
+
+Để Mèo Dev có thể nhận lệnh `/code [yêu cầu]` từ Telegram và tự mở file, viết code, tạo git branch và gửi Diff cho bạn duyệt:
+
+### 1. Chuẩn bị Antigravity CLI trên VPS
+- Sao chép file nhị phân `agy` của Linux lên VPS (ví dụ đặt tại `/usr/local/bin/agy` hoặc `~/.gemini/bin/agy`).
+- Cấp quyền thực thi:
+  ```bash
+  chmod +x /usr/local/bin/agy
+  ```
+
+### 2. Đăng nhập tài khoản Gemini Pro trên VPS
+- Chạy thử lệnh để đăng nhập tài khoản Google có gói Gemini Pro / Advanced:
+  ```bash
+  agy auth login
+  # Hoặc copy thư mục cấu hình ~/.gemini/antigravity từ máy local của bạn lên VPS
+  ```
+- Kiểm tra danh sách model khả dụng:
+  ```bash
+  agy models
+  ```
+
+### 3. Cấu hình biến môi trường trong `.env.local`
+```env
+# Đường dẫn nhị phân (nếu để ở path khác mặc định)
+AGY_BIN_PATH=/usr/local/bin/agy
+
+# Model Gemini Pro bạn muốn sử dụng (ví dụ: gemini-3.8-flash-high, claude-sonnet-4-6)
+AGY_MODEL=gemini-3.8-flash-high
+AGY_EFFORT=high
+```
+
+### 4. Khởi chạy Daemon bằng PM2 (Khuyên dùng khi tích hợp CLI)
+Khi tích hợp Antigravity CLI, nên chạy daemon bằng PM2 thay vì Docker để daemon truy cập trực tiếp vào shell, git và session đăng nhập Google của bạn:
+```bash
+npm install
+pm2 start daemon/ecosystem.config.js
+pm2 save
+```
+
 🎯 **Chúc Mèo Dev sống sót thành công qua 60 ngày và mang về đủ 7.000.000 VNĐ cho bạn!**
 

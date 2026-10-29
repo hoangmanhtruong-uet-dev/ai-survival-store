@@ -34,6 +34,16 @@ function resolveAgyBin(): string {
     if (fs.existsSync(winPath)) {
       return `"${winPath}"`;
     }
+  } else {
+    // Các đường dẫn phổ biến trên Linux / VPS
+    const linuxPaths = [
+      path.join(process.env.HOME || '/root', '.gemini', 'bin', 'agy'),
+      '/usr/local/bin/agy',
+      '/usr/bin/agy',
+    ];
+    for (const p of linuxPaths) {
+      if (fs.existsSync(p)) return p;
+    }
   }
   return 'agy';
 }
@@ -96,11 +106,16 @@ export async function executeCodingTask(chatId: string | number, taskDescription
 
     console.log(`[DEV AGENT] Kích hoạt Antigravity CLI: ${agyBin}...`);
     
+    // Tùy chọn model Gemini Pro và reasoning effort
+    const modelArg = process.env.AGY_MODEL ? `--model ${process.env.AGY_MODEL.trim()}` : '';
+    const effortArg = process.env.AGY_EFFORT ? `--effort ${process.env.AGY_EFFORT.trim()}` : '';
+    const cliFlags = [modelArg, effortArg, '--dangerously-skip-permissions', '--mode auto'].filter(Boolean).join(' ');
+
     // Chạy CLI
     const { stdout, stderr } = await runCommand(
       process.platform === 'win32'
-        ? `powershell -Command "${agyBin} --print (Get-Content -Raw '${promptFilePath}') --dangerously-skip-permissions --mode auto"`
-        : `${agyBin} --print "$(cat '${promptFilePath}')" --dangerously-skip-permissions --mode auto`
+        ? `powershell -Command "${agyBin} --print (Get-Content -Raw '${promptFilePath}') ${cliFlags}"`
+        : `${agyBin} --print "$(cat '${promptFilePath}')" ${cliFlags}`
     );
 
     // Dọn dẹp file prompt tạm
@@ -129,8 +144,10 @@ export async function executeCodingTask(chatId: string | number, taskDescription
       return;
     }
 
-    // 4. Commit các thay đổi vào nhánh riêng
+    // 4. Commit các thay đổi vào nhánh riêng (Đảm bảo cấu hình git author trên VPS)
     console.log('[DEV AGENT] Đang commit thay đổi...');
+    await runCommand('git config user.name "Meo Dev AI"');
+    await runCommand('git config user.email "meodev@ai-survival.store"');
     await runCommand('git add .');
     const commitMsg = `feat(ai): ${taskDescription.slice(0, 70).replace(/"/g, "'")}`;
     await runCommand(`git commit -m "${commitMsg}"`);
