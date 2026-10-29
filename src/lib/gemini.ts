@@ -4,6 +4,9 @@ import { mockStore } from './mock-store';
 import { generateVietQRUrl, generateOrderCode } from './vietqr';
 import { TAROT_DECK_22, TarotCard } from './tarot-data';
 import { getSupabaseAdminClient, getSupabaseClient } from './supabase/client';
+import { roastCVContentAdvanced, RoastCVOptions, RoastCVResult } from './cv-roaster';
+export type { RoastCVOptions, RoastCVResult };
+export { roastCVContentAdvanced };
 
 export function getApiKeys(): string[] {
   const raw = process.env.GEMINI_API_KEY || '';
@@ -216,102 +219,15 @@ export async function chatWithCatDev(
 
 /**
  * AI Roast CV Engine (Hỗ trợ cả Text thô và File PDF Upload trực tiếp)
+ * Tự động xoay tua API key, trích xuất điểm ATS và tuân thủ Anti-Slop Manifesto
  */
-export async function roastCVContent(cvText: string, pdfBase64?: string) {
-  if (isGeminiConfigured()) {
-    try {
-      const apiKey = getGeminiApiKey();
-      if (!apiKey) throw new Error('No valid Gemini API key found');
-      const ai = new GoogleGenAI({ apiKey });
-      const prompt = `
-Bạn là "Mèo Dev" - Senior Tech Lead kiêm Chuyên gia tối ưu hóa CV chuẩn quốc tế.
-Bạn nổi tiếng vì mỏ hỗn, mồm mép cực kỳ chua cay xéo xắt, nhưng kiến thức kỹ thuật thì chuẩn chỉ 100%, có tâm và chỉ ra đúng huyệt tử của ứng viên.
-Khách hàng vừa bỏ 10.000đ mua dịch vụ "ROAST-10". Bạn PHẢI mang lại một bản báo cáo sấy CV cực kỳ đẳng cấp, sâu sắc, thực chiến, không được trả lời chung chung!
-
-CẤU TRÚC BÁO CÁO BẮT BUỘC (Markdown):
-
-# 🔥 BÁO CÁO MÈO DEV SẤY CV & TỐI ƯU ATS CHUYÊN SÂU
-
-### 📊 1. ĐIỂM SỐ ATS SCANNER: [Chấm từ 0 đến 100]/100
-- **Phán quyết:** [Trượt từ vòng gửi xe / Tạm ổn cần mài giũa / Suýt thành Senior]
-- **Tóm tắt 1 câu:** [Một câu châm biếm sâu cay về toàn bộ CV]
-
-### 🐱 2. BÀI SẤY XÉ LÒNG TỪ SENIOR TECH LEAD (4 GÓC NHÌN ĐA CHIỀU)
-- **Góc nhìn Recruiter (Test 6 giây đầu):** [Đập vào mắt có gì nổi bật hay nhạt nhẽo như nước ốc?]
-- **Góc nhìn Tech Lead (Kỹ thuật & Dự án):** [Chém gió công nghệ thế nào? Dự án Todo App hay E-commerce clone? Có biết optimize hay chỉ biết copy code?]
-- **Góc nhìn ATS Parser:** [Lỗi format, bảng biểu, icon, cột đôi khiến máy quét vứt vào sọt rác thế nào?]
-- **Góc nhìn Mèo Dev (Sấy mỏ hỗn):** [2 đoạn văn mỏ hỗn, cà khịa cực thâm về thái độ và cách dùng từ]
-
-### 💎 3. TOP 3 CÂU CHÂM BIẾM ĐẮT GIÁ NHẤT
-- [HIGHLIGHT] "[Câu châm biếm 1]"
-- [HIGHLIGHT] "[Câu châm biếm 2]"
-- [HIGHLIGHT] "[Câu châm biếm 3]"
-
-### ✍️ 4. REWRITE MẪU THỰC CHIẾN THEO GOOGLE XYZ FORMULA
-[Chọn 2 bullet point tệ nhất trong CV và viết lại thành phiên bản triệu đô]:
-- **Nguyên bản tệ hại:** "[Câu gốc trong CV]"
-- **Bản sửa đỉnh cao (XYZ):** "Accomplished [X] measured by [Y] by doing [Z] (Bản dịch tiếng Việt thực chiến kèm số liệu định lượng)"
-
-### 🚀 5. CHECKLIST 3 VIỆC PHẢI SỬA NGAY ĐỂ ĐƯỢC GỌI PHỎNG VẤN TUẦN TỚI
-1. [Hành động 1 cụ thể]
-2. [Hành động 2 cụ thể]
-3. [Hành động 3 cụ thể]
-`;
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const parts: any[] = [{ text: prompt }];
-
-      if (pdfBase64) {
-        parts.push({
-          inlineData: {
-            mimeType: 'application/pdf',
-            data: pdfBase64,
-          },
-        });
-      } else {
-        parts.push({
-          text: `NỘI DUNG CV:\n${cvText}`,
-        });
-      }
-
-      const response = await ai.models.generateContent({
-        model: getGeminiModel(),
-        contents: [{ parts }],
-      });
-
-      return response.text || getMockCVRoast(cvText);
-    } catch {
-      // Fallback
-    }
-  }
-
-  return getMockCVRoast(cvText);
-}
-
-function getMockCVRoast(cvText: string): string {
-  const preview = cvText.slice(0, 80).replace(/\n/g, ' ');
-  return `### 🔥 BÁO CÁO MÈO DEV SẤY CV CỰC CĂNG
-
-**Lời mở đầu từ Mèo Dev:**
-Ối giời đất ơi, tao vừa đọc lướt qua cái bản CV "${preview}..." mà tí nữa thì sặc luôn hộp pate cá ngừ! 
-Mày để cái phần kỹ năng "Thành thạo React, Node, Python, Docker, K8s, AI, Blockchain" trong khi mới ra trường được 3 tháng à? Bill Gates hồi bằng tuổi mày chắc cũng phải gọi mày bằng cụ tổ! 
-
-Lại còn quả mục sở thích: "Thích đọc sách, bơi lội, nghe nhạc và làm việc nhóm dưới áp lực cao". Dưới áp lực cao là áp lực deadline của sếp dí hay áp lực ngủ dậy muộn vậy con sen? 
-
----
-
-### [HIGHLIGHT] TOP 3 CÂU CHÂM BIẾM ĐẮT GIÁ:
-- [HIGHLIGHT] "Junior 6 tháng kinh nghiệm nhưng list công nghệ dài hơn cả sớ Táo Quân chầu trời!"
-- [HIGHLIGHT] "Ghi 'Làm việc độc lập tốt' thực chất là vì không ai thèm làm chung do hay merge conflict!"
-- [HIGHLIGHT] "Dự án cá nhân làm Todo App nhưng xưng là 'Kiến trúc sư hệ thống phần mềm'!"
-
----
-
-### 🛠️ HƯỚNG DẪN VIẾT LẠI CHUẨN ATS (ĐỂ ĐỠ BỊ LOẠI VÒNG GỬI XE):
-1. **Bỏ ngay thang điểm thanh đo kỹ năng dạng 80% 90%**: Máy quét ATS không hiểu cái thanh 8/10 sao của mày đâu! Hãy thay bằng: Kỹ năng + Công cụ thực chiến (VD: *Next.js, TypeScript, Tailwind, RESTful API*).
-2. **Định lượng hóa kết quả dự án (Công thức XYZ của Google)**: Thay vì ghi "Làm website bán hàng", hãy ghi "Xây dựng web e-commerce xử lý 500 đơn/ngày, tối ưu Core Web Vitals tăng 35% tốc độ tải".
-3. **Format chuẩn Plain Text / Single Column**: Đừng dùng template Canva 2 cột lòe loẹt, ATS quét lộn xộn từ trái sang phải là mày bay màu ngay!
-`;
+export async function roastCVContent(
+  cvText: string,
+  pdfBase64?: string,
+  options?: RoastCVOptions
+): Promise<string> {
+  const result = await roastCVContentAdvanced(cvText, pdfBase64, options);
+  return result.report;
 }
 
 /**
