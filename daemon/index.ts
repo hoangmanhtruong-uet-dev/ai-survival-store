@@ -8,7 +8,7 @@ import { runDailyContentGeneratorTask } from './tasks/content-generator';
 import { runProductGeneratorTask, authorProductDraft, publishProductFromDraft } from './tasks/product-generator';
 import { runMarketAnalyzerTask } from './tasks/market-analyzer';
 import { runCustomTaskWorker } from './tasks/custom-task-worker';
-import { handleTelegramIncomingMessage, handlePlanCallback } from './tasks/telegram-chat';
+import { handleTelegramIncomingMessage, handlePlanCallback, executeResetHunger, getLiveStoreStats } from './tasks/telegram-chat';
 import { handleApproveMerge, handleDiscardCode } from './tasks/code-runner';
 
 const BANNER = `
@@ -34,6 +34,13 @@ async function main() {
   const args = process.argv.slice(2);
 
   // 2. Chế độ chạy thủ công các tác vụ đơn lẻ (CLI Mode)
+  if (args.includes('--reset-hunger') || args.includes('--feed')) {
+    console.log('▶️ [CLI] Kích hoạt thủ công: Tự reset độ no bụng Mèo Dev (Hunger Reset 100%)');
+    const targetChatId = DAEMON_CONFIG.telegramChatId;
+    await executeResetHunger(targetChatId, 100, 'CLI Command --feed');
+    process.exit(0);
+  }
+
   if (args.includes('--hunger')) {
     console.log('▶️ [CLI] Kích hoạt thủ công: Giảm độ đói (Hunger Decay)');
     await runHungerDecayTask();
@@ -130,6 +137,10 @@ async function main() {
     } else if (cb.data.startsWith('grill_plan:')) {
       const planId = cb.data.replace('grill_plan:', '');
       await handlePlanCallback(cb.id, 'grill', planId, cb.message?.chat.id);
+    } else if (cb.data === 'quick_stats') {
+      await answerTelegramCallback(cb.id, 'Đang lấy chỉ số...');
+      const statsText = await getLiveStoreStats();
+      await sendTelegramNotification(statsText, { parseMode: 'HTML' }, cb.message?.chat.id);
     }
   };
 

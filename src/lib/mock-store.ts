@@ -142,6 +142,8 @@ if (!global.__mockStoreData) {
       total_orders: 0,
       paid_orders: 0,
       cat_hunger_level: 100,
+      auto_feed_enabled: true,
+      last_hunger_reset_at: new Date().toISOString(),
       last_order_at: null,
       start_date: startTime,
       end_date: sixtyDaysFromNow,
@@ -401,5 +403,42 @@ export const mockStore = {
     item.updated_at = new Date().toISOString();
 
     return { valid: true, codeData: { ...item } };
+  },
+
+  /**
+   * Reset độ no bụng của Mèo Dev về mức mong muốn (mặc định 100%)
+   */
+  resetHunger(level: number = 100, source: string = 'Boss Telegram'): { previous: number; current: number } {
+    const stats = global.__mockStoreData!.stats;
+    const previous = stats.cat_hunger_level;
+    const newLevel = Math.max(0, Math.min(100, Math.round(level)));
+    
+    stats.cat_hunger_level = newLevel;
+    stats.last_hunger_reset_at = new Date().toISOString();
+    stats.last_order_at = new Date().toISOString(); // Reset mốc tính giờ suy giảm
+
+    const logMsg = `🐟 [HỒI PHỤC] ${source} vừa reset độ no bụng cho Mèo Dev: ${previous}% ➜ ${newLevel}%! No căng bụng cày tiếp!`;
+    this.addLog('SYSTEM', logMsg, {
+      previousLevel: previous,
+      newLevel,
+      source,
+      resetAt: stats.last_hunger_reset_at,
+    });
+
+    return { previous, current: newLevel };
+  },
+
+  /**
+   * Bật/tắt chế độ tự cứu đói (Auto-Feed)
+   */
+  setAutoFeed(enabled: boolean): boolean {
+    const stats = global.__mockStoreData!.stats;
+    stats.auto_feed_enabled = enabled;
+    this.addLog('SYSTEM', `⚙️ [CẤU HÌNH] Chế độ tự cứu đói (Auto-Feed) đã ${enabled ? 'BẬT' : 'TẮT'}.`);
+    return enabled;
+  },
+
+  getAutoFeed(): boolean {
+    return global.__mockStoreData!.stats.auto_feed_enabled ?? true;
   },
 };

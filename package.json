@@ -12,6 +12,8 @@
     "daemon:content": "tsx daemon/index.ts --content",
     "daemon:social-test": "tsx daemon/index.ts --social-test",
     "daemon:hunger": "tsx daemon/index.ts --hunger",
+    "daemon:feed": "tsx daemon/index.ts --feed",
+    "daemon:reset-hunger": "tsx daemon/index.ts --reset-hunger",
     "daemon:sale": "tsx daemon/index.ts --sale",
     "daemon:product": "tsx daemon/index.ts --product",
     "daemon:market": "tsx daemon/index.ts --market",

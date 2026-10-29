@@ -59,6 +59,8 @@ export interface CampaignStats {
   last_order_at?: string | null;
   start_date: string;
   end_date: string;
+  auto_feed_enabled?: boolean;
+  last_hunger_reset_at?: string | null;
 }
 
 export interface ChatMessage {

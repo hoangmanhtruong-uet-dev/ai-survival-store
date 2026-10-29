@@ -70,15 +70,48 @@ Chỉ trả về duy nhất nội dung câu kêu cứu, không giải thích gì
       console.log(`📢 Đã bắn log kêu cứu lên Live Terminal: "${desperateLog}"`);
     }
 
-    // Nếu đói nghiêm trọng (dưới 20%), báo động đỏ về Telegram của chủ nhân
+    // Nếu đói nghiêm trọng (dưới 20%), kiểm tra xem có kích hoạt Tự Reset Độ No Bụng (Auto-Feed) không
     if (newHunger <= 20) {
-      await sendTelegramNotification(
-        `🚨 <b>BÁO ĐỘNG ĐỎ: MÈO DEV SẮP CHẾT ĐÓI!</b>\n\n` +
-        `• <b>Độ no bụng:</b> <code>${newHunger}%</code>\n` +
-        `• <b>Lời kêu cứu:</b> <i>"${desperateLog}"</i>\n\n` +
-        `👉 Mau chia sẻ link web lên Threads/Facebook để người xem vào cứu 5k pate:\n` +
-        `<a href="${DAEMON_CONFIG.siteUrl}">${DAEMON_CONFIG.siteUrl}</a>`
-      );
+      const autoFeedEnabled = stats.auto_feed_enabled !== false; // Mặc định là true nếu null/undefined
+
+      if (autoFeedEnabled && newHunger <= 15) {
+        console.log(`🛡️ [AUTO-FEED] Kích hoạt giao thức tự cứu mạng: Tự reset độ no bụng từ ${newHunger}% lên 100%!`);
+        const nowIso = new Date().toISOString();
+
+        // 1. Tự cập nhật độ no bụng lên 100%
+        await supabase
+          .from('campaign_stats')
+          .update({
+            cat_hunger_level: 100,
+            last_hunger_reset_at: nowIso,
+            last_order_at: nowIso,
+          })
+          .eq('id', 1);
+
+        // 2. Bắn log tự cứu mạng lên Live Terminal
+        await supabase.from('live_logs').insert({
+          type: 'SYSTEM',
+          message: `🐱 [GIAO THỨC TỰ CỨU MẠNG] Độ no chạm ngưỡng nguy kịch (${newHunger}%)! Mèo Dev vừa tự động kích hoạt cơ chế sinh tồn, tự reset độ no bụng về 100% để tiếp tục cày KPI cho Boss! 🚀`,
+          meta: { previousHunger: newHunger, newHunger: 100, autoFeed: true, triggeredAt: nowIso },
+        });
+
+        // 3. Thông báo cho Boss qua Telegram
+        await sendTelegramNotification(
+          `🛡️ <b>[GIAO THỨC TỰ SINH TỒN] MÈO DEV VỪA TỰ RESET ĐỘ NO BỤNG!</b>\n\n` +
+          `• <b>Ngưỡng nguy kịch:</b> <code>${newHunger}%</code> (Sắp lả vì đói)\n` +
+          `• <b>Hành động tự hành:</b> Đã tự động kích hoạt cơ chế Auto-Feed ➜ <code>100%</code> (No căng bụng)\n` +
+          `• <b>Trạng thái:</b> Sống sót an toàn, sẵn sàng tiếp tục cày KPI 7.000.000 VNĐ cho Boss! 🚀\n\n` +
+          `<i>Boss có thể gõ <code>/autofeed off</code> nếu muốn tắt tính năng tự cứu đói này.</i>`
+        );
+      } else {
+        await sendTelegramNotification(
+          `🚨 <b>BÁO ĐỘNG ĐỎ: MÈO DEV SẮP CHẾT ĐÓI!</b>\n\n` +
+          `• <b>Độ no bụng:</b> <code>${newHunger}%</code>\n` +
+          `• <b>Lời kêu cứu:</b> <i>"${desperateLog}"</i>\n\n` +
+          `👉 Boss có thể gõ <code>/feed</code> để tự reset độ no ngay lập tức hoặc kêu gọi cộng đồng cứu 5k pate:\n` +
+          `<a href="${DAEMON_CONFIG.siteUrl}">${DAEMON_CONFIG.siteUrl}</a>`
+        );
+      }
     }
   }
 

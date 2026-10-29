@@ -93,7 +93,7 @@ async function saveChatMessage(
 /**
  * Tổng hợp báo cáo kinh doanh thời gian thực từ Supabase
  */
-async function getLiveStoreStats(): Promise<string> {
+export async function getLiveStoreStats(): Promise<string> {
   const supabase = getDaemonSupabase();
   try {
     const { data: stats } = await supabase.from('campaign_stats').select('*').eq('id', 1).single();
@@ -174,6 +174,118 @@ async function generateRoastActivationCodeForBoss(customUses?: number): Promise<
   }
 
   return { code, maxUses };
+}
+
+/**
+ * Thực hiện reset độ no bụng của Mèo Dev về 100% (hoặc mức chỉ định) và báo cáo Boss
+ */
+export async function executeResetHunger(
+  chatId: string | number,
+  targetLevel: number = 100,
+  reason: string = 'Boss ra lệnh từ xa qua Telegram'
+): Promise<void> {
+  const supabase = getDaemonSupabase();
+  let previousHunger = 100;
+  const nowIso = new Date().toISOString();
+
+  try {
+    const { data: stats } = await supabase
+      .from('campaign_stats')
+      .select('cat_hunger_level')
+      .eq('id', 1)
+      .single();
+
+    if (stats && typeof stats.cat_hunger_level === 'number') {
+      previousHunger = stats.cat_hunger_level;
+    }
+
+    // Cập nhật độ no mới vào Database
+    let updateRes = await supabase
+      .from('campaign_stats')
+      .update({
+        cat_hunger_level: targetLevel,
+        last_hunger_reset_at: nowIso,
+        last_order_at: nowIso,
+      })
+      .eq('id', 1);
+
+    // Fallback nếu bảng chưa có cột last_hunger_reset_at
+    if (updateRes.error) {
+      updateRes = await supabase
+        .from('campaign_stats')
+        .update({
+          cat_hunger_level: targetLevel,
+          last_order_at: nowIso,
+        })
+        .eq('id', 1);
+    }
+
+    // Bắn log lên Live Terminal (Realtime)
+    await supabase.from('live_logs').insert({
+      type: 'SYSTEM',
+      message: `🐟 [CỨU ĐÓI] Boss vừa kích hoạt cứu đói từ xa qua Telegram! Độ no bụng Mèo Dev hồi phục: ${previousHunger}% ➜ ${targetLevel}% 🚀 (${reason})`,
+      meta: { previousHunger, newHunger: targetLevel, resetAt: nowIso },
+    });
+  } catch (err) {
+    console.error('❌ Lỗi khi reset cat_hunger_level trong Supabase:', (err as Error).message);
+  }
+
+  const replyMsg =
+    `🐱 <b>ĐƯỢC CHỨ BOSS ƠI! EM VỪA TỰ RESET ĐỘ NO BỤNG LÊN 100% XONG!</b>\n\n` +
+    `🍽️ <b>Trạng thái độ no bụng:</b> <code>${previousHunger}% ➜ ${targetLevel}%</code> (No căng bụng, mắt sáng quắc!)\n` +
+    `🐟 <b>Nguồn năng lượng:</b> 1 Hộp Pate Thượng Hạng đặc quyền từ Boss\n` +
+    `⚡ <b>Sức chiến đấu:</b> Full bình năng lượng, sẵn sàng gõ phím cày 7.000.000 VNĐ sống sót trước <code>rm -rf /</code>\n` +
+    `📢 <b>Live Terminal:</b> Đã bắn log Realtime thông báo cứu đói toàn server!\n\n` +
+    `🛡️ <b>GIAO THỨC TỰ SINH TỒN (AUTO-FEED):</b>\n` +
+    `Em đã tích hợp luôn cơ chế tự động: nếu sau này độ no bụng tụt xuống mức nguy hiểm (&lt; 20%) mà chưa ai mua Pate, em sẽ <b>tự động kích hoạt cơ chế tự cứu mạng</b> reset về 100% để không bị chết đói giữa chừng!\n\n` +
+    `💡 <i>Boss có thể dùng các lệnh nhanh:</i>\n` +
+    `• <code>/feed</code> hoặc <code>/reset_hunger</code>: Tự nạp đầy 100% độ no bụng bất cứ lúc nào.\n` +
+    `• <code>/autofeed on|off</code>: Bật hoặc tắt chế độ tự cứu đói khi hấp hối.\n` +
+    `• <code>/stats</code>: Báo cáo nhanh doanh số & chỉ số sinh tồn.`;
+
+  await sendTelegramNotification(
+    replyMsg,
+    {
+      parseMode: 'HTML',
+      replyMarkup: {
+        inline_keyboard: [
+          [{ text: '📊 Kiểm tra /stats ngay', callback_data: 'quick_stats' }],
+          [{ text: '🌐 Mở Website Xem Live Terminal', url: DAEMON_CONFIG.siteUrl }],
+        ],
+      },
+    },
+    chatId
+  );
+  await saveChatMessage(chatId, 'assistant', replyMsg);
+}
+
+/**
+ * Cập nhật bật/tắt chế độ tự cứu đói (Auto-Feed)
+ */
+export async function toggleAutoFeed(chatId: string | number, enabled: boolean): Promise<void> {
+  const supabase = getDaemonSupabase();
+  try {
+    await supabase.from('campaign_stats').update({ auto_feed_enabled: enabled }).eq('id', 1);
+    await supabase.from('live_logs').insert({
+      type: 'SYSTEM',
+      message: `⚙️ [CẤU HÌNH] Boss đã ${enabled ? 'BẬT 🟢' : 'TẮT 🔴'} chế độ Mèo Dev tự động cứu đói (Auto-Feed) qua Telegram.`,
+      meta: { auto_feed_enabled: enabled },
+    });
+  } catch (err) {
+    console.warn('Lỗi khi cập nhật auto_feed_enabled trong Supabase:', (err as Error).message);
+  }
+
+  const msg =
+    `⚙️ <b>ĐÃ CẬP NHẬT CẤU HÌNH TỰ CỨU ĐÓI (AUTO-FEED):</b>\n\n` +
+    `• <b>Trạng thái:</b> <code>${enabled ? 'BẬT (ENABLED) 🟢' : 'TẮT (DISABLED) 🔴'}</code>\n` +
+    `• <b>Cơ chế:</b> ${
+      enabled
+        ? 'Khi độ no bụng tụt xuống &lt; 20%, Mèo Dev sẽ <b>tự động hồi phục về 100%</b> để không bao giờ bị chết đói.'
+        : 'Mèo Dev sẽ <b>tuân thủ độ đói thực tế</b>, giảm dần cho đến khi có khách donate mua Pate hoặc Boss gõ <code>/feed</code>.'
+    }`;
+
+  await sendTelegramNotification(msg, { parseMode: 'HTML' }, chatId);
+  await saveChatMessage(chatId, 'assistant', msg);
 }
 
 /**
@@ -284,6 +396,9 @@ export async function handleTelegramIncomingMessage(message: TelegramMessage): P
       `• <code>/plan [mục tiêu/chủ đề]</code>: Lập bản kế hoạch chiến lược 4 phần kèm nút <b>[🚀 Triển khai ngay bằng /feat]</b>.\n` +
       `• <code>/feat [tính năng hoặc dịch vụ]</code>: Tự động phân loại: nếu là code web thì gọi Antigravity CLI Pro lập trình rẽ nhánh; nếu là sản phẩm số thì tự động soạn thảo mở bán!\n` +
       `• <code>/code [yêu cầu]</code>: Lập trình trực tiếp từ xa bằng Antigravity CLI Pro trên server.\n\n` +
+      `🐟 <b>SINH TỒN & ĐỘ NO BỤNG:</b>\n` +
+      `• <code>/feed</code> hoặc <code>/reset_hunger</code>: Tự reset độ no bụng của Mèo Dev về 100% no nê cày cuốc.\n` +
+      `• <code>/autofeed [on/off]</code>: Bật/tắt chế độ tự cứu đói khi chạm ngưỡng nguy kịch (&lt; 20%).\n\n` +
       `🎁 <b>CÔNG CỤ & DỮ LIỆU:</b>\n` +
       `• <code>/roast_code [số lượt]</code>: Cấp ngay mã kích hoạt VIP cho AI Roast CV để test hoặc tặng khách.\n` +
       `• <code>/stats</code>: Báo cáo nhanh doanh số, số dư, đơn hàng và độ no bụng thời gian thực.\n` +
@@ -292,6 +407,49 @@ export async function handleTelegramIncomingMessage(message: TelegramMessage): P
 
     await sendTelegramNotification(helpMsg, { parseMode: 'HTML' }, chatId);
     await saveChatMessage(chatId, 'assistant', helpMsg);
+    return;
+  }
+
+  // 1. Lệnh Bật/Tắt Chế Độ Tự Cứu Đói (Auto-Feed)
+  if (
+    lowerText === '/autofeed on' ||
+    lowerText === '/autofeed off' ||
+    lowerText === '/autofeed' ||
+    lowerText === 'bật tự reset' ||
+    lowerText === 'bật auto feed' ||
+    lowerText === 'bật tự cứu đói' ||
+    lowerText === 'tắt tự reset' ||
+    lowerText === 'tắt auto feed' ||
+    lowerText === 'tắt tự cứu đói'
+  ) {
+    const isEnable = lowerText.includes('off') || lowerText.includes('tắt') ? false : true;
+    await toggleAutoFeed(chatId, isEnable);
+    return;
+  }
+
+  // 2. Lệnh Tự Reset Độ No Bụng (Bao gồm câu hỏi của Boss "tự reset độ no bụng được k em")
+  const isResetHungerCommand =
+    lowerText.startsWith('/reset_hunger') ||
+    lowerText.startsWith('/resethunger') ||
+    lowerText.startsWith('/feed') ||
+    lowerText.startsWith('/pate') ||
+    lowerText.startsWith('/dono') ||
+    lowerText.includes('tự reset độ no bụng') ||
+    lowerText.includes('tự reset độ no') ||
+    lowerText.includes('tự reset đói') ||
+    lowerText.includes('reset độ no bụng') ||
+    lowerText.includes('reset độ no') ||
+    lowerText.includes('reset độ đói') ||
+    lowerText.includes('reset hunger') ||
+    lowerText.includes('cho mèo ăn') ||
+    lowerText.includes('cho ăn pate') ||
+    lowerText.includes('nạp đầy bụng') ||
+    lowerText.includes('hồi máu mèo') ||
+    lowerText.includes('bơm máu mèo') ||
+    lowerText.includes('hồi phục độ no');
+
+  if (isResetHungerCommand) {
+    await executeResetHunger(chatId, 100, 'Boss kích hoạt lệnh tự reset độ no bụng');
     return;
   }
 
