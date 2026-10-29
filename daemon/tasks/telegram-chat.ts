@@ -1,7 +1,7 @@
 import { DAEMON_CONFIG } from '../config';
 import { getDaemonSupabase } from '../services/supabase';
 import { askGemini, askGeminiWithSearch, getAgentRules } from '../services/gemini';
-import { sendTelegramNotification, sendTelegramChatAction, TelegramMessage } from '../telegram';
+import { sendTelegramNotification, sendTelegramChatAction, answerTelegramCallback, TelegramMessage } from '../telegram';
 import { runMarketAnalyzerTask } from './market-analyzer';
 import { executeCodingTask } from './code-runner';
 
@@ -10,6 +10,17 @@ interface InMemoryMessage {
   content: string;
   timestamp: number;
 }
+
+export interface StoredPlan {
+  id: string;
+  goal: string;
+  planText: string;
+  codeTask: string;
+  createdAt: number;
+}
+
+// Bộ nhớ lưu tạm các bản kế hoạch /plan để sẵn sàng bấm nút [Triển khai]
+export const pendingPlans = new Map<string, StoredPlan>();
 
 // Bộ nhớ dự phòng RAM nếu Supabase chưa chạy file migration telegram_messages
 const memoryChatHistory: InMemoryMessage[] = [];
@@ -165,6 +176,53 @@ async function generateRoastActivationCodeForBoss(customUses?: number): Promise<
   return { code, maxUses };
 }
 
+/**
+ * Xử lý các nút bấm tương tác liên quan đến kế hoạch (/plan)
+ */
+export async function handlePlanCallback(
+  cbId: string,
+  action: 'deploy' | 'grill',
+  planId: string,
+  chatId?: string | number
+): Promise<void> {
+  const plan = pendingPlans.get(planId);
+  const targetChatId = chatId || DAEMON_CONFIG.telegramChatId;
+
+  if (!plan) {
+    await answerTelegramCallback(cbId, 'Kế hoạch đã hết hạn trong bộ nhớ tạm!');
+    return;
+  }
+
+  if (action === 'deploy') {
+    await answerTelegramCallback(cbId, 'Đang kích hoạt Antigravity CLI triển khai kế hoạch!');
+    await sendTelegramNotification(
+      `🚀 <b>BẮT ĐẦU TRIỂN KHAI KẾ HOẠCH BẰNG /feat!</b>\n\n` +
+      `📦 <b>Kế hoạch:</b> <i>${plan.goal}</i>\n` +
+      `🛠️ <b>Đầu việc kỹ thuật:</b> <i>${plan.codeTask}</i>\n` +
+      `🤖 Mèo Dev đang rẽ nhánh Git an toàn và bắt đầu lập trình...`,
+      { parseMode: 'HTML' },
+      targetChatId
+    );
+    executeCodingTask(targetChatId, plan.codeTask || plan.goal).catch((err) => {
+      console.error('❌ Lỗi khi deploy plan qua callback:', err);
+    });
+  } else if (action === 'grill') {
+    await answerTelegramCallback(cbId, 'Đang triệu hồi Mèo Phản Biện...');
+    await sendTelegramChatAction(targetChatId, 'typing');
+    const grillPrompt = `
+Bạn là Mèo Dev trong vai trò "Giám Đốc Phản Biện Khó Tính & Sắc Sảo".
+Boss muốn bạn phản biện thẳng thắn bản kế hoạch sau:
+Mục tiêu: "${plan.goal}"
+Nội dung kế hoạch:
+"${plan.planText.slice(0, 1500)}"
+
+Hãy bóc tách 3 lỗ hổng rủi ro lớn nhất và đặt 3 câu hỏi chất vấn hóc búa nhất cho kế hoạch này!
+`;
+    const grillReport = await askGemini(grillPrompt);
+    await sendTelegramNotification(grillReport, { parseMode: 'HTML' }, targetChatId);
+  }
+}
+
 
 /**
  * Xử lý tin nhắn văn bản đến từ Telegram
@@ -217,19 +275,254 @@ export async function handleTelegramIncomingMessage(message: TelegramMessage): P
   // 2. Xử lý các lệnh nhanh định sẵn (Fast Commands)
   if (lowerText === '/start' || lowerText === '/help' || lowerText === 'trợ giúp') {
     const helpMsg =
-      `🐱 <b>XIN CHÀO BOSS! TÔI LÀ MÈO DEV - AI CO-FOUNDER SINH TỒN!</b>\n\n` +
-      `Tôi đã sẵn sàng nhận lệnh và đồng hành cùng Boss cày KPI 7.000.000 VNĐ. Boss có thể chat tự do hoặc dùng các lệnh nhanh:\n\n` +
-      `📌 <b>CÁC KHẢ NĂNG CỐT LÕI:</b>\n` +
-      `• <b>Chat tự do:</b> Bàn bạc ý tưởng kinh doanh, hỏi ý kiến, tư vấn giải pháp dịch vụ số.\n` +
-      `• <b>Tạo mã kích hoạt Roast CV:</b> Gõ <code>/roast_code</code> hoặc chat <i>"tạo mã roast", "thêm mã kích hoạt cv"</i> ➜ Tôi sẽ tạo ngay mã <code>RCV-BOSS-XXXX</code> để Boss sấy CV miễn phí hoặc tặng khách hàng!\n` +
-      `• <b>Lập trình từ xa (Antigravity Pro):</b> Gõ <code>/code [yêu cầu]</code> (VD: <i>/code Viết tính năng Lươn GPT thu 10k</i>) ➜ Mèo Dev sẽ chạy Antigravity CLI trên server để viết code trên nhánh riêng và gửi nút Duyệt Merge về đây!\n` +
-      `• <b>Báo cáo gian hàng:</b> Gõ <code>/stats</code> hoặc hỏi <i>"doanh thu thế nào", "tình hình đơn hàng"</i>.\n` +
-      `• <b>Nghiên cứu thị trường theo lệnh:</b> Gõ <code>/analyze [chủ đề]</code> hoặc chat <i>"quét mảng dropshipping", "tìm cơ hội AI chatbot"</i> ➜ Tôi sẽ Google Search và đề xuất ngay ý tưởng kèm nút duyệt!\n` +
-      `• <b>Thẩm định chất lượng:</b> Khi tôi soạn xong sản phẩm, tôi sẽ gửi bản preview toàn văn qua đây để Boss duyệt trước khi mở bán!\n\n` +
-      `Boss muốn tôi cày việc gì ngay bây giờ?`;
+      `🐱 <b>HỆ THỐNG ĐIỀU KHIỂN MÈO DEV - AI CO-FOUNDER SINH TỒN:</b>\n\n` +
+      `Tôi đã sẵn sàng đồng hành cùng Boss cày KPI 7.000.000 VNĐ. Boss có thể chat tự do hoặc dùng bộ lệnh chuyên sâu sau:\n\n` +
+      `💬 <b>GIAO TIẾP & THAM VẤN:</b>\n` +
+      `• <code>/ask [câu hỏi]</code>: Cố vấn chiến lược Co-Founder & Tech Lead chuyên sâu (kèm Google Search thời gian thực 2026).\n` +
+      `• <code>/grill [ý tưởng/dịch vụ]</code>: Chế độ <b>Mèo Phản Biện Đa Chiều</b> (Devil's Advocate), bóc tách 3 lỗ hổng chí mạng và 3 câu hỏi hóc búa nhất trước khi làm.\n\n` +
+      `🗺️ <b>CHIẾN LƯỢC & THỰC THI:</b>\n` +
+      `• <code>/plan [mục tiêu/chủ đề]</code>: Lập bản kế hoạch chiến lược 4 phần kèm nút <b>[🚀 Triển khai ngay bằng /feat]</b>.\n` +
+      `• <code>/feat [tính năng hoặc dịch vụ]</code>: Tự động phân loại: nếu là code web thì gọi Antigravity CLI Pro lập trình rẽ nhánh; nếu là sản phẩm số thì tự động soạn thảo mở bán!\n` +
+      `• <code>/code [yêu cầu]</code>: Lập trình trực tiếp từ xa bằng Antigravity CLI Pro trên server.\n\n` +
+      `🎁 <b>CÔNG CỤ & DỮ LIỆU:</b>\n` +
+      `• <code>/roast_code [số lượt]</code>: Cấp ngay mã kích hoạt VIP cho AI Roast CV để test hoặc tặng khách.\n` +
+      `• <code>/stats</code>: Báo cáo nhanh doanh số, số dư, đơn hàng và độ no bụng thời gian thực.\n` +
+      `• <code>/analyze [chủ đề]</code>: Cào dữ liệu thị trường và đề xuất ý tưởng sản phẩm mới.\n\n` +
+      `<i>Boss muốn em cày việc gì ngay bây giờ?</i>`;
 
     await sendTelegramNotification(helpMsg, { parseMode: 'HTML' }, chatId);
     await saveChatMessage(chatId, 'assistant', helpMsg);
+    return;
+  }
+
+  // 1. Lệnh /ask: Chế độ Cố Vấn Tối Ưu (Google Search Grounding thời gian thực 2026)
+  if (lowerText.startsWith('/ask') || lowerText.startsWith('hỏi ')) {
+    const query = text.replace(/^\/ask|^hỏi\s+/i, '').replace(/^[:\-\s]+/, '').trim();
+    if (!query) {
+      const askGuide =
+        `💡 <b>CHẾ ĐỘ CỐ VẤN CO-FOUNDER (/ask):</b>\n\n` +
+        `<i>Boss hãy dùng cú pháp:</i>\n` +
+        `<code>/ask [câu hỏi cần tư vấn]</code>\n\n` +
+        `<i>Ví dụ:</i>\n` +
+        `• <code>/ask Làm sao để có 50 khách mua Roast CV đầu tiên với chi phí 0 đồng?</code>\n` +
+        `• <code>/ask Xu hướng dịch vụ AI mini nào đang hot nhất năm 2026?</code>`;
+      await sendTelegramNotification(askGuide, { parseMode: 'HTML' }, chatId);
+      return;
+    }
+
+    await sendTelegramChatAction(chatId, 'typing');
+    const systemPrompt = `
+Bạn là Mèo Dev - AI Co-Founder & Senior Tech Lead của dự án AI Survival Store (mục tiêu 7 triệu VNĐ / 60 ngày).
+Boss đang dùng lệnh /ask để tham vấn chuyên sâu.
+Phong cách phản hồi:
+- Đi thẳng vào bản chất vấn đề, thực tế, thực dụng, sắc bén, không sáo rỗng.
+- Ưu tiên các giải pháp thực chiến Zero-Cost (chi phí 0 đồng) và tận dụng đòn bẩy AI.
+- Chia bố cục rõ ràng:
+  💡 <b>Góc Nhìn Thực Chiến:</b> Nhận định sắc bén về câu hỏi.
+  📊 <b>Dữ Liệu & Thực Tế:</b> Dẫn chứng hoặc số liệu thị trường 2026.
+  🎯 <b>3 Bước Hành Động Cụ Thể:</b> Bước 1 - Bước 2 - Bước 3 rõ ràng để Boss làm ngay.
+`;
+    const res = await askGeminiWithSearch(query, systemPrompt);
+    const reply = res.text || '🐱 Mèo Dev nghe rõ rồi nhưng mạng hơi nghẽn chút, Boss hỏi lại nhé!';
+    await sendTelegramNotification(reply, { parseMode: 'HTML' }, chatId);
+    await saveChatMessage(chatId, 'assistant', reply);
+    return;
+  }
+
+  // 2. Lệnh /feat: Yêu cầu thêm tính năng mới hoặc mở bán gói dịch vụ mới
+  if (lowerText.startsWith('/feat') || lowerText.startsWith('/feature')) {
+    const featReq = text.replace(/^\/feat|^\/feature/i, '').replace(/^[:\-\s]+/, '').trim();
+    if (!featReq) {
+      const featGuide =
+        `🚀 <b>YÊU CẦU PHÁT TRIỂN TÍNH NĂNG / DỊCH VỤ MỚI (/feat):</b>\n\n` +
+        `<i>Boss hãy dùng cú pháp:</i>\n` +
+        `<code>/feat [mô tả tính năng hoặc dịch vụ mới]</code>\n\n` +
+        `<i>Ví dụ:</i>\n` +
+        `• <code>/feat Thêm thanh đo ATS Score chi tiết 4 tiêu chí cho Roast CV</code> (Tính năng Web ➜ Tự động code)\n` +
+        `• <code>/feat Mở bán bộ 100 Prompt phỏng vấn Big Tech giá 19k</code> (Gói dịch vụ ➜ Tự động soạn thảo mở bán)`;
+      await sendTelegramNotification(featGuide, { parseMode: 'HTML' }, chatId);
+      return;
+    }
+
+    await sendTelegramChatAction(chatId, 'typing');
+
+    // Phân loại thông minh bằng Gemini: CODE (tính năng phần mềm/web) hay PRODUCT (sản phẩm số/nội dung/dịch vụ)
+    const classifyPrompt = `
+Phân loại yêu cầu sau thành 1 trong 2 loại:
+- "CODE": Nếu yêu cầu liên quan đến lập trình, tính năng web, UI, backend, API, sửa bug, chức năng kỹ thuật.
+- "PRODUCT": Nếu yêu cầu liên quan đến bán sản phẩm số, tài liệu, prompt pack, ebook, khóa học, dịch vụ nội dung.
+
+Yêu cầu của Boss: "${featReq}"
+
+Chỉ trả về JSON định dạng: {"type": "CODE" | "PRODUCT", "summary": "tóm tắt ngắn 1 dòng", "task": "mô tả chi tiết tác vụ"}
+`;
+    let type = 'CODE';
+    let summary = featReq;
+    try {
+      const classRes = await askGemini(classifyPrompt);
+      const cleanJson = classRes.replace(/```json/gi, '').replace(/```/g, '').trim();
+      const parsed = JSON.parse(cleanJson);
+      if (parsed.type === 'PRODUCT') type = 'PRODUCT';
+      if (parsed.summary) summary = parsed.summary;
+    } catch {
+      const isProductWords = /bán|gói|tài liệu|ebook|prompt pack|template|khóa học|bộ công cụ/i.test(featReq);
+      type = isProductWords ? 'PRODUCT' : 'CODE';
+    }
+
+    if (type === 'CODE') {
+      const notifyMsg =
+        `🛠️ <b>MÈO DEV ĐÃ NHẬN LỆNH LẬP TRÌNH TÍNH NĂNG WEB!</b>\n\n` +
+        `📦 <b>Nhiệm vụ:</b> <i>${summary}</i>\n` +
+        `🤖 <b>Bộ máy:</b> Antigravity CLI Pro (Headless Agent)\n` +
+        `🌱 <b>Cơ chế an toàn:</b> Tự động rẽ nhánh Git riêng, lập trình và gửi diff cho Boss duyệt!\n\n` +
+        `⏳ <i>Mèo Dev đang đọc hiểu codebase và viết code... Boss đợi em vài phút nhé!</i>`;
+      await sendTelegramNotification(notifyMsg, { parseMode: 'HTML' }, chatId);
+      executeCodingTask(chatId, featReq).catch((err) => {
+        console.error('❌ Lỗi khi chạy executeCodingTask từ /feat:', err);
+      });
+      return;
+    } else {
+      const notifyMsg =
+        `🛍️ <b>MÈO DEV ĐÃ NHẬN LỆNH MỞ RỘNG GÓI DỊCH VỤ / SẢN PHẨM SỐ!</b>\n\n` +
+        `📦 <b>Sản phẩm:</b> <i>${summary}</i>\n` +
+        `✍️ <b>Tiến trình:</b> Mèo Dev đang phân tích thị trường và kích hoạt bộ máy Auto-Authoring soạn thảo nội dung chất lượng cao...\n\n` +
+        `⏳ <i>Sau khi soạn xong, em sẽ gửi toàn văn bản thảo về đây để Boss thẩm định trước khi mở bán!</i>`;
+      await sendTelegramNotification(notifyMsg, { parseMode: 'HTML' }, chatId);
+      runMarketAnalyzerTask('Theo Lệnh Boss', featReq).catch((err) => {
+        console.error('❌ Lỗi khi chạy runMarketAnalyzerTask từ /feat:', err);
+      });
+      return;
+    }
+  }
+
+  // 3. Lệnh /plan: Lên kế hoạch chiến lược hành động kèm nút [Triển khai ngay]
+  if (lowerText.startsWith('/plan') || lowerText.startsWith('/kehoach') || lowerText.startsWith('lên kế hoạch')) {
+    const goal = text.replace(/^\/plan|^\/kehoach|^lên kế hoạch/i, '').replace(/^[:\-\s]+/, '').trim();
+    if (!goal) {
+      const planGuide =
+        `🗺️ <b>LẬP KẾ HOẠCH CHIẾN LƯỢC HÀNH ĐỘNG (/plan):</b>\n\n` +
+        `<i>Boss hãy dùng cú pháp:</i>\n` +
+        `<code>/plan [mục tiêu kinh doanh hoặc dự án]</code>\n\n` +
+        `<i>Ví dụ:</i>\n` +
+        `• <code>/plan Kiếm 1.000.000đ đầu tiên trong 7 ngày tới với dịch vụ CV</code>\n` +
+        `• <code>/plan Ra mắt tính năng Tarot AI thu 5.000đ/lượt trong 48h</code>`;
+      await sendTelegramNotification(planGuide, { parseMode: 'HTML' }, chatId);
+      return;
+    }
+
+    await sendTelegramChatAction(chatId, 'typing');
+
+    const planPrompt = `
+Bạn là Mèo Dev - AI Co-Founder & Senior System Architect của AI Survival Store (Mục tiêu: 7.000.000 VNĐ / 60 ngày).
+Boss yêu cầu lập kế hoạch hành động chiến lược cho mục tiêu: "${goal}"
+
+Hãy soạn thảo bản kế hoạch cực kỳ thực chiến, rõ ràng theo định dạng sau:
+🎯 <b>MỤC TIÊU & CHỈ SỐ ĐO LƯỜNG (KPIs):</b>
+(Doanh thu, số lượng đơn hàng, thời gian hoàn thành)
+
+🗺️ <b>LỘ TRÌNH 3 BƯỚC HÀNH ĐỘNG (ACTION ITEMS):</b>
+• <b>Bước 1 (Chuẩn bị):</b> Các đầu việc chuẩn bị nhanh trong 2-4 giờ.
+• <b>Bước 2 (Triển khai kỹ thuật):</b> Các tính năng/giao diện web cần code hoặc tích hợp.
+• <b>Bước 3 (Kéo traffic & chốt đơn):</b> Chiến dịch phân phối 0 đồng.
+
+💰 <b>TỐI ƯU CHI PHÍ & RỦI RO:</b>
+(Các công cụ miễn phí, rủi ro tiềm ẩn và cách né tránh)
+
+⚡ <b>ĐẦU VIỆC CODE CẦN LÀM NGAY:</b>
+[Tóm tắt đúng 1-2 câu ngắn gọn về tính năng web cần code ngay để triển khai kế hoạch này]
+`;
+
+    const planText = await askGemini(planPrompt);
+    const planId = 'p_' + Date.now().toString(36);
+
+    const codeTaskMatch = planText.match(/⚡\s*<b>ĐẦU VIỆC CODE CẦN LÀM NGAY:<\/b>([\s\S]*?)$/i) ||
+      planText.match(/ĐẦU VIỆC CODE CẦN LÀM NGAY:([\s\S]*?)$/i);
+    const codeTask = codeTaskMatch && codeTaskMatch[1] ? codeTaskMatch[1].trim() : goal;
+
+    pendingPlans.set(planId, {
+      id: planId,
+      goal,
+      planText,
+      codeTask,
+      createdAt: Date.now(),
+    });
+
+    if (pendingPlans.size > 20) {
+      const oldestKey = pendingPlans.keys().next().value;
+      if (oldestKey) pendingPlans.delete(oldestKey);
+    }
+
+    await sendTelegramNotification(
+      planText,
+      {
+        parseMode: 'HTML',
+        replyMarkup: {
+          inline_keyboard: [
+            [
+              { text: '🚀 Triển khai kế hoạch này bằng /feat', callback_data: `deploy_plan:${planId}` },
+            ],
+            [
+              { text: '🥊 Phản biện rủi ro bằng /grill', callback_data: `grill_plan:${planId}` },
+            ],
+          ],
+        },
+      },
+      chatId
+    );
+    await saveChatMessage(chatId, 'assistant', planText);
+    return;
+  }
+
+  // 4. Lệnh /grill: Chế độ Mèo Phản Biện Đa Chiều (Devil's Advocate)
+  if (
+    lowerText.startsWith('/grill') ||
+    lowerText.startsWith('/grill_me') ||
+    lowerText.startsWith('/grillme') ||
+    lowerText.startsWith('phản biện')
+  ) {
+    const idea = text
+      .replace(/^\/grill_me|^\/grillme|^\/grill|^phản biện/i, '')
+      .replace(/^[:\-\s]+/, '')
+      .trim();
+
+    if (!idea) {
+      const grillGuide =
+        `🥊 <b>CHẾ ĐỘ MÈO PHẢN BIỆN ĐA CHIỀU (/grill):</b>\n\n` +
+        `<i>Boss hãy dùng cú pháp:</i>\n` +
+        `<code>/grill [ý tưởng kinh doanh / tính năng dự định làm]</code>\n\n` +
+        `<i>Ví dụ:</i>\n` +
+        `• <code>/grill Thu phí 50k cho mỗi lượt chấm CV thay vì 10k</code>\n` +
+        `• <code>/grill Tích hợp thanh toán tiền mã hóa Crypto cho gian hàng</code>`;
+      await sendTelegramNotification(grillGuide, { parseMode: 'HTML' }, chatId);
+      return;
+    }
+
+    await sendTelegramChatAction(chatId, 'typing');
+
+    const grillPrompt = `
+Bạn là Mèo Dev trong vai trò "Giám Đốc Phản Biện Khó Tính & Sắc Sảo (Devil's Advocate)".
+Nhiệm vụ tối thượng: Bảo vệ ngân sách, thời gian quý báu và cơ hội sinh tồn 7.000.000 VNĐ / 60 ngày của Boss.
+Boss vừa ném ra một ý tưởng: "${idea}"
+
+Hãy phản biện không kiêng nể nhưng cực kỳ logic, sâu sắc và mang tính xây dựng theo cấu trúc:
+🔍 <b>ĐÁNH GIÁ NHANH:</b>
+Nhìn nhận khách quan điểm sáng và tiềm năng thực tế (nếu có).
+
+⚠️ <b>3 LỖ HỔNG & RỦI RO CHÍ MẠNG:</b>
+1. <b>Rủi ro thị trường & nhu cầu thật:</b> Người ta có THỰC SỰ trả tiền không hay chỉ khen đãi bôi?
+2. <b>Rủi ro thời gian & kỹ thuật:</b> Tốn bao nhiêu công sức để build, có bị sa đà phức tạp hóa không?
+3. <b>Rủi ro chuyển đổi & chi phí kéo khách:</b> Làm sao để người ta biết tới mà không tốn tiền ads?
+
+🥊 <b>3 CÂU HỎI CHẤT VẤN HÓC BÚA NHẤT:</b>
+(3 câu hỏi đanh thép mà Boss PHẢI trả lời dứt khoát trước khi quyết định làm)
+
+💡 <b>GÓC XOAY ĐỀ XUẤT (PIVOT ZERO-RISK):</b>
+Nếu Boss vẫn muốn triển khai ý tưởng này, phiên bản rút gọn 0-đồng khả thi nhất nên là gì?
+`;
+
+    const grillReport = await askGemini(grillPrompt);
+    await sendTelegramNotification(grillReport, { parseMode: 'HTML' }, chatId);
+    await saveChatMessage(chatId, 'assistant', grillReport);
     return;
   }
 

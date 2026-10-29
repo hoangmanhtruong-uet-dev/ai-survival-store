@@ -1,6 +1,6 @@
 import cron from 'node-cron';
 import { validateDaemonConfig, DAEMON_CONFIG } from './config';
-import { sendTelegramNotification, fetchTelegramUpdates, answerTelegramCallback, TelegramMessage } from './telegram';
+import { sendTelegramNotification, fetchTelegramUpdates, answerTelegramCallback, TelegramMessage, TelegramCallbackQuery } from './telegram';
 import { getDaemonSupabase } from './services/supabase';
 import { runHungerDecayTask } from './tasks/hunger-decay';
 import { runFlashSaleTask } from './tasks/flash-sale';
@@ -8,7 +8,7 @@ import { runDailyContentGeneratorTask } from './tasks/content-generator';
 import { runProductGeneratorTask, authorProductDraft, publishProductFromDraft } from './tasks/product-generator';
 import { runMarketAnalyzerTask } from './tasks/market-analyzer';
 import { runCustomTaskWorker } from './tasks/custom-task-worker';
-import { handleTelegramIncomingMessage } from './tasks/telegram-chat';
+import { handleTelegramIncomingMessage, handlePlanCallback } from './tasks/telegram-chat';
 import { handleApproveMerge, handleDiscardCode } from './tasks/code-runner';
 
 const BANNER = `
@@ -81,7 +81,7 @@ async function main() {
   }
 
   // Hàm xử lý chung các lệnh bấm nút từ Telegram (Inline Keyboard Callbacks)
-  const processTelegramCallback = async (cb: { id: string; data?: string }) => {
+  const processTelegramCallback = async (cb: TelegramCallbackQuery) => {
     if (!cb.data) return;
 
     if (cb.data.startsWith('approve:')) {
@@ -124,6 +124,12 @@ async function main() {
     } else if (cb.data.startsWith('discard_code:')) {
       const branchName = cb.data.replace('discard_code:', '');
       await handleDiscardCode(cb.id, branchName);
+    } else if (cb.data.startsWith('deploy_plan:')) {
+      const planId = cb.data.replace('deploy_plan:', '');
+      await handlePlanCallback(cb.id, 'deploy', planId, cb.message?.chat.id);
+    } else if (cb.data.startsWith('grill_plan:')) {
+      const planId = cb.data.replace('grill_plan:', '');
+      await handlePlanCallback(cb.id, 'grill', planId, cb.message?.chat.id);
     }
   };
 
