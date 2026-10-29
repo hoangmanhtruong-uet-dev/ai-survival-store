@@ -111,3 +111,18 @@ export interface MarketInsight {
   created_at: string;
   reviewed_at?: string | null;
 }
+
+export interface ActivationCode {
+  id?: string;
+  code: string;
+  service_type: string;
+  max_uses: number;
+  used_count: number;
+  is_active: boolean;
+  expires_at?: string | null;
+  created_by?: string;
+  note?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+

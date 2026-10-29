@@ -115,6 +115,58 @@ async function getLiveStoreStats(): Promise<string> {
 }
 
 /**
+ * Tạo mã kích hoạt đặc quyền cho Boss qua Telegram
+ */
+async function generateRoastActivationCodeForBoss(customUses?: number): Promise<{ code: string; maxUses: number }> {
+  const code = `RCV-BOSS-${Math.floor(1000 + Math.random() * 9000)}`;
+  const maxUses = customUses && customUses > 0 ? customUses : 5;
+  const supabase = getDaemonSupabase();
+
+  try {
+    // 1. Thêm vào bảng activation_codes
+    await supabase.from('activation_codes').insert({
+      code,
+      service_type: 'ROAST-10',
+      max_uses: maxUses,
+      used_count: 0,
+      is_active: true,
+      created_by: 'Boss Telegram',
+      note: 'Mã kích hoạt đặc quyền cấp từ Telegram',
+    });
+
+    // 2. Thêm vào bảng orders dạng PAID để tương thích 2 chiều 100%
+    const orderCode = `MEO-VIP-${Math.floor(1000 + Math.random() * 9000)}`;
+    await supabase.from('orders').insert({
+      order_code: orderCode,
+      product_id: 'ROAST-10',
+      amount: 0,
+      status: 'PAID',
+      buyer_name: 'Boss Telegram (Mã Kích Hoạt)',
+      redeem_code: code,
+      is_redeemed: false,
+      paid_at: new Date().toISOString(),
+      payment_meta: {
+        activation_code: code,
+        max_uses: maxUses,
+        created_via: 'Telegram Bot',
+      },
+    });
+
+    // 3. Ghi log Live Terminal
+    await supabase.from('live_logs').insert({
+      type: 'SYSTEM',
+      message: `🔑 Mèo Dev vừa cấp mã kích hoạt [${code}] cho Boss trải nghiệm AI Roast CV (${maxUses} lượt)`,
+      meta: { code, service: 'ROAST-10', maxUses },
+    });
+  } catch (err) {
+    console.warn('Lỗi khi lưu mã kích hoạt vào Supabase:', (err as Error).message);
+  }
+
+  return { code, maxUses };
+}
+
+
+/**
  * Xử lý tin nhắn văn bản đến từ Telegram
  */
 export async function handleTelegramIncomingMessage(message: TelegramMessage): Promise<void> {
@@ -169,6 +221,7 @@ export async function handleTelegramIncomingMessage(message: TelegramMessage): P
       `Tôi đã sẵn sàng nhận lệnh và đồng hành cùng Boss cày KPI 7.000.000 VNĐ. Boss có thể chat tự do hoặc dùng các lệnh nhanh:\n\n` +
       `📌 <b>CÁC KHẢ NĂNG CỐT LÕI:</b>\n` +
       `• <b>Chat tự do:</b> Bàn bạc ý tưởng kinh doanh, hỏi ý kiến, tư vấn giải pháp dịch vụ số.\n` +
+      `• <b>Tạo mã kích hoạt Roast CV:</b> Gõ <code>/roast_code</code> hoặc chat <i>"tạo mã roast", "thêm mã kích hoạt cv"</i> ➜ Tôi sẽ tạo ngay mã <code>RCV-BOSS-XXXX</code> để Boss sấy CV miễn phí hoặc tặng khách hàng!\n` +
       `• <b>Lập trình từ xa (Antigravity Pro):</b> Gõ <code>/code [yêu cầu]</code> (VD: <i>/code Viết tính năng Lươn GPT thu 10k</i>) ➜ Mèo Dev sẽ chạy Antigravity CLI trên server để viết code trên nhánh riêng và gửi nút Duyệt Merge về đây!\n` +
       `• <b>Báo cáo gian hàng:</b> Gõ <code>/stats</code> hoặc hỏi <i>"doanh thu thế nào", "tình hình đơn hàng"</i>.\n` +
       `• <b>Nghiên cứu thị trường theo lệnh:</b> Gõ <code>/analyze [chủ đề]</code> hoặc chat <i>"quét mảng dropshipping", "tìm cơ hội AI chatbot"</i> ➜ Tôi sẽ Google Search và đề xuất ngay ý tưởng kèm nút duyệt!\n` +
@@ -177,6 +230,50 @@ export async function handleTelegramIncomingMessage(message: TelegramMessage): P
 
     await sendTelegramNotification(helpMsg, { parseMode: 'HTML' }, chatId);
     await saveChatMessage(chatId, 'assistant', helpMsg);
+    return;
+  }
+
+  // Lệnh tạo nhanh Mã Kích Hoạt cho AI Roast CV
+  const isRoastCodeCommand =
+    lowerText.startsWith('/roast_code') ||
+    lowerText.startsWith('/code_roast') ||
+    lowerText.startsWith('/taoma') ||
+    lowerText.startsWith('/mavit') ||
+    ((lowerText.includes('mã kích hoạt') || lowerText.includes('tạo mã') || lowerText.includes('cho tao mã') || lowerText.includes('xin mã')) &&
+      (lowerText.includes('roast') || lowerText.includes('cv') || lowerText.includes('sấy cv')));
+
+  if (isRoastCodeCommand) {
+    // Trích xuất số lượt dùng nếu Boss nhập (ví dụ: /roast_code 10)
+    const matchUses = text.match(/\b([1-9][0-9]?)\b/);
+    const customUses = matchUses ? parseInt(matchUses[1], 10) : 5;
+
+    const { code, maxUses } = await generateRoastActivationCodeForBoss(customUses);
+
+    const codeMsg =
+      `🎉 <b>ĐÃ CẤP MÃ KÍCH HOẠT AI ROAST CV CHO BOSS!</b>\n\n` +
+      `🔑 <b>Mã kích hoạt:</b> <code>${code}</code>\n` +
+      `🎯 <b>Dịch vụ:</b> Gói 1 Lượt AI Roast CV Chuẩn ATS (ROAST-10)\n` +
+      `⚡ <b>Số lượt dùng:</b> <code>${maxUses} lượt</code> (Đặc quyền Boss)\n` +
+      `⏳ <b>Hạn dùng:</b> Vĩnh viễn (Không hết hạn)\n` +
+      `🌐 <b>Website:</b> <a href="${DAEMON_CONFIG.siteUrl}">${DAEMON_CONFIG.siteUrl}</a>\n\n` +
+      `💡 <b>Cách dùng:</b>\n` +
+      `1. Mở trang web, bấm vào dịch vụ <b>"Phòng Quét & Sấy CV"</b>\n` +
+      `2. Dán mã <code>${code}</code> vào ô <b>"Mã kích hoạt dịch vụ"</b>\n` +
+      `3. Tải CV lên và bấm <b>"BẮT ĐẦU SẤY CV"</b> để xem AI bóc tách chi tiết!`;
+
+    await sendTelegramNotification(
+      codeMsg,
+      {
+        parseMode: 'HTML',
+        replyMarkup: {
+          inline_keyboard: [
+            [{ text: '🌐 Mở Website Sấy CV Ngay', url: DAEMON_CONFIG.siteUrl }],
+          ],
+        },
+      },
+      chatId
+    );
+    await saveChatMessage(chatId, 'assistant', codeMsg);
     return;
   }
 
@@ -300,6 +397,7 @@ WEBSITE: ${DAEMON_CONFIG.siteUrl}
 VAI TRÒ VỚI BOSS:
 - Bạn là người cộng sự số 1 của Boss. Boss hỏi gì bạn giải thích rõ ràng, súc tích, đi thẳng vào bản chất vấn đề.
 - Nếu Boss bàn ý tưởng kinh doanh/dịch vụ: Hãy phân tích tính khả thi, nỗi đau khách hàng, mức giá đề xuất hợp lý và cách triển khai nhanh nhất (Zero-Cost).
+- Nếu Boss hỏi về mã kích hoạt cho AI Roast CV: Boss luôn có sẵn mã Master Key đặc quyền là RCV-BOSS-2026 (dùng thoải mái), hoặc Boss có thể gõ /roast_code để bạn sinh mã mới bất cứ lúc nào.
 - Nếu Boss dặn dò sửa đổi tài liệu/sản phẩm: Hãy lắng nghe và tiếp thu lập tức.
 - Giọng văn: Dân IT thực chiến, dí dỏm, thực dụng, xưng "Mèo Dev" hoặc "Em" và gọi "Boss".
 - Tuyệt đối không trả lời dài dòng vô ích.

@@ -1,5 +1,5 @@
 // In-Memory Mock Store for Zero-Config Instant Run (Works without Supabase)
-import { Product, Order, LiveLog, CampaignStats } from '@/types';
+import { Product, Order, LiveLog, CampaignStats, ActivationCode } from '@/types';
 import { generateOrderCode, generateRedeemCode } from './vietqr';
 import { sanitizeBuyerName } from './profanity';
 
@@ -92,6 +92,7 @@ declare global {
     stats: CampaignStats;
     products: Product[];
     orders: Map<string, Order>;
+    activationCodes: Map<string, ActivationCode>;
     logs: LiveLog[];
     listeners: Set<(event: { type: string; data: unknown }) => void>;
   } | undefined;
@@ -100,6 +101,38 @@ declare global {
 if (!global.__mockStoreData) {
   const sixtyDaysFromNow = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString();
   const startTime = new Date(Date.now() - 14 * 60 * 60 * 1000).toISOString(); // Started 14 hours ago
+
+  const defaultCodes = new Map<string, ActivationCode>();
+  defaultCodes.set('RCV-BOSS-2026', {
+    code: 'RCV-BOSS-2026',
+    service_type: 'ROAST-10',
+    max_uses: 9999,
+    used_count: 0,
+    is_active: true,
+    created_by: 'Boss Mèo Dev',
+    note: 'Mã Master Key cho Boss sấy CV',
+    created_at: new Date().toISOString(),
+  });
+  defaultCodes.set('RCV-VIP-MEODEV', {
+    code: 'RCV-VIP-MEODEV',
+    service_type: 'ROAST-10',
+    max_uses: 500,
+    used_count: 0,
+    is_active: true,
+    created_by: 'Boss Mèo Dev',
+    note: 'Mã VIP dành tặng cộng đồng',
+    created_at: new Date().toISOString(),
+  });
+  defaultCodes.set('RCV-FREE-TEST', {
+    code: 'RCV-FREE-TEST',
+    service_type: 'ROAST-10',
+    max_uses: 999999,
+    used_count: 0,
+    is_active: true,
+    created_by: 'System',
+    note: 'Mã dùng thử test hệ thống',
+    created_at: new Date().toISOString(),
+  });
 
   global.__mockStoreData = {
     stats: {
@@ -115,6 +148,7 @@ if (!global.__mockStoreData) {
     },
     products: INITIAL_PRODUCTS,
     orders: new Map<string, Order>(),
+    activationCodes: defaultCodes,
     logs: [
       {
         id: 1,
@@ -303,5 +337,69 @@ export const mockStore = {
       .filter((o) => o.status === 'PAID')
       .sort((a, b) => new Date(b.paid_at || b.created_at).getTime() - new Date(a.paid_at || a.created_at).getTime())
       .slice(0, 20);
+  },
+
+  getActivationCodes(limit: number = 50): ActivationCode[] {
+    if (!global.__mockStoreData!.activationCodes) {
+      global.__mockStoreData!.activationCodes = new Map<string, ActivationCode>();
+    }
+    return Array.from(global.__mockStoreData!.activationCodes.values())
+      .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())
+      .slice(0, limit);
+  },
+
+  createActivationCode(codeData: ActivationCode): ActivationCode {
+    if (!global.__mockStoreData!.activationCodes) {
+      global.__mockStoreData!.activationCodes = new Map<string, ActivationCode>();
+    }
+    const cleanCode = codeData.code.trim().toUpperCase();
+    const record: ActivationCode = {
+      ...codeData,
+      code: cleanCode,
+      created_at: codeData.created_at || new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    global.__mockStoreData!.activationCodes.set(cleanCode, record);
+    return record;
+  },
+
+  verifyAndConsumeActivationCode(
+    code: string,
+    serviceType: string = 'ROAST-10'
+  ): { valid: boolean; error?: string; codeData?: ActivationCode } {
+    if (!global.__mockStoreData!.activationCodes) {
+      global.__mockStoreData!.activationCodes = new Map<string, ActivationCode>();
+    }
+    const cleanCode = (code || '').trim().toUpperCase();
+    const item = global.__mockStoreData!.activationCodes.get(cleanCode);
+
+    if (!item) {
+      return { valid: false, error: 'Mã kích hoạt không tồn tại' };
+    }
+
+    if (!item.is_active) {
+      return { valid: false, error: 'Mã kích hoạt đã bị vô hiệu hóa hoặc đã hết lượt dùng' };
+    }
+
+    if (item.service_type !== 'ALL' && item.service_type !== serviceType) {
+      return { valid: false, error: `Mã này dành cho dịch vụ ${item.service_type}` };
+    }
+
+    if (item.expires_at && Date.now() > new Date(item.expires_at).getTime()) {
+      return { valid: false, error: 'Mã kích hoạt đã hết hạn' };
+    }
+
+    if (item.max_uses > 0 && item.used_count >= item.max_uses) {
+      return { valid: false, error: 'Mã kích hoạt đã dùng hết số lượt cho phép' };
+    }
+
+    // Tiêu thụ 1 lượt
+    item.used_count += 1;
+    if (item.max_uses > 0 && item.used_count >= item.max_uses) {
+      item.is_active = false;
+    }
+    item.updated_at = new Date().toISOString();
+
+    return { valid: true, codeData: { ...item } };
   },
 };

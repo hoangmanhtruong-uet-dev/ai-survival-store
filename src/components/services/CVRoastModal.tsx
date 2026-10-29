@@ -408,22 +408,49 @@ Sở thích: Thích ngủ dậy muộn, ghét fix bug, chịu được áp lực
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Ô Nhập Mã Kích Hoạt */}
-              <div className="bg-zinc-900/60 border border-zinc-800/80 p-3 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div>
-                  <label className="block text-xs font-mono text-zinc-300 font-bold">
-                    Mã kích hoạt dịch vụ (ROAST-10):
-                  </label>
-                  <span className="text-[10px] text-emerald-400 font-mono">
-                    ✓ Hỗ trợ mã đơn hàng hoặc mã dùng thử RCV-FREE-TEST
-                  </span>
+              <div className="bg-zinc-900/60 border border-zinc-800/80 p-3.5 rounded-2xl space-y-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <label className="block text-xs font-mono text-zinc-300 font-bold flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                      <span>Mã kích hoạt dịch vụ (Activation / Redeem Code):</span>
+                    </label>
+                    <span className="text-[10px] text-zinc-400 font-mono">
+                      Nhập mã VIP Boss (RCV-BOSS-2026), mã kích hoạt RCV-XXXX hoặc mã đơn VietQR
+                    </span>
+                  </div>
+                  <input
+                    type="text"
+                    value={redeemCode}
+                    onChange={(e) => setRedeemCode(e.target.value)}
+                    placeholder="VD: RCV-BOSS-2026"
+                    className="bg-zinc-950 border border-zinc-700 focus:border-rose-500 rounded-xl px-3 py-1.5 text-xs text-amber-300 font-mono outline-none uppercase font-bold sm:w-56"
+                  />
                 </div>
-                <input
-                  type="text"
-                  value={redeemCode}
-                  onChange={(e) => setRedeemCode(e.target.value)}
-                  placeholder="Ví dụ: RCV-4829 hoặc MEO-4829"
-                  className="bg-zinc-950 border border-zinc-700 focus:border-rose-500 rounded-xl px-3 py-1.5 text-xs text-amber-300 font-mono outline-none uppercase font-bold"
-                />
+                {/* Nút bấm nhanh mã kích hoạt thử nghiệm / Boss */}
+                <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-zinc-800/60">
+                  <span className="text-[10px] text-zinc-500 font-mono">Mã nhanh:</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRedeemCode('RCV-BOSS-2026');
+                      soundEngine.playKeyClick();
+                    }}
+                    className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-950/60 text-amber-400 border border-amber-800/60 hover:bg-amber-900/60 transition cursor-pointer"
+                  >
+                    👑 RCV-BOSS-2026
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRedeemCode('RCV-FREE-TEST');
+                      soundEngine.playKeyClick();
+                    }}
+                    className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-800/60 hover:bg-emerald-900/60 transition cursor-pointer"
+                  >
+                    ✨ RCV-FREE-TEST
+                  </button>
+                </div>
               </div>
 
               {/* TÙY CHỈNH CHUYÊN SÂU: TARGET ROLE & SPICY LEVEL */}
