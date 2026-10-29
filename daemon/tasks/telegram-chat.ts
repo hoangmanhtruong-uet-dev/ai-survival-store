@@ -14,6 +14,10 @@ interface InMemoryMessage {
 // Bộ nhớ dự phòng RAM nếu Supabase chưa chạy file migration telegram_messages
 const memoryChatHistory: InMemoryMessage[] = [];
 
+// Chống trùng lặp tin nhắn (Deduplication) khi mạng lag hoặc restart
+const processedMessageIds = new Set<number>();
+const daemonStartTime = Math.floor(Date.now() / 1000);
+
 /**
  * Lấy lịch sử hội thoại gần nhất (tối đa 12 tin)
  */
@@ -120,6 +124,24 @@ export async function handleTelegramIncomingMessage(message: TelegramMessage): P
   const senderName = message.from?.first_name || message.from?.username || 'Boss';
 
   if (!text) return;
+
+  // 0. Chống trùng lặp tin nhắn (Deduplication)
+  if (message.date && message.date < daemonStartTime - 30) {
+    console.log(`⚠️ [TELEGRAM STALE] Bỏ qua tin nhắn cũ tồn đọng (date=${message.date}).`);
+    return;
+  }
+
+  if (message.message_id) {
+    if (processedMessageIds.has(message.message_id)) {
+      console.log(`⚠️ [TELEGRAM DEDUP] Đã xử lý tin nhắn message_id=${message.message_id}, bỏ qua.`);
+      return;
+    }
+    processedMessageIds.add(message.message_id);
+    if (processedMessageIds.size > 2000) {
+      const first = processedMessageIds.values().next().value;
+      if (first !== undefined) processedMessageIds.delete(first);
+    }
+  }
 
   // 1. Kiểm tra quyền bảo mật: Chỉ cho phép duy nhất Boss tương tác
   if (bossChatId && chatId !== bossChatId) {
