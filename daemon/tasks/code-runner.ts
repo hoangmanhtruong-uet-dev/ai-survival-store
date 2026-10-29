@@ -37,6 +37,7 @@ function resolveAgyBin(): string {
   } else {
     // Các đường dẫn phổ biến trên Linux / VPS
     const linuxPaths = [
+      path.join(process.env.HOME || '/root', '.local', 'bin', 'agy'),
       path.join(process.env.HOME || '/root', '.gemini', 'bin', 'agy'),
       '/usr/local/bin/agy',
       '/usr/bin/agy',
