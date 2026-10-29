@@ -18,7 +18,7 @@ export function filterProfanity(text: string): string {
 }
 
 /**
- * Che thông tin cá nhân (PII: Số điện thoại, Email, Số CMND/CCCD) trong bài chửi CV
+ * Che thông tin cá nhân (PII: Số điện thoại, Email, Số CMND/CCCD, Ngày sinh, Link riêng tư) trong bài sấy CV
  */
 export function scrubPII(text: string): string {
   if (!text) return '';
@@ -26,11 +26,15 @@ export function scrubPII(text: string): string {
     // Che email
     .replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, '[EMAIL ĐÃ CHE]')
     // Che số điện thoại VN (10-11 số)
-    .replace(/(0|\+84)[3|5|7|8|9][0-9]{8}/g, '[SĐT ĐÃ CHE]')
+    .replace(/(?:(?:\+84|0)(?:3|5|7|8|9)[0-9]{8})/g, '[SĐT ĐÃ CHE]')
     // Che số CCCD (12 số) hoặc CMND (9 số)
     .replace(/\b\d{9}\b|\b\d{12}\b/g, '[CCCD ĐÃ CHE]')
+    // Che ngày tháng năm sinh cụ thể (dd/mm/yyyy hoặc dd-mm-yyyy)
+    .replace(/\b(0?[1-9]|[12][0-9]|3[01])[\/\-\.](0?[1-9]|1[012])[\/\-\.](19\d\d|20\d\d)\b/g, '[NGÀY SINH ĐÃ CHE]')
+    // Che link Google Drive / Docs / Dropbox chứa CV cá nhân
+    .replace(/(https?:\/\/)?(drive\.google\.com|docs\.google\.com|dropbox\.com)\/[^\s]+/gi, '[LINK CLOUD ĐÃ CHE]')
     // Che link facebook / linkedin cá nhân
-    .replace(/(https?:\/\/)?(www\.)?(facebook\.com|linkedin\.com)\/[a-zA-Z0-9._-]+/g, '[LINK ĐÃ CHE]');
+    .replace(/(https?:\/\/)?(www\.)?(facebook\.com|linkedin\.com|github\.com)\/[a-zA-Z0-9._-]+/gi, '[LINK ĐÃ CHE]');
 }
 
 /**
