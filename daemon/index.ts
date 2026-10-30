@@ -10,6 +10,7 @@ import { runMarketAnalyzerTask } from './tasks/market-analyzer';
 import { runCustomTaskWorker } from './tasks/custom-task-worker';
 import { handleTelegramIncomingMessage, handlePlanCallback, executeResetHunger, getLiveStoreStats } from './tasks/telegram-chat';
 import { handleApproveMerge, handleDiscardCode } from './tasks/code-runner';
+import { executeAutonomousDeploy, handleDeployCallback } from './tasks/deploy-runner';
 
 const BANNER = `
 ==========================================================
@@ -34,6 +35,12 @@ async function main() {
   const args = process.argv.slice(2);
 
   // 2. Chế độ chạy thủ công các tác vụ đơn lẻ (CLI Mode)
+  if (args.includes('--deploy') || args.includes('-d')) {
+    console.log('▶️ [CLI] Kích hoạt thủ công: Tự động deploy bản mới nhất (Autonomous Deploy)');
+    const result = await executeAutonomousDeploy({ requestedBy: 'CLI Command --deploy' });
+    process.exit(result.success ? 0 : 1);
+  }
+
   if (args.includes('--reset-hunger') || args.includes('--feed')) {
     console.log('▶️ [CLI] Kích hoạt thủ công: Tự reset độ no bụng Mèo Dev (Hunger Reset 100%)');
     const targetChatId = DAEMON_CONFIG.telegramChatId;
@@ -141,6 +148,8 @@ async function main() {
       await answerTelegramCallback(cb.id, 'Đang lấy chỉ số...');
       const statsText = await getLiveStoreStats();
       await sendTelegramNotification(statsText, { parseMode: 'HTML' }, cb.message?.chat.id);
+    } else if (cb.data === 'deploy_latest' || cb.data === 'deploy_now') {
+      await handleDeployCallback(cb.id, cb.message?.chat.id);
     }
   };
 

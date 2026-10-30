@@ -19,7 +19,9 @@
     "daemon:market": "tsx daemon/index.ts --market",
     "daemon:listen": "tsx daemon/index.ts --listen",
     "daemon:chat": "tsx daemon/index.ts --chat",
-    "daemon:worker": "tsx daemon/index.ts --worker"
+    "daemon:worker": "tsx daemon/index.ts --worker",
+    "daemon:deploy": "tsx daemon/index.ts --deploy",
+    "deploy": "tsx daemon/index.ts --deploy"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1158.0",

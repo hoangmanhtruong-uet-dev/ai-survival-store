@@ -179,6 +179,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     return () => {
       active = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [product, initialOrderCode, selectedTierId, buyerEmail, buyerName, buyerNote, refCode]);
 
   const handleSelectTier = async (newTierId: string) => {
@@ -281,6 +282,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
       }
       clearInterval(fallbackInterval);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [order?.order_code, order?.status, onPaymentSuccess]);
 
   const copyToClipboard = (text: string, field: string) => {

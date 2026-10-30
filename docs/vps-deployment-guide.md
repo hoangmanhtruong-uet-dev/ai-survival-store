@@ -137,7 +137,12 @@ npm run daemon:product
 
 # Thử chạy chu kỳ trừ đói:
 npm run daemon:hunger
+
+# Tự động kiểm tra chất lượng, build và deploy bản mới nhất:
+npm run deploy
 ```
+
+> **Mẹo:** Boss chỉ cần mở Telegram nhắn: *"m tự deploy bản mới nhất đi"* hoặc gõ `/deploy`, Mèo Dev sẽ tự động checkout, test build Turbopack và push lên Production Vercel ngay lập tức!
 
 ---
 

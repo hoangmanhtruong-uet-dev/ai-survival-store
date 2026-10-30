@@ -4,6 +4,7 @@ import { askGemini, askGeminiWithSearch, getAgentRules } from '../services/gemin
 import { sendTelegramNotification, sendTelegramChatAction, answerTelegramCallback, TelegramMessage } from '../telegram';
 import { runMarketAnalyzerTask } from './market-analyzer';
 import { executeCodingTask } from './code-runner';
+import { executeAutonomousDeploy } from './deploy-runner';
 
 interface InMemoryMessage {
   role: 'user' | 'assistant' | 'system';
@@ -395,7 +396,8 @@ export async function handleTelegramIncomingMessage(message: TelegramMessage): P
       `🗺️ <b>CHIẾN LƯỢC & THỰC THI:</b>\n` +
       `• <code>/plan [mục tiêu/chủ đề]</code>: Lập bản kế hoạch chiến lược 4 phần kèm nút <b>[🚀 Triển khai ngay bằng /feat]</b>.\n` +
       `• <code>/feat [tính năng hoặc dịch vụ]</code>: Tự động phân loại: nếu là code web thì gọi Antigravity CLI Pro lập trình rẽ nhánh; nếu là sản phẩm số thì tự động soạn thảo mở bán!\n` +
-      `• <code>/code [yêu cầu]</code>: Lập trình trực tiếp từ xa bằng Antigravity CLI Pro trên server.\n\n` +
+      `• <code>/code [yêu cầu]</code>: Lập trình trực tiếp từ xa bằng Antigravity CLI Pro trên server.\n` +
+      `• <code>/deploy</code> hoặc nhắn <i>"m tự deploy bản mới nhất đi"</i>: Tự động kiểm tra lint, test build và đẩy lên Production Vercel + reload PM2 trên VPS.\n\n` +
       `🐟 <b>SINH TỒN & ĐỘ NO BỤNG:</b>\n` +
       `• <code>/feed</code> hoặc <code>/reset_hunger</code>: Tự reset độ no bụng của Mèo Dev về 100% no nê cày cuốc.\n` +
       `• <code>/autofeed [on/off]</code>: Bật/tắt chế độ tự cứu đói khi chạm ngưỡng nguy kịch (&lt; 20%).\n\n` +
@@ -405,8 +407,48 @@ export async function handleTelegramIncomingMessage(message: TelegramMessage): P
       `• <code>/analyze [chủ đề]</code>: Cào dữ liệu thị trường và đề xuất ý tưởng sản phẩm mới.\n\n` +
       `<i>Boss muốn em cày việc gì ngay bây giờ?</i>`;
 
-    await sendTelegramNotification(helpMsg, { parseMode: 'HTML' }, chatId);
+    await sendTelegramNotification(
+      helpMsg,
+      {
+        parseMode: 'HTML',
+        replyMarkup: {
+          inline_keyboard: [
+            [{ text: '🚀 Tự Deploy Bản Mới Nhất', callback_data: 'deploy_latest' }],
+            [{ text: '📊 Xem Chỉ Số /stats', callback_data: 'quick_stats' }],
+          ],
+        },
+      },
+      chatId
+    );
     await saveChatMessage(chatId, 'assistant', helpMsg);
+    return;
+  }
+
+  // Lệnh Tự Động Deploy Bản Mới Nhất (Autonomous Deploy to Vercel & VPS PM2)
+  const isDeployCommand =
+    lowerText === '/deploy' ||
+    lowerText === '/ship' ||
+    lowerText === '/release' ||
+    lowerText.startsWith('/deploy') ||
+    lowerText.includes('tự deploy') ||
+    lowerText.includes('deploy bản mới nhất') ||
+    lowerText.includes('deploy bản mới') ||
+    lowerText.includes('deploy đi em') ||
+    lowerText.includes('deploy lên web') ||
+    lowerText.includes('deploy production') ||
+    lowerText.includes('triển khai bản mới nhất') ||
+    lowerText.includes('triển khai production') ||
+    lowerText.includes('deploy lên vercel') ||
+    lowerText === 'deploy' ||
+    lowerText === 'deploy đi' ||
+    lowerText === 'm tự deploy bản mới nhất đi' ||
+    lowerText === 'm tự deploy đi' ||
+    lowerText === 'tự deploy đi em';
+
+  if (isDeployCommand) {
+    executeAutonomousDeploy({ chatId, requestedBy: senderName, triggerReason: text }).catch((err) => {
+      console.error('❌ Lỗi uncaught trong executeAutonomousDeploy từ Telegram message:', err);
+    });
     return;
   }
 
