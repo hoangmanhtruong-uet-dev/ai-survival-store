@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseClient } from '@/lib/supabase/client';
+import { mockStore } from '@/lib/mock-store';
+import { getSupabaseAdminClient, getSupabaseClient } from '@/lib/supabase/client';
 import { generateOrderCode, generateVietQRUrl } from '@/lib/vietqr';
 import { sanitizeBuyerName, filterProfanity } from '@/lib/profanity';
 import { isPayOSConfigured, createPayOSPaymentLink } from '@/lib/payos';
@@ -62,9 +63,9 @@ HÃY ĐỊNH GIÁ VÀ TRẢ LỜI KHÁCH:
       }
     }
 
-    // 2. Tạo đơn hàng trong Supabase
+    // 2. Tạo đơn hàng trong Supabase (hoặc mockStore) với quyền Admin Client
     const orderCode = generateOrderCode();
-    const supabase = getSupabaseClient();
+    const supabase = getSupabaseAdminClient() || getSupabaseClient();
     let order = null;
 
     if (supabase) {
@@ -88,24 +89,26 @@ HÃY ĐỊNH GIÁ VÀ TRẢ LỜI KHÁCH:
 
       if (!error && newOrder) {
         order = newOrder;
+        const maskedCode = `${orderCode.slice(0, 4)}***`;
         await supabase.from('live_logs').insert({
           type: 'ORDER_CREATED',
           message: `🛠️ Mèo Dev vừa nhận kèo cày thuê [${orderCode}] từ ${cleanName} (${estimatedPrice.toLocaleString('vi-VN')}đ): "${cleanTask.slice(0, 40)}..."`,
-          meta: { orderCode, amount: estimatedPrice, productId: 'CUSTOM-TASK' },
+          meta: { orderCode: maskedCode, amount: estimatedPrice, productId: 'CUSTOM-TASK' },
         });
+      } else {
+        console.warn('Lỗi khi chèn custom task order vào Supabase:', error?.message);
       }
     }
 
+    // LOGIC-04: Lưu an toàn vào mockStore nếu Supabase không khả dụng
     if (!order) {
-      order = {
-        order_code: orderCode,
-        product_id: 'CUSTOM-TASK',
-        amount: estimatedPrice,
-        buyer_name: cleanName,
-        buyer_email: cleanEmail,
-        buyer_note: cleanTask,
-        status: 'PENDING',
-      };
+      order = mockStore.createOrder('CUSTOM-TASK', cleanName, cleanTask, estimatedPrice, cleanEmail);
+      if (order) {
+        order.payment_meta = {
+          task_description: cleanTask,
+          cat_comment: catComment,
+        };
+      }
     }
 
     // 3. Tạo link thanh toán VietQR / PayOS

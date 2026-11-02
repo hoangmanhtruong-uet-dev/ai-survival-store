@@ -4,8 +4,8 @@ import { resetCatHunger, getHungerInfo, setAutoFeed } from '@/lib/hunger-service
 function verifyAdmin(req: NextRequest): boolean {
   const adminSecret = process.env.ADMIN_SECRET_KEY || process.env.PAYMENT_WEBHOOK_SECRET;
   if (!adminSecret) {
-    // Môi trường dev hoặc chưa cài secret thì cho phép
-    return true;
+    // Chỉ cho phép bỏ qua xác thực trên môi trường local dev
+    return process.env.NODE_ENV === 'development';
   }
 
   const authHeader = req.headers.get('authorization') || req.headers.get('x-admin-token') || '';

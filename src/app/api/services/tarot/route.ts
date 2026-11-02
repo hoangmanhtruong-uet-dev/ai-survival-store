@@ -15,16 +15,20 @@ export async function POST(req: NextRequest) {
 
     const cleanQuestion = filterProfanity(question.trim());
     const cleanBirthDate = birthDate || '2000-01-01';
-    const validCode = redeemCode?.trim().toUpperCase();
 
+    // SEC-07: Chuẩn hóa và làm sạch redeemCode
+    const rawCode = typeof redeemCode === 'string' ? redeemCode.trim().toUpperCase() : '';
+    const validCode = rawCode.replace(/[^A-Z0-9\-_]/g, '');
+
+    if (!validCode) {
+      return NextResponse.json({ success: false, error: 'Vui lòng quét mã 10k để nhận mã bốc quẻ Tarot từ Thầy Mèo!' }, { status: 403 });
+    }
+
+    const isDevBypass = process.env.NODE_ENV === 'development' && validCode === 'TRT-FREE-TEST';
     const supabase = getSupabaseAdminClient() || getSupabaseClient();
+    let isAuthorized = false;
+
     if (supabase) {
-      if (!validCode) {
-        return NextResponse.json({ success: false, error: 'Vui lòng quét mã 10k để nhận mã bốc quẻ Tarot từ Thầy Mèo!' }, { status: 403 });
-      }
-
-      const isDevBypass = process.env.NODE_ENV === 'development' && validCode === 'TRT-FREE-TEST';
-
       const { data: order } = await supabase
         .from('orders')
         .select('*')
@@ -32,26 +36,56 @@ export async function POST(req: NextRequest) {
         .eq('status', 'PAID')
         .single();
 
-      if (!order && !isDevBypass) {
-        return NextResponse.json(
-          { success: false, error: 'Mã bói quẻ không hợp lệ hoặc đơn hàng chưa thanh toán! Vui lòng quét mã 10k ủng hộ Mèo.' },
-          { status: 403 }
-        );
-      }
+      if (order) {
+        // LOGIC-07: Xác thực đơn hàng thuộc gói TAROT-10
+        if (order.product_id !== 'TAROT-10' && !isDevBypass) {
+          return NextResponse.json(
+            { success: false, error: 'Mã đơn hàng này không thuộc Gói Bói Tarot (TAROT-10)! Vui lòng sử dụng đúng mã đơn mua dịch vụ Tarot.' },
+            { status: 403 }
+          );
+        }
 
-      // SEC-08: Kiểm tra chống tái sử dụng token (Trả về kết quả quẻ trước đó nếu có)
-      if (order && order.is_redeemed && order.ai_result) {
-        return NextResponse.json({
-          success: true,
-          ...order.ai_result,
-          cached: true,
-          message: 'Quẻ Tarot trước đó đã được tải lại thành công.',
-        });
+        // SEC-04: Trả lại quẻ cũ nếu token đã từng được sử dụng
+        if (order.is_redeemed && order.ai_result) {
+          return NextResponse.json({
+            success: true,
+            ...order.ai_result,
+            cached: true,
+            message: 'Quẻ Tarot trước đó đã được tải lại thành công từ cơ sở dữ liệu.',
+          });
+        }
+
+        isAuthorized = true;
+      }
+    } else {
+      const mockOrder = mockStore.getOrderByCode(validCode);
+      if (mockOrder && mockOrder.status === 'PAID') {
+        if (mockOrder.product_id !== 'TAROT-10' && !isDevBypass) {
+          return NextResponse.json(
+            { success: false, error: 'Mã đơn hàng này không thuộc Gói Bói Tarot (TAROT-10)!' },
+            { status: 403 }
+          );
+        }
+        if (mockOrder.is_redeemed && mockOrder.ai_result) {
+          return NextResponse.json({
+            success: true,
+            ...mockOrder.ai_result,
+            cached: true,
+            message: 'Quẻ Tarot trước đó đã được tải lại thành công.',
+          });
+        }
+        isAuthorized = true;
       }
     }
 
-    const result = await getTarotReading(cleanQuestion, cleanBirthDate, category, selectedCardIds);
+    if (!isAuthorized && !isDevBypass) {
+      return NextResponse.json(
+        { success: false, error: 'Mã bói quẻ không hợp lệ hoặc đơn hàng chưa thanh toán! Vui lòng quét mã 10k ủng hộ Mèo.' },
+        { status: 403 }
+      );
+    }
 
+    const result = await getTarotReading(cleanQuestion, cleanBirthDate, category, selectedCardIds);
     const logMsg = `🔮 Thầy Mèo vừa bốc 3 lá luận quẻ [${category || 'Tổng quan'}]: "${cleanQuestion.slice(0, 40)}..."`;
 
     if (supabase) {
@@ -67,6 +101,11 @@ export async function POST(req: NextRequest) {
       }
     } else {
       mockStore.addLog('TASK_DONE', logMsg);
+      const mockOrder = mockStore.getOrderByCode(validCode);
+      if (mockOrder) {
+        mockOrder.is_redeemed = true;
+        mockOrder.ai_result = result as unknown as Record<string, unknown>;
+      }
     }
 
     return NextResponse.json({

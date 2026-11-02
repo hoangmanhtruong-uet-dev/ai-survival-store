@@ -31,17 +31,18 @@ CREATE POLICY "Cho phép service_role và route handler tạo orders"
   ON orders FOR INSERT
   WITH CHECK (true);
 
--- Đọc orders: Chỉ service_role có toàn quyền đọc tất cả
+-- Đọc orders: Chỉ service_role có toàn quyền đọc và truy vấn toàn bộ orders
 CREATE POLICY "Cho phép service_role đọc toàn bộ orders"
   ON orders FOR SELECT
   TO service_role
   USING (true);
 
--- Cho phép anon lắng nghe Realtime / đọc đơn của chính mình (chỉ xem thông tin cần thiết)
-CREATE POLICY "Cho phép đọc đơn hàng cơ bản theo order_code"
+-- Khóa quyền đọc công khai orders đối với anon để chống thu thập PII trái phép
+-- Mọi truy vấn tra cứu đơn hàng phải đi qua Route Handler an toàn trên Server (/api/orders/[code])
+CREATE POLICY "Chặn anon đọc trực tiếp bảng orders"
   ON orders FOR SELECT
-  TO anon, authenticated
-  USING (true);
+  TO anon
+  USING (false);
 
 
 -- 2. BẢNG CAMPAIGN_STATS (TIẾN ĐỘ CHIẾN DỊCH & ĐỘ ĐÓI CỦA MÈO)

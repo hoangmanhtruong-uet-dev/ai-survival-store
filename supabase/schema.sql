@@ -11,6 +11,8 @@ CREATE TABLE IF NOT EXISTS campaign_stats (
   total_orders INT DEFAULT 24,
   paid_orders INT DEFAULT 18,
   cat_hunger_level INT DEFAULT 85, -- 0 (chết đói) đến 100 (no căng bụng)
+  auto_feed_enabled BOOLEAN DEFAULT true,
+  last_hunger_reset_at TIMESTAMPTZ DEFAULT NOW(),
   last_order_at TIMESTAMPTZ DEFAULT NOW(),
   start_date TIMESTAMPTZ DEFAULT NOW(),
   end_date TIMESTAMPTZ DEFAULT (NOW() + INTERVAL '60 days')
@@ -27,7 +29,8 @@ CREATE TABLE IF NOT EXISTS products (
   name TEXT NOT NULL,
   description TEXT,
   price INT NOT NULL,
-  type TEXT NOT NULL CHECK (type IN ('DONATE', 'AI_TASK', 'R2_FILE', 'GDRIVE_ACCESS')),
+  type TEXT NOT NULL CHECK (type IN ('DONATE', 'AI_TASK', 'R2_FILE', 'GDRIVE_ACCESS', 'CUSTOM_TASK', 'EBOOK')),
+  content_markdown TEXT,
   r2_file_key TEXT,
   gdrive_folder_id TEXT,
   icon TEXT,
@@ -110,8 +113,67 @@ ALTER TABLE live_logs ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Cho phép đọc công khai campaign_stats" ON campaign_stats FOR SELECT USING (true);
 CREATE POLICY "Chỉ cho phép service_role cập nhật campaign_stats" ON campaign_stats FOR UPDATE TO service_role USING (true) WITH CHECK (true);
 CREATE POLICY "Cho phép đọc công khai products" ON products FOR SELECT USING (true);
-CREATE POLICY "Cho phép đọc đơn hàng orders" ON orders FOR SELECT USING (true);
+CREATE POLICY "Cho phép service_role đọc orders" ON orders FOR SELECT TO service_role USING (true);
+CREATE POLICY "Chặn anon đọc trực tiếp orders" ON orders FOR SELECT TO anon USING (false);
 CREATE POLICY "Cho phép tạo đơn hàng orders" ON orders FOR INSERT WITH CHECK (true);
 CREATE POLICY "Chỉ cho phép service_role cập nhật orders" ON orders FOR UPDATE TO service_role USING (true) WITH CHECK (true);
 CREATE POLICY "Cho phép đọc công khai live_logs" ON live_logs FOR SELECT USING (true);
 CREATE POLICY "Chỉ cho phép service_role chèn live_logs" ON live_logs FOR INSERT TO service_role WITH CHECK (true);
+
+-- 7. Bảng Phân Tích Thị Trường (Market Insights)
+CREATE TABLE IF NOT EXISTS market_insights (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  cycle_time TEXT,
+  trend_summary TEXT NOT NULL,
+  target_audience TEXT DEFAULT 'Học sinh THPT & Sinh viên IT',
+  market_pain_point TEXT,
+  proposed_product_id TEXT NOT NULL,
+  proposed_product_name TEXT NOT NULL,
+  proposed_price INT NOT NULL DEFAULT 29000,
+  proposed_description TEXT,
+  proposed_outline TEXT,
+  marketing_angle TEXT,
+  domain_category TEXT,
+  draft_content TEXT,
+  quality_metrics JSONB DEFAULT '{}'::jsonb,
+  authoring_feedback TEXT,
+  status TEXT DEFAULT 'PENDING_APPROVAL' CHECK (status IN ('PENDING_APPROVAL', 'DRAFTING', 'READY_FOR_REVIEW', 'APPROVED', 'REJECTED', 'SUPERSEDED')),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  reviewed_at TIMESTAMPTZ
+);
+ALTER TABLE market_insights ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Cho phép đọc công khai market_insights" ON market_insights FOR SELECT USING (true);
+CREATE POLICY "Chỉ cho phép service_role quản lý market_insights" ON market_insights FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+-- 8. Bảng Mã Kích Hoạt Dịch Vụ (Activation Codes)
+CREATE TABLE IF NOT EXISTS activation_codes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  code TEXT UNIQUE NOT NULL,
+  service_type TEXT NOT NULL DEFAULT 'ROAST-10',
+  max_uses INT NOT NULL DEFAULT 1,
+  used_count INT NOT NULL DEFAULT 0,
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  expires_at TIMESTAMPTZ,
+  created_by TEXT DEFAULT 'Admin Portal',
+  note TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+ALTER TABLE activation_codes ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Chỉ cho phép service_role quản lý activation_codes" ON activation_codes FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+-- 9. Bảng Tin Nhắn Telegram 2 Chiều (Telegram Messages)
+CREATE TABLE IF NOT EXISTS telegram_messages (
+  id BIGSERIAL PRIMARY KEY,
+  chat_id TEXT NOT NULL,
+  sender_role TEXT NOT NULL CHECK (sender_role IN ('user', 'assistant', 'system')),
+  sender_name TEXT,
+  content TEXT NOT NULL,
+  metadata JSONB DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+ALTER TABLE telegram_messages ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Chỉ cho phép service_role quản lý telegram_messages" ON telegram_messages FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+-- Realtime cho các bảng mở rộng
+ALTER PUBLICATION supabase_realtime ADD TABLE market_insights;

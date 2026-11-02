@@ -23,7 +23,11 @@ CREATE TABLE IF NOT EXISTS market_insights (
   proposed_description TEXT,
   proposed_outline TEXT,
   marketing_angle TEXT,
-  status TEXT DEFAULT 'PENDING_APPROVAL' CHECK (status IN ('PENDING_APPROVAL', 'APPROVED', 'REJECTED', 'SUPERSEDED')),
+  domain_category TEXT,
+  draft_content TEXT,
+  quality_metrics JSONB DEFAULT '{}'::jsonb,
+  authoring_feedback TEXT,
+  status TEXT DEFAULT 'PENDING_APPROVAL' CHECK (status IN ('PENDING_APPROVAL', 'DRAFTING', 'READY_FOR_REVIEW', 'APPROVED', 'REJECTED', 'SUPERSEDED')),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   reviewed_at TIMESTAMPTZ
 );

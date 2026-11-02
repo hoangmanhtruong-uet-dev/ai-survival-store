@@ -98,6 +98,15 @@ async function main() {
   const processTelegramCallback = async (cb: TelegramCallbackQuery) => {
     if (!cb.data) return;
 
+    // SEC-06: Xác thực quyền hạn của người gửi Callback Query (Chỉ cho phép Boss thao tác)
+    const senderId = String(cb.from?.id || cb.message?.chat.id || '');
+    const bossChatId = String(DAEMON_CONFIG.telegramChatId || '');
+    if (bossChatId && senderId !== bossChatId) {
+      console.warn(`🚨 [TELEGRAM SECURITY] Người lạ (ID: ${senderId}) cố bấm nút callback: "${cb.data}" ➜ Từ chối.`);
+      await answerTelegramCallback(cb.id, '⛔ Bạn không có quyền thao tác trên hệ thống Mèo Dev!');
+      return;
+    }
+
     if (cb.data.startsWith('approve:')) {
       const insightId = cb.data.replace('approve:', '');
       console.log(`\n🛎️ [TELEGRAM VÒNG 1] Boss duyệt ý tưởng ${insightId}! Mèo Dev bắt đầu biên soạn bản thảo chất lượng cao...`);

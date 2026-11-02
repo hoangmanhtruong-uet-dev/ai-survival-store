@@ -87,7 +87,42 @@ Hãy xuất ra định dạng Markdown hoàn hảo, chuyên nghiệp.
 
       console.log(`✅ Đã giải quyết xong đơn ${task.order_code}!`);
     } catch (err) {
-      console.error(`❌ Lỗi xử lý đơn ${task.order_code}:`, (err as Error).message);
+      const errMsg = (err as Error).message;
+      console.error(`❌ Lỗi xử lý đơn ${task.order_code}:`, errMsg);
+
+      // LOGIC-05: Chống lặp vô tận (Infinite Retry Loop)
+      const currentRetries = Number((task.payment_meta as Record<string, unknown>)?.retry_count || 0);
+      const newRetries = currentRetries + 1;
+      const isExhausted = newRetries >= 3;
+
+      await supabase
+        .from('orders')
+        .update({
+          is_redeemed: isExhausted, // Đánh dấu dừng quét nếu đã thử thất bại 3 lần
+          payment_meta: {
+            ...((task.payment_meta as Record<string, unknown>) || {}),
+            retry_count: newRetries,
+            last_error: errMsg,
+          },
+          ai_result: isExhausted
+            ? {
+                failed: true,
+                error_message: 'Yêu cầu của bạn đang được Mèo Dev chuyển tiếp hỗ trợ thủ công do gặp trục trặc kỹ thuật.',
+                failed_at: new Date().toISOString(),
+              }
+            : task.ai_result,
+        })
+        .eq('id', task.id);
+
+      if (isExhausted) {
+        await sendTelegramNotification(
+          `⚠️ <b>CẢNH BÁO: TASK CÀY THUÊ THẤT BẠI 3 LẦN LIÊN TIẾP!</b>\n\n` +
+          `• <b>Mã đơn:</b> <code>${task.order_code}</code>\n` +
+          `• <b>Khách hàng:</b> ${customerName} (${customerEmail})\n` +
+          `• <b>Lỗi:</b> <code>${errMsg.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code>\n\n` +
+          `<i>Mèo Dev đã tạm dừng tự động cày đơn này để Boss kiểm tra trực tiếp!</i>`
+        );
+      }
     }
   }
 }

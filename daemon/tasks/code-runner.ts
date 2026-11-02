@@ -227,6 +227,15 @@ export async function handleApproveMerge(callbackId: string, branchName: string)
       throw new Error(`Xung đột (conflict) khi merge: ${mergeErr}`);
     }
 
+    // [LOGIC-10] Kiểm tra build an toàn trước khi push lên main
+    console.log(`[MERGE] Chạy build verification trước khi push lên main...`);
+    const { code: buildCode, stderr: buildErr } = await runCommand('npm run build');
+    if (buildCode !== 0) {
+      // Rollback commit merge trên main để không làm bẩn nhánh chính
+      await runCommand('git reset --hard HEAD~1');
+      throw new Error(`Build verification thất bại: ${buildErr || 'Lỗi biên dịch/typecheck'}. Đã tự động rollback nhánh main!`);
+    }
+
     // Push lên GitHub để Vercel tự build
     console.log(`[MERGE] Đang push origin main...`);
     const { code: pushCode, stderr: pushErr } = await runCommand('git push origin main');

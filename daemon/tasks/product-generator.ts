@@ -139,18 +139,29 @@ TIÊU CHUẨN CHẤT LƯỢNG BẮT BUỘC (ANTI-SLOP MANIFESTO):
       qualityScore,
     };
 
-    // 4. Lưu bản thảo và metrics vào database (Chưa đăng lên bảng products!)
-    try {
-      await supabase
+    // 4. Lưu bản thảo và metrics vào database (LOGIC-02: Khắc phục swallowed error)
+    const { error: draftUpdateErr } = await supabase
+      .from('market_insights')
+      .update({
+        draft_content: markdownContent,
+        status: 'READY_FOR_REVIEW',
+        quality_metrics: metrics,
+      })
+      .eq('id', insightId);
+
+    if (draftUpdateErr) {
+      console.warn('⚠️ Lỗi cập nhật READY_FOR_REVIEW cho market_insights, đang fallback:', draftUpdateErr.message);
+      // Fallback nếu constraint chưa có trạng thái READY_FOR_REVIEW
+      const { error: fallbackErr } = await supabase
         .from('market_insights')
         .update({
           draft_content: markdownContent,
-          status: 'READY_FOR_REVIEW',
-          quality_metrics: metrics,
         })
         .eq('id', insightId);
-    } catch {
-      // Ignore
+
+      if (fallbackErr) {
+        console.error('❌ Không thể lưu draft_content vào database:', fallbackErr.message);
+      }
     }
 
     console.log(`✅ Đã biên soạn xong bản thảo (${words} từ, Quality Score: ${qualityScore}/100). Đang gửi Preview về Telegram cho Boss...`);

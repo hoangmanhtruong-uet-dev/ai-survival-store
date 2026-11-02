@@ -13,10 +13,18 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Thiếu thông tin file cần tải' }, { status: 400 });
     }
 
-    // 1. Bản Preview miễn phí (SEC-07: Chỉ cho phép file preview thực sự có hậu tố -preview.pdf)
+    // 1. Bản Preview miễn phí (LOGIC-01: Cho phép các tài liệu xem trước mẫu)
     const isExplicitPreview = searchParams.get('preview') === 'true';
     if (isExplicitPreview) {
-      if (!fileKey.toLowerCase().endsWith('-preview.pdf')) {
+      const lowerKey = fileKey.toLowerCase();
+      const isAllowedPreview =
+        lowerKey.endsWith('-preview.pdf') ||
+        lowerKey.endsWith('-preview.zip') ||
+        lowerKey === 'chem-12-lo-trinh.pdf' ||
+        lowerKey === 'chem-12-lo-trinh-preview.pdf' ||
+        lowerKey === 'git-cheatsheet-preview.pdf';
+
+      if (!isAllowedPreview) {
         return NextResponse.json(
           { success: false, error: 'Chỉ được phép xem trước các tài liệu preview mẫu.' },
           { status: 403 }

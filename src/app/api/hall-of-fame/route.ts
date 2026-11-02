@@ -14,9 +14,17 @@ export async function GET() {
         .eq('status', 'PAID')
         .order('paid_at', { ascending: false })
         .limit(20);
-      donors = data || [];
+
+      // SEC-05: Mask order_code công khai trên Bảng Vàng để chống thu thập & chiếm dụng token
+      donors = (data || []).map((d) => ({
+        ...d,
+        order_code: d.order_code ? `${d.order_code.slice(0, 4)}***` : 'MEO-***',
+      }));
     } else {
-      donors = mockStore.getHallOfFame();
+      donors = mockStore.getHallOfFame().map((d) => ({
+        ...d,
+        order_code: d.order_code ? `${d.order_code.slice(0, 4)}***` : 'MEO-***',
+      }));
     }
 
     return NextResponse.json({

@@ -8,9 +8,6 @@ export const CHEMISTRY_LAUNCH_DATE = '2026-11-01T06:00:00+07:00';
  * Kiểm tra xem Gói Đề Hóa có đang trong thời gian hoàn thiện (chưa mở bán) hay không
  */
 export function isChemistryComingSoon(): boolean {
-  if (typeof window === 'undefined') {
-    return true;
-  }
   return Date.now() < new Date(CHEMISTRY_LAUNCH_DATE).getTime();
 }
 

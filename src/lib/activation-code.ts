@@ -2,33 +2,33 @@ import { getSupabaseAdminClient, getSupabaseClient } from '@/lib/supabase/client
 import { mockStore } from '@/lib/mock-store';
 import { ActivationCode } from '@/types';
 
-// Danh sách các Master Codes mặc định của Boss và Hệ thống (Luôn hoạt động dù chưa có DB)
-const BUILTIN_MASTER_CODES: Record<string, { service: string; maxUses: number; description: string }> = {
+// Danh sách các Master Codes chỉ dành riêng cho môi trường Development (SEC-03)
+const DEV_MASTER_CODES: Record<string, { service: string; maxUses: number; description: string }> = {
   'RCV-BOSS-2026': {
     service: 'ROAST-10',
     maxUses: 99999,
-    description: 'Mã Master Key đặc quyền của Boss Mèo Dev',
+    description: 'Mã Master Key kiểm thử của Boss Mèo Dev (Dev Only)',
   },
   'RCV-VIP-MEODEV': {
     service: 'ROAST-10',
     maxUses: 1000,
-    description: 'Mã VIP dành tặng đối tác và cộng đồng',
+    description: 'Mã VIP kiểm thử đối tác (Dev Only)',
   },
   'RCV-FREE-TEST': {
     service: 'ROAST-10',
     maxUses: 999999,
-    description: 'Mã dùng thử và kiểm thử hệ thống',
+    description: 'Mã dùng thử và kiểm thử hệ thống (Dev Only)',
   },
 };
 
 /**
- * Lấy danh sách các mã kích hoạt từ biến môi trường nếu có
+ * Lấy danh sách các mã kích hoạt từ biến môi trường máy chủ bí mật nếu có
  * (ví dụ: ROAST_CV_ACTIVATION_CODES="RCV-VIP1,RCV-VIP2,ROAST-PRO")
  */
 function getEnvMasterCodes(): Set<string> {
-  const envCodes = process.env.ROAST_CV_ACTIVATION_CODES || '';
+  const envCodes = process.env.ROAST_CV_ACTIVATION_CODES || process.env.ROAST_CV_MASTER_KEY || '';
   const list = envCodes
-    .split(',')
+    .split(/[,;\n]/)
     .map((c) => c.trim().toUpperCase())
     .filter((c) => c.length > 0);
   return new Set(list);
@@ -62,32 +62,14 @@ export async function verifyAndConsumeActivationCode(
   inputCode: string,
   serviceType: string = 'ROAST-10'
 ): Promise<VerifyActivationResult> {
-  const code = (inputCode || '').trim().toUpperCase();
+  const rawCode = (inputCode || '').trim().toUpperCase();
+  const code = rawCode.replace(/[^A-Z0-9\-_]/g, '');
 
   if (!code) {
-    return { valid: false, error: 'Vui lòng cung cấp mã kích hoạt' };
+    return { valid: false, error: 'Vui lòng cung cấp mã kích hoạt hợp lệ' };
   }
 
-  // 1. Kiểm tra Master Codes của Boss & Dev
-  if (BUILTIN_MASTER_CODES[code]) {
-    const master = BUILTIN_MASTER_CODES[code];
-    if (master.service === 'ALL' || master.service === serviceType) {
-      return {
-        valid: true,
-        source: 'MASTER_KEY',
-        isMasterKey: true,
-        codeData: {
-          code,
-          service_type: master.service,
-          max_uses: master.maxUses,
-          used_count: 1,
-          is_active: true,
-          note: master.description,
-        },
-      };
-    }
-  }
-
+  // 1. Kiểm tra Master Codes từ biến môi trường máy chủ
   const envCodes = getEnvMasterCodes();
   if (envCodes.has(code)) {
     return {
@@ -105,18 +87,20 @@ export async function verifyAndConsumeActivationCode(
     };
   }
 
-  // Hỗ trợ mã test trên môi trường development
-  if (process.env.NODE_ENV === 'development' && (code === 'RCV-FREE-TEST' || code.startsWith('RCV-TEST'))) {
+  // Hỗ trợ mã test trên môi trường local development (SEC-03: Tuyệt đối cấm trên Production)
+  if (process.env.NODE_ENV === 'development' && DEV_MASTER_CODES[code]) {
+    const devMaster = DEV_MASTER_CODES[code];
     return {
       valid: true,
       source: 'MASTER_KEY',
       isMasterKey: true,
       codeData: {
         code,
-        service_type: serviceType,
-        max_uses: 99999,
+        service_type: devMaster.service,
+        max_uses: devMaster.maxUses,
         used_count: 0,
         is_active: true,
+        note: devMaster.description,
       },
     };
   }
@@ -202,6 +186,23 @@ export async function verifyAndConsumeActivationCode(
           };
         }
 
+        // SEC-04: Chống tấn công tái sử dụng token (Token Replay Attack)
+        if (order.is_redeemed) {
+          return {
+            valid: false,
+            error: 'Mã đơn hàng này đã được sử dụng trước đó! Bạn có thể xem lại kết quả đã lưu trong mục Tra Cứu Đơn Hàng.',
+            source: 'ORDER_RECORD',
+            codeData: {
+              code,
+              service_type: order.product_id,
+              max_uses: 1,
+              used_count: 1,
+              is_active: false,
+              note: order.buyer_note || order.buyer_name,
+            },
+          };
+        }
+
         return {
           valid: true,
           source: 'ORDER_RECORD',
@@ -209,8 +210,8 @@ export async function verifyAndConsumeActivationCode(
             code,
             service_type: order.product_id,
             max_uses: 1,
-            used_count: order.is_redeemed ? 1 : 0,
-            is_active: !order.is_redeemed,
+            used_count: 0,
+            is_active: true,
             note: order.buyer_note || order.buyer_name,
           },
         };
