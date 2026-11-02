@@ -49,10 +49,26 @@ Chỉ trả về nội dung thông báo, không kèm giải thích.
       console.warn('⚠️ Lỗi Gemini, dùng thông báo Flash Sale mặc định:', (err as Error).message);
     }
 
+    // Cập nhật trạng thái Flash Sale thật 100% vào database (Giảm 20% trong 2 giờ)
+    const endsAt = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString();
+    const discountPercent = 20;
+
+    try {
+      await supabase.from('campaign_stats').update({
+        is_flash_sale: true,
+        flash_sale_discount_percent: discountPercent,
+        flash_sale_ends_at: endsAt,
+        flash_sale_message: saleAnnouncement,
+      }).eq('id', 1);
+      console.log(`✅ Đã cập nhật trạng thái Flash Sale giảm ${discountPercent}% vào database (hạn tới ${endsAt})`);
+    } catch (dbErr) {
+      console.warn('⚠️ Lỗi cập nhật Flash Sale vào database:', (dbErr as Error).message);
+    }
+
     // Đẩy thông báo lên Live Terminal cho khách đang xem web
     const { error: logErr } = await supabase.from('live_logs').insert({
       type: 'SYSTEM',
-      message: `⚡ ${saleAnnouncement}`,
+      message: `⚡ [GIỜ VÀNG FLASH SALE -${discountPercent}%] ${saleAnnouncement}. Giá trên web và mã QR ngân hàng đã tự động giảm ${discountPercent}%!`,
     });
 
     if (logErr) {
@@ -63,13 +79,23 @@ Chỉ trả về nội dung thông báo, không kèm giải thích.
 
     // Bắn tin báo Telegram cho chủ nhân
     await sendTelegramNotification(
-      `⚡ <b>MÈO DEV ĐÃ TỰ ĐỘNG BẬT FLASH SALE!</b>\n\n` +
-      `<i>Do 6 tiếng qua chưa có đơn nổ, Mèo vừa tung thông điệp kích cầu lên Live Terminal:</i>\n\n` +
+      `⚡ <b>MÈO DEV ĐÃ KÍCH HOẠT FLASH SALE GIẢM ${discountPercent}% THẬT TRÊN WEB!</b>\n\n` +
+      `<i>Do 6 tiếng qua chưa có đơn nổ, Mèo đã kích hoạt ưu đãi Giảm Giá ${discountPercent}% THẬT 100% cho mọi dịch vụ:</i>\n\n` +
       `💬 <code>"${saleAnnouncement}"</code>\n\n` +
-      `🔗 Web: <a href="${DAEMON_CONFIG.siteUrl}">${DAEMON_CONFIG.siteUrl}</a>`
+      `🔥 <b>Mức giảm giá:</b> <code>-${discountPercent}%</code> (Áp dụng trực tiếp vào giao diện và mã QR VietQR)\n` +
+      `⏳ <b>Thời hạn:</b> 2 tiếng (Đến ${new Date(Date.now() + 2 * 3600 * 1000).toLocaleTimeString('vi-VN')})\n\n` +
+      `👉 <b>Kiểm tra trang web:</b> <a href="${DAEMON_CONFIG.siteUrl}">${DAEMON_CONFIG.siteUrl}</a>`
     );
   } else {
     console.log(`🎉 Doanh số ổn định (${paidCount} đơn trong 6h). Tạm thời không cần bật Flash Sale.`);
+    try {
+      await supabase.from('campaign_stats').update({
+        is_flash_sale: false,
+        flash_sale_ends_at: null,
+      }).eq('id', 1);
+    } catch {
+      // Ignore
+    }
   }
 
   console.log(`✅ [TASK 2] Hoàn thành kiểm tra chuyển đổi.`);

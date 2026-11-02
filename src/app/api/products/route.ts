@@ -4,6 +4,15 @@ import { getSupabaseClient } from '@/lib/supabase/client';
 import { getChemistryFolderId } from '@/lib/google-drive';
 import { Product } from '@/types';
 
+// Danh sách các sản phẩm rác/vô nghĩa cần loại bỏ triệt để theo yêu cầu của Boss
+const REMOVED_PRODUCT_IDS = new Set([
+  'PROMPT-SOLOPRENEUR-365',
+  'CASIO-VDC-2K7',
+  'AUTO-01',
+  'LIVE-BOM-DON',
+  'GIT-25',
+]);
+
 export async function GET() {
   try {
     const supabase = getSupabaseClient();
@@ -15,7 +24,12 @@ export async function GET() {
         .order('sort_order', { ascending: true });
 
       if (!error && data && data.length > 0) {
-        const mappedProducts: Product[] = data.map((p) => {
+        // Lọc bỏ 5 sản phẩm vô nghĩa và các ebook lý thuyết suông
+        const filteredData = data.filter(
+          (p) => !REMOVED_PRODUCT_IDS.has(p.id) && p.type !== 'EBOOK'
+        );
+
+        const mappedProducts: Product[] = filteredData.map((p) => {
           if (p.id.startsWith('CHEM-')) {
             return {
               ...p,
@@ -39,14 +53,47 @@ export async function GET() {
             is_active: true,
             sort_order: 3,
           });
-          mappedProducts.sort((a, b) => a.sort_order - b.sort_order);
         }
+
+        // Luôn đảm bảo giữ lại sản phẩm dịch vụ thực chiến: CUSTOM-TASK
+        if (!mappedProducts.some((p) => p.id === 'CUSTOM-TASK')) {
+          mappedProducts.push({
+            id: 'CUSTOM-TASK',
+            name: 'Giao Kèo Cày Thuê (Code Web, Script, Giải Bài)',
+            description: 'Nhập bất kỳ yêu cầu lập trình hay học tập, Mèo Dev tự định giá 19k - 49k, tự code và tự trả hàng qua Gmail!',
+            price: 29000,
+            type: 'CUSTOM_TASK',
+            icon: '⚡',
+            badge: 'Nhận việc 24/7',
+            is_active: true,
+            sort_order: 10,
+          });
+        }
+
+        mappedProducts.sort((a, b) => a.sort_order - b.sort_order);
 
         return NextResponse.json({ success: true, products: mappedProducts });
       }
     }
 
-    const products = mockStore.getProducts();
+    const rawProducts = mockStore.getProducts();
+    const products = rawProducts.filter(
+      (p) => !REMOVED_PRODUCT_IDS.has(p.id) && p.type !== 'EBOOK'
+    );
+    if (!products.some((p) => p.id === 'CUSTOM-TASK')) {
+      products.push({
+        id: 'CUSTOM-TASK',
+        name: 'Giao Kèo Cày Thuê (Code Web, Script, Giải Bài)',
+        description: 'Nhập bất kỳ yêu cầu lập trình hay học tập, Mèo Dev tự định giá 19k - 49k, tự code và tự trả hàng qua Gmail!',
+        price: 29000,
+        type: 'CUSTOM_TASK',
+        icon: '⚡',
+        badge: 'Nhận việc 24/7',
+        is_active: true,
+        sort_order: 10,
+      });
+    }
+
     return NextResponse.json({ success: true, products });
   } catch (error) {
     return NextResponse.json(

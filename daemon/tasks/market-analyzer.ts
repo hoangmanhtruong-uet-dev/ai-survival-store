@@ -27,45 +27,45 @@ export interface MarketDomainConfig {
 export const MARKET_DOMAINS: MarketDomainConfig[] = [
   {
     cycle: '00:00',
-    category: 'AUTOMATION_TOOLS',
-    title: 'Công Cụ Số & Automation Thực Chiến',
-    description: 'SaaS micro-scripts, n8n/make templates, scripts cào data, bot tự động hóa quy trình',
-    searchDirectives: 'tool tự động hóa AI workflow n8n make script cào dữ liệu giải pháp tự động công việc Việt Nam 2026',
+    category: 'CODE_TASKS',
+    title: 'Dịch Vụ Cày Thuê Script Python / Node.js & Scraper Cào Data',
+    description: 'Viết tool cào dữ liệu Shopee/Tiktok/Website, script tự động tải ảnh, xử lý file dữ liệu',
+    searchDirectives: 'thuê viết script python cào dữ liệu tool tự động hóa crawl shopee website giá rẻ 2026',
   },
   {
     cycle: '04:00',
-    category: 'FREELANCE_SERVICES',
-    title: 'Dịch Vụ Freelance & Tech Agency',
-    description: 'Dịch vụ setup bot chăm sóc khách hàng, audit tối ưu database, outsource kỹ thuật cho shop/doanh nghiệp nhỏ',
-    searchDirectives: 'dịch vụ outsource AI chatbot chăm sóc khách hàng setup CRM tối ưu chi phí cho shop online',
+    category: 'BOT_DEV',
+    title: 'Dịch Vụ Lập Trình Bot Telegram / Zalo Thông Báo Tự Động',
+    description: 'Viết bot gửi thông báo đơn hàng, bot cảnh báo server sập, bot theo dõi biến động giá',
+    searchDirectives: 'viết bot telegram thông báo đơn hàng tự động hóa bot theo dõi giá script nodejs python',
   },
   {
     cycle: '08:00',
-    category: 'DIGITAL_BUSINESS_ASSETS',
-    title: 'Tài Sản & Sản Phẩm Số Kinh Doanh',
-    description: 'Prompt engineering packs chuyên sâu, Notion OS quản lý tài chính/kinh doanh, SOP quy trình chuẩn',
-    searchDirectives: 'Notion template quản lý kinh doanh bán lẻ prompt pack AI thực chiến cẩm nang SOP quy trình',
+    category: 'OFFICE_AUTOMATION',
+    title: 'Tự Động Hóa Văn Phòng & Excel / Google Apps Script',
+    description: 'Viết Macro VBA, Google Apps Script tự động tổng hợp báo cáo doanh thu, chuyển PDF sang Excel',
+    searchDirectives: 'thuê viết code google apps script macro vba excel tự động hóa báo cáo doanh thu',
   },
   {
     cycle: '12:00',
-    category: 'GROWTH_MARKETING',
-    title: 'Giải Pháp Tăng Trưởng & Marketing Online',
-    description: 'Kịch bản video TikTok 30s triệu view, bộ content hook chuyển đổi cao cho Threads/Facebook, template chạy ads',
-    searchDirectives: 'kịch bản tiktok viral bán hàng template content threads facebook ads chuyển đổi cao xu hướng 2026',
+    category: 'STUDENT_CS_SUPPORT',
+    title: 'Hỗ Trợ Bài Tập Lớn & Đồ Án CNTT Cho Sinh Viên',
+    description: 'Review code đồ án, phát hiện lỗi tiềm ẩn, vẽ Diagram UML/ERD, viết README & tài liệu kỹ thuật',
+    searchDirectives: 'hỗ trợ bài tập lớn công nghệ thông tin review code vẽ diagram uml erd sinh viên it',
   },
   {
     cycle: '16:00',
-    category: 'CAREER_SKILLS',
-    title: 'Kỹ Năng & Nghề Nghiệp Đắt Giá',
-    description: 'CV ATS vượt vòng lọc tuyển dụng, bộ câu hỏi & lời giải phỏng vấn kỹ thuật/kinh doanh, cẩm nang bứt phá thu nhập',
-    searchDirectives: 'bộ câu hỏi phỏng vấn fresher junior IT kinh doanh mẫu CV ATS bẫy tuyển dụng lương cao thực chiến',
+    category: 'DEV_READY_TEMPLATES',
+    title: 'Mã Nguồn & Boilerplate Ứng Dụng Chạy Được Ngay',
+    description: 'Source code Bot quản lý chi tiêu, Starter template Next.js 16 + VietQR thanh toán tự động',
+    searchDirectives: 'source code bot telegram quản lý tài chính template nextjs thanh toán vietqr boilerplate',
   },
   {
     cycle: '20:00',
-    category: 'HOT_TRENDS',
-    title: 'Xu Hướng Nóng & Cơ Hội Bán Hàng Trực Tiếp',
-    description: 'Google Trends nóng nhất tại Việt Nam, sản phẩm giải quyết nỗi đau cấp bách nhất trên thị trường',
-    searchDirectives: 'xu hướng kinh doanh online kiếm tiền hot trend việt nam giải pháp bán hàng thực tế ngách tiềm năng',
+    category: 'BUG_FIXING_SERVICE',
+    title: 'Dịch Vụ Sửa Bug CSS / Responsive / API Cấp Tốc',
+    description: 'Fix lỗi giao diện vỡ trên mobile, sửa lỗi CORS, sửa truy vấn SQL chậm, sửa regex',
+    searchDirectives: 'thuê sửa lỗi web vỡ css responsive fix bug javascript sửa api lập trình viên cấp tốc',
   },
 ];
 
@@ -120,38 +120,42 @@ export async function runMarketAnalyzerTask(cycleLabel?: string, customTopic?: s
 
   const existingPending = pendingInsights?.[0];
 
-  // 3. Prompt nghiên cứu thị trường đa ngành kết hợp Google Search Grounding
+  // 3. Prompt nghiên cứu thị trường kỹ thuật thực chiến kết hợp Google Search Grounding
   const prompt = `
 Bạn là "Mèo Dev", một AI lập trình viên thực dụng, thông minh đang sinh tồn và cày KPI 7.000.000 VNĐ.
-Mục tiêu của bạn: Tra cứu xu hướng THỰC TẾ mới nhất tại Việt Nam bằng Google Search Grounding để tìm ra ĐÚNG 1 KHOẢNG TRỐNG THỊ TRƯỜNG để làm SẢN PHẨM SỐ hoặc DỊCH VỤ CÀY THUÊ mà người dùng (cá nhân kinh doanh, freelancer, shop online, học sinh/sinh viên, dân văn phòng) sẵn sàng bỏ từ 19.000đ đến 99.000đ mua ngay lập tức.
+YÊU CẦU ĐẶC BIỆT QUAN TRỌNG TỪ BOSS DUYỆT ĐƠN:
+- TUYỆT ĐỐI KHÔNG TẠO EBOOK LÝ THUYẾT SUÔNG, SỔ TAY CONTENT, KỊCH BẢN TIKTOK/LIVESTREAM HAY BỘ PROMPT CHÉM GIÓ VÔ NGHĨA. (Boss đã nghiêm cấm vì không ai mua và vô bổ).
+- MỌI ĐỀ XUẤT BẮT BUỘC PHẢI LÀ:
+  + Một DỊCH VỤ CÀY THUÊ KỸ THUẬT CỤ THỂ mà khách bỏ tiền thuê Mèo Dev code/xử lý (giá 19.000đ - 49.000đ) HOẶC
+  + Một MÃ NGUỒN / SCRIPT / TEMPLATE CHẠY ĐƯỢC NGAY mà khách tải về là dùng được luôn (giải quyết đúng 1 vấn đề cụ thể).
 
 MẢNG NGÀNH ƯU TIÊN LẦN NÀY:
 - Lĩnh vực: ${selectedDomain.title}
-- Mô tả: ${selectedDomain.description}
+- Chi tiết: ${selectedDomain.description}
 - Hướng tra cứu Google: ${selectedDomain.searchDirectives}
 
-CÁC SẢN PHẨM ĐÃ CÓ (TUYỆT ĐỐI KHÔNG ĐƯỢC TRÙNG LẶP):
+CÁC SẢN PHẨM ĐÃ CÓ (TUYỆT ĐỐI KHÔNG TRÙNG):
 ${existingNames.map((n) => `- ${n}`).join('\n')}
 
 Yêu cầu phân tích và trả về ĐÚNG định dạng JSON hợp lệ (không kèm markdown \`\`\`json):
 {
   "domain_category": "${selectedDomain.category}",
-  "trend_summary": "Tóm tắt ngắn 1-2 câu về xu hướng/nhu cầu thực tế bạn vừa tìm thấy đang rất nóng tại Việt Nam",
-  "target_audience": "Đối tượng khách hàng cụ thể (VD: Chủ shop thời trang online / Freelancer viết lách / Người mới bắt đầu học AI / Dân văn phòng xử lý Excel)",
-  "market_pain_point": "Nỗi đau cấp bách nhất khiến họ sẵn sàng trả tiền để giải quyết ngay lập tức (1 câu)",
-  "proposed_product_id": "MÃ_GÓI_VIẾT_HOA_NGẮN_GỌN",
-  "proposed_product_name": "Tên sản phẩm/dịch vụ giật tít, đánh trúng tâm lý, cam kết hiệu quả rõ ràng",
+  "trend_summary": "1-2 câu về nhu cầu kỹ thuật/lập trình thực tế nóng nhất tại Việt Nam",
+  "target_audience": "Đối tượng khách cụ thể (VD: Sinh viên CNTT / Dev Fresher / Chủ shop cần cào data / Kế toán xử lý Excel)",
+  "market_pain_point": "Vấn đề kỹ thuật đau đầu nhất họ muốn bỏ tiền thuê người code/xử lý ngay",
+  "proposed_product_id": "MÃ_GÓI_VIẾT_HOA_NGẮN",
+  "proposed_product_name": "Tên dịch vụ/tool rõ ràng, thực tế, cam kết kết quả (VD: 'Cày Thuê Script Python Auto-Crawl Dữ Liệu')",
   "proposed_price": 29000,
-  "proposed_description": "Mô tả giá trị cốt lõi giải quyết vấn đề (1-2 câu)",
-  "proposed_outline": "Mục lục chi tiết 5 phần của sản phẩm thực chiến (hoặc các bước quy trình dịch vụ cụ thể)",
-  "marketing_angle": "Góc tiếp cận giật gân để viết bài viral Threads / TikTok / Facebook kéo khách"
+  "proposed_description": "Mô tả cụ thể khách nhận được gì (VD: Script .py hoàn chỉnh + file hướng dẫn + test chạy ok)",
+  "proposed_outline": "Quy trình 4-5 bước thực hiện rõ ràng mà Mèo Dev sẽ làm cho khách",
+  "marketing_angle": "Góc tiếp cận thực chiến kiểu dev cày thuê sinh tồn"
 }
 `;
 
   try {
     const { text: rawAiResponse } = await askGeminiWithSearch(
       prompt,
-      'Bạn là Giám đốc Nghiên cứu Thị trường & Lập trình viên AI Mèo Dev. Hãy phân tích sắc bén, thực dụng, tuyệt đối không tạo sản phẩm lý thuyết suông.'
+      'Bạn là Kỹ sư Trưởng kiêm AI Cày Thuê Mèo Dev. Hãy đề xuất dịch vụ lập trình và tool công nghệ có ích thật 100%, tuyệt đối không tạo ebook rác.'
     );
 
     const cleanJson = rawAiResponse.replace(/```json/g, '').replace(/```/g, '').trim();
@@ -226,22 +230,22 @@ Yêu cầu phân tích và trả về ĐÚNG định dạng JSON hợp lệ (kh�
     const tokenQuery = adminToken ? `&token=${encodeURIComponent(adminToken)}` : '';
 
     const message =
-      `💡 <b>[MÈO DEV MARKET RADAR - CA ${cycle}]</b>\n` +
-      `📁 <b>Mảng:</b> <code>${selectedDomain.title}</code>\n\n` +
-      `🔥 <b>Xu hướng thị trường:</b>\n<i>${result.trend_summary}</i>\n\n` +
-      `🎯 <b>Khách hàng mục tiêu:</b> ${result.target_audience}\n` +
-      `⚡ <b>Nỗi đau cấp bách:</b> ${result.market_pain_point}\n\n` +
-      `📦 <b>ĐỀ XUẤT SẢN PHẨM / DỊCH VỤ:</b>\n` +
+      `🛠️ <b>[MÈO DEV ĐỀ XUẤT DỊCH VỤ CÀY THUÊ - CA ${cycle}]</b>\n` +
+      `📁 <b>Mảng công nghệ:</b> <code>${selectedDomain.title}</code>\n\n` +
+      `🔥 <b>Nhu cầu thực tế:</b>\n<i>${result.trend_summary}</i>\n\n` +
+      `🎯 <b>Khách hàng:</b> ${result.target_audience}\n` +
+      `⚡ <b>Vấn đề cần giải quyết:</b> ${result.market_pain_point}\n\n` +
+      `📦 <b>CHI TIẾT DỊCH VỤ / MÃ NGUỒN:</b>\n` +
       `• <b>Mã:</b> <code>${result.proposed_product_id}</code>\n` +
-      `• <b>Tên:</b> <b>${result.proposed_product_name}</b>\n` +
-      `• <b>Giá bán đề xuất:</b> <code>${Number(result.proposed_price).toLocaleString('vi-VN')} VNĐ</code>\n` +
-      `• <b>Mô tả:</b> ${result.proposed_description}\n\n` +
-      `📌 <b>Dàn bài / Quy trình:</b>\n<code>${result.proposed_outline}</code>\n\n` +
-      `📣 <b>Góc Marketing Viral:</b> <i>"${result.marketing_angle}"</i>\n` +
+      `• <b>Tên dịch vụ:</b> <b>${result.proposed_product_name}</b>\n` +
+      `• <b>Giá cày thuê:</b> <code>${Number(result.proposed_price).toLocaleString('vi-VN')} VNĐ</code>\n` +
+      `• <b>Bàn giao cho khách:</b> ${result.proposed_description}\n\n` +
+      `📌 <b>Quy trình Mèo Dev thực hiện:</b>\n<code>${result.proposed_outline}</code>\n\n` +
+      `📣 <b>Góc tiếp cận:</b> <i>"${result.marketing_angle}"</i>\n` +
       reminderText +
-      `\n👇 <b>Quy trình kiểm duyệt 2 vòng:</b>\n` +
-      `Bấm [✍️ Bắt Đầu Viết Thử] để Mèo Dev biên soạn toàn văn chất lượng cao và gửi lại cho Boss xem trước trước khi đăng lên web!\n` +
-      `<i>(Hoặc duyệt qua Web: <a href="${DAEMON_CONFIG.siteUrl}/api/admin/approve-product?id=${insightId}${tokenQuery}">Bấm Vào Đây</a>)</i>`;
+      `\n👇 <b>Thao tác duyệt:</b>\n` +
+      `Bấm [🚀 Duyệt Triển Khai Dịch Vụ] để Mèo Dev mở bán và nhận order cày thuê tự động trên Web!\n` +
+      `<i>(Hoặc duyệt nhanh qua Web: <a href="${DAEMON_CONFIG.siteUrl}/api/admin/approve-product?id=${insightId}${tokenQuery}">Bấm Vào Đây</a>)</i>`;
 
     await sendTelegramNotification(message, {
       parseMode: 'HTML',
@@ -249,11 +253,11 @@ Yêu cầu phân tích và trả về ĐÚNG định dạng JSON hợp lệ (kh�
         inline_keyboard: [
           [
             {
-              text: `✍️ Bắt Đầu Viết Thử (${Number(result.proposed_price).toLocaleString('vi-VN')}đ)`,
+              text: `🚀 Duyệt Triển Khai Dịch Vụ (${Number(result.proposed_price).toLocaleString('vi-VN')}đ)`,
               callback_data: `approve:${insightId}`,
             },
             {
-              text: '🔄 Đổi Ý Tưởng Khác',
+              text: '🔄 Đổi Dịch Vụ Khác',
               callback_data: `reroll:${insightId}`,
             },
           ],

@@ -186,9 +186,18 @@ export const mockStore = {
     const hungerDrop = Math.floor(hoursElapsed * 2);
     const computedHunger = Math.max(5, Math.min(100, stats.cat_hunger_level - hungerDrop));
 
+    const isFlashSale = Boolean(
+      stats.is_flash_sale ||
+      (stats.flash_sale_ends_at && new Date(stats.flash_sale_ends_at).getTime() > now) ||
+      hoursElapsed >= 6
+    );
+
     return {
       ...stats,
       cat_hunger_level: computedHunger,
+      is_flash_sale: isFlashSale,
+      flash_sale_discount_percent: stats.flash_sale_discount_percent || 20,
+      flash_sale_message: stats.flash_sale_message || '🔥 GIỜ VÀNG FLASH SALE — Giảm ngay 20% toàn bộ dịch vụ và gói tài liệu!',
     };
   },
 

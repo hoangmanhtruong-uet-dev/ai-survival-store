@@ -21,6 +21,8 @@ interface PaymentModalProps {
   onOpenChemistryTutor?: (token?: string) => void;
   onOpenEbookReader?: (title: string, markdown: string) => void;
   onOpenChemistryPreorder?: (tierId?: string) => void;
+  isFlashSale?: boolean;
+  flashSaleDiscount?: number;
 }
 
 export interface ChemistryTier {
@@ -72,6 +74,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   onOpenChemistryTutor,
   onOpenEbookReader,
   onOpenChemistryPreorder,
+  isFlashSale = false,
+  flashSaleDiscount = 20,
 }) => {
   const [order, setOrder] = useState<Order | null>(null);
   const [buyerName] = useState('');
@@ -626,9 +630,20 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                             </div>
 
                             <div className="mt-2 pt-1 border-t border-zinc-800/80 flex items-center justify-between">
-                              <span className="text-xs font-bold font-mono text-emerald-400">
-                                {tier.price.toLocaleString('vi-VN')}đ
-                              </span>
+                              {isFlashSale ? (
+                                <div>
+                                  <span className="text-[10px] line-through text-zinc-500 mr-1">
+                                    {tier.price.toLocaleString('vi-VN')}đ
+                                  </span>
+                                  <span className="text-xs font-bold font-mono text-amber-400">
+                                    {(Math.round((tier.price * (100 - flashSaleDiscount)) / 1000) * 1000).toLocaleString('vi-VN')}đ
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-xs font-bold font-mono text-emerald-400">
+                                  {tier.price.toLocaleString('vi-VN')}đ
+                                </span>
+                              )}
                               <span
                                 className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center text-[9px] ${
                                   isSelected
@@ -742,9 +757,21 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                       {/* Số tiền */}
                       <div className="flex items-center justify-between py-1 border-b border-zinc-800/80">
                         <span className="text-zinc-400">Số tiền:</span>
-                        <span className="text-sm font-bold text-emerald-400">
-                          {order.amount.toLocaleString('vi-VN')} VNĐ
-                        </span>
+                        <div className="text-right">
+                          {currentProduct && order.amount < currentProduct.price && (
+                            <span className="text-xs line-through text-zinc-500 mr-2">
+                              {currentProduct.price.toLocaleString('vi-VN')}đ
+                            </span>
+                          )}
+                          <span className="text-sm font-bold text-emerald-400">
+                            {order.amount.toLocaleString('vi-VN')} VNĐ
+                          </span>
+                          {currentProduct && order.amount < currentProduct.price && (
+                            <span className="block text-[10px] text-rose-400 font-bold">
+                              🔥 Đã giảm -{flashSaleDiscount}% Giờ Vàng
+                            </span>
+                          )}
+                        </div>
                       </div>
 
                       {/* Ngân hàng & Số tài khoản */}

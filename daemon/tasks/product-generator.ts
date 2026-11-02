@@ -247,24 +247,25 @@ export async function publishProductFromDraft(insightId: string): Promise<boolea
       throw new Error('Sản phẩm chưa có nội dung bản thảo draft_content. Vui lòng bấm biên soạn trước.');
     }
 
-    // Xác định icon phù hợp theo mảng ngành
-    let icon = '📚';
+    // Xác định icon phù hợp theo mảng dịch vụ kỹ thuật
+    let icon = '⚡';
     const category = insight.domain_category || '';
-    if (category.includes('AUTOMATION')) icon = '⚡';
-    else if (category.includes('SERVICE')) icon = '🛠️';
-    else if (category.includes('MARKETING')) icon = '🚀';
-    else if (category.includes('CAREER')) icon = '💼';
+    if (category.includes('CODE') || category.includes('SCRIPT')) icon = '💻';
+    else if (category.includes('BOT')) icon = '🤖';
+    else if (category.includes('OFFICE') || category.includes('EXCEL')) icon = '📊';
+    else if (category.includes('STUDENT')) icon = '🎓';
+    else if (category.includes('BUG')) icon = '🐛';
 
-    // Nạp chính thức vào bảng products
+    // Nạp chính thức vào bảng products dưới dạng Dịch Vụ Cày Thuê Thực Chiến
     const { error: insertProductErr } = await supabase.from('products').upsert({
       id: insight.proposed_product_id,
       name: insight.proposed_product_name,
       description: insight.proposed_description,
       price: Number(insight.proposed_price),
-      type: 'EBOOK',
-      content_markdown: insight.draft_content,
+      type: 'CUSTOM_TASK',
+      content_markdown: insight.draft_content || null,
       icon,
-      badge: 'Vừa Lên Kệ',
+      badge: 'Cày Thuê 24/7',
       is_active: true,
       sort_order: 35,
     });
@@ -297,7 +298,7 @@ export async function publishProductFromDraft(insightId: string): Promise<boolea
       `📦 <b>Mã gói:</b> <code>${insight.proposed_product_id}</code>\n` +
       `🏷️ <b>Tên:</b> <b>${insight.proposed_product_name}</b>\n` +
       `💰 <b>Giá bán:</b> <code>${Number(insight.proposed_price).toLocaleString('vi-VN')} VNĐ</code>\n` +
-      `📖 <b>Định dạng:</b> Ebook Interactive Reader trực tuyến\n\n` +
+      `📖 <b>Định dạng:</b> Dịch Vụ Cày Thuê Nhận Việc Trực Tuyến 24/7 (Bàn giao qua Gmail)\n\n` +
       `👉 Khách hàng truy cập <a href="${DAEMON_CONFIG.siteUrl}">${DAEMON_CONFIG.siteUrl}</a> đã có thể quét mã VietQR và trải nghiệm ngay lập tức!`
     );
 

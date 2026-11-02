@@ -36,11 +36,23 @@ export async function POST(req: NextRequest) {
 
     if (supabase) {
       const { data: prodData } = await supabase.from('products').select('*').eq('id', targetProductId).single();
-      const { data: stats } = await supabase.from('campaign_stats').select('last_order_at').eq('id', 1).single();
+      const { data: stats } = await supabase
+        .from('campaign_stats')
+        .select('last_order_at, is_flash_sale, flash_sale_discount_percent, flash_sale_ends_at')
+        .eq('id', 1)
+        .single();
 
-      // LOGIC-06: Kiểm tra Flash Sale kích cầu thực tế (nếu > 6 tiếng chưa có đơn)
+      // Kiểm tra Flash Sale kích cầu thực tế (từ database hoặc nếu > 6 tiếng chưa có đơn)
       const lastOrderTime = stats?.last_order_at ? new Date(stats.last_order_at).getTime() : 0;
-      const isFlashSaleActive = !stats?.last_order_at || (Date.now() - lastOrderTime >= 6 * 60 * 60 * 1000);
+      const isTimerActive = stats?.flash_sale_ends_at ? new Date(stats.flash_sale_ends_at).getTime() > Date.now() : false;
+      const isFlashSaleActive = Boolean(
+        stats?.is_flash_sale ||
+        isTimerActive ||
+        !stats?.last_order_at ||
+        Date.now() - lastOrderTime >= 6 * 60 * 60 * 1000
+      );
+
+      const discountPercent = stats?.flash_sale_discount_percent || 20;
 
       // SEC-09: Ngăn chặn sửa đổi giá tùy ý qua customAmount (chỉ áp dụng cho gói DONATE / PATE-05)
       const isDonation = prodData?.type === 'DONATE' || targetProductId === 'PATE-05';
@@ -48,9 +60,9 @@ export async function POST(req: NextRequest) {
         ? Math.max(5000, Number(customAmount) || prodData?.price || 5000)
         : (prodData?.price || 5000);
 
-      // Áp dụng giảm giá 15% cho các gói học/tài liệu nếu đang Giờ Vàng Flash Sale
-      if (isFlashSaleActive && !isDonation && productPrice > 20000) {
-        productPrice = Math.round((productPrice * 0.85) / 1000) * 1000;
+      // Áp dụng giảm giá Flash Sale thật 20% cho toàn bộ sản phẩm/dịch vụ (ngoại trừ gói donate)
+      if (isFlashSaleActive && !isDonation) {
+        productPrice = Math.round((productPrice * (100 - discountPercent)) / 1000) * 1000;
       }
 
       // LOGIC-03: Thử tạo đơn hàng với retry loop chống va chạm mã UNIQUE

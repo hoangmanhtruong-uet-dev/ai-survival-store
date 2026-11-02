@@ -61,6 +61,10 @@ export interface CampaignStats {
   end_date: string;
   auto_feed_enabled?: boolean;
   last_hunger_reset_at?: string | null;
+  is_flash_sale?: boolean;
+  flash_sale_discount_percent?: number;
+  flash_sale_ends_at?: string | null;
+  flash_sale_message?: string | null;
 }
 
 export interface ChatMessage {

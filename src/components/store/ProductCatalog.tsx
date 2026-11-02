@@ -14,7 +14,18 @@ interface ProductCatalogProps {
   onOpenChemistryQuiz?: () => void;
   onOpenCustomTask?: () => void;
   onOpenChemistryPreorder?: (tierId?: string) => void;
+  isFlashSale?: boolean;
+  flashSaleDiscount?: number;
+  flashSaleMessage?: string | null;
 }
+
+const REMOVED_PRODUCT_IDS = new Set([
+  'PROMPT-SOLOPRENEUR-365',
+  'CASIO-VDC-2K7',
+  'AUTO-01',
+  'LIVE-BOM-DON',
+  'GIT-25',
+]);
 
 export const ProductCatalog: React.FC<ProductCatalogProps> = ({
   products,
@@ -25,14 +36,22 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
   onOpenChemistryQuiz,
   onOpenCustomTask,
   onOpenChemistryPreorder,
+  isFlashSale = false,
+  flashSaleDiscount = 20,
+  flashSaleMessage,
 }) => {
   const [isComingSoon] = React.useState(() => isChemistryComingSoon());
 
-  // Gom các gói Hóa học lại thành 1 thẻ duy nhất "CHEM-PACK", ẩn các gói con CHEM-49, CHEM-89, CHEM-149
+  // Lọc bỏ 5 sản phẩm vô nghĩa & các ebook lý thuyết, gom các gói Hóa học, giữ lại CUSTOM-TASK
   const displayProducts = React.useMemo(() => {
-    const nonSubChem = products.filter((p) => !['CHEM-49', 'CHEM-89', 'CHEM-149'].includes(p.id));
+    const validProducts = products.filter(
+      (p) =>
+        !['CHEM-49', 'CHEM-89', 'CHEM-149'].includes(p.id) &&
+        !REMOVED_PRODUCT_IDS.has(p.id) &&
+        p.type !== 'EBOOK'
+    );
 
-    const list = [...nonSubChem];
+    const list = [...validProducts];
 
     if (!list.some((p) => p.id === 'CHEM-PACK')) {
       const chemPack: Product = {
@@ -59,7 +78,7 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
         price: 29000,
         type: 'CUSTOM_TASK',
         icon: '⚡',
-        badge: 'Nhận việc 24/7',
+        badge: 'Hot • Nhận việc 24/7',
         is_active: true,
         sort_order: 10,
       };
@@ -86,6 +105,34 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
           <span>Tự động 100% không cần Admin duyệt</span>
         </div>
       </div>
+
+      {/* Banner 0: GIỜ VÀNG FLASH SALE (NẾU ĐANG DIỄN RA) */}
+      {isFlashSale && (
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-amber-500 via-rose-500 to-amber-500 p-0.5 shadow-xl animate-pulse">
+          <div className="bg-zinc-950/95 backdrop-blur rounded-[14px] p-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center text-2xl shrink-0">
+                ⚡
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-xs font-black uppercase tracking-wider text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/30">
+                    🔥 ĐANG DIỄN RA GIỜ VÀNG FLASH SALE (-{flashSaleDiscount}%)
+                  </span>
+                </div>
+                <p className="text-xs text-zinc-300 mt-1 font-medium">
+                  {flashSaleMessage || 'Server đang ế ẩm! Mèo Dev hạ giá 20% toàn bộ dịch vụ và gói đề. Quét mã QR nhận đúng giá sale thật 100%!'}
+                </p>
+              </div>
+            </div>
+            <div className="text-right shrink-0">
+              <span className="text-xs font-mono text-emerald-400 bg-emerald-950/80 border border-emerald-500/30 px-3 py-1 rounded-lg block font-bold">
+                ✓ GIÁ SALE ÁP DỤNG TRỰC TIẾP
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Lead Magnet Banner: Thi thử 10 câu bẫy Hóa THPT */}
       <div className="bg-gradient-to-r from-emerald-950/60 via-zinc-900 to-amber-950/40 border border-emerald-500/30 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
@@ -157,18 +204,24 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {displayProducts.map((p) => {
-          const isDonate = p.type === 'DONATE';
+          const isDonate = p.type === 'DONATE' || p.id === 'PATE-05';
           const isRoast = p.id === 'ROAST-10';
           const isTarot = p.id === 'TAROT-10';
-          const isFile = p.type === 'R2_FILE';
           const isGDrive = p.type === 'GDRIVE_ACCESS' || p.id.startsWith('CHEM-');
-          const isEbook = p.type === 'EBOOK';
+          const isCustomTask = p.type === 'CUSTOM_TASK' || p.id === 'CUSTOM-TASK';
+
+          const discountPercent = isFlashSale ? (flashSaleDiscount || 20) : 0;
+          const effectivePrice = discountPercent > 0 && !isDonate
+            ? Math.round((p.price * (100 - discountPercent)) / 1000) * 1000
+            : p.price;
 
           return (
             <div
               key={p.id}
               className={`relative flex flex-col justify-between bg-zinc-900/90 border rounded-2xl p-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${
-                isGDrive
+                isCustomTask
+                  ? 'border-indigo-500/60 hover:border-indigo-400 hover:shadow-indigo-950/40 bg-zinc-900/95 ring-1 ring-indigo-500/30'
+                  : isGDrive
                   ? 'border-emerald-500/50 hover:border-emerald-400 hover:shadow-emerald-950/30 bg-zinc-900/95 ring-1 ring-emerald-500/20'
                   : isDonate
                   ? 'border-pink-500/40 hover:border-pink-400 hover:shadow-pink-950/30'
@@ -180,23 +233,32 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
               }`}
             >
               {/* Badge trên góc card */}
-              {p.badge && (
-                <div className="absolute -top-2.5 left-4">
-                  <span
-                    className={`text-[9px] font-mono font-bold uppercase px-2 py-0.5 rounded-full border shadow-sm ${
-                      isGDrive
-                        ? 'bg-emerald-950 text-emerald-300 border-emerald-600/70'
-                        : isDonate
-                        ? 'bg-pink-950 text-pink-300 border-pink-700/60'
-                        : isRoast
-                        ? 'bg-orange-950 text-orange-300 border-orange-700/60'
-                        : isTarot
-                        ? 'bg-purple-950 text-purple-300 border-purple-700/60'
-                        : 'bg-emerald-950 text-emerald-300 border-emerald-700/60'
-                    }`}
-                  >
-                    {p.badge}
-                  </span>
+              {(p.badge || (discountPercent > 0 && !isDonate)) && (
+                <div className="absolute -top-2.5 left-4 flex items-center gap-1.5">
+                  {p.badge && (
+                    <span
+                      className={`text-[9px] font-mono font-bold uppercase px-2 py-0.5 rounded-full border shadow-sm ${
+                        isCustomTask
+                          ? 'bg-indigo-950 text-indigo-300 border-indigo-600/70'
+                          : isGDrive
+                          ? 'bg-emerald-950 text-emerald-300 border-emerald-600/70'
+                          : isDonate
+                          ? 'bg-pink-950 text-pink-300 border-pink-700/60'
+                          : isRoast
+                          ? 'bg-orange-950 text-orange-300 border-orange-700/60'
+                          : isTarot
+                          ? 'bg-purple-950 text-purple-300 border-purple-700/60'
+                          : 'bg-emerald-950 text-emerald-300 border-emerald-700/60'
+                      }`}
+                    >
+                      {p.badge}
+                    </span>
+                  )}
+                  {discountPercent > 0 && !isDonate && (
+                    <span className="text-[9px] font-mono font-bold uppercase px-2 py-0.5 rounded-full bg-rose-600 text-white border border-rose-400 shadow-sm animate-pulse">
+                      -{discountPercent}% SALE
+                    </span>
+                  )}
                 </div>
               )}
 
@@ -224,17 +286,34 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
                 {/* Giá tiền */}
                 <div className="border-t border-zinc-800/80 pt-2.5 mb-2.5 flex items-baseline justify-between">
                   <span className="text-[10px] text-zinc-500 uppercase font-mono">
-                    {isGDrive ? 'Giá từ:' : 'Giá cứu đói:'}
+                    {isGDrive || isCustomTask ? 'Giá từ:' : 'Giá cứu đói:'}
                   </span>
                   <div className="text-right">
-                    <span className="text-base font-black font-mono text-emerald-400">
-                      {p.price.toLocaleString('vi-VN')}
-                    </span>
-                    <span className="text-xs font-mono text-emerald-500/80 ml-0.5">đ</span>
-                    {isGDrive && (
-                      <span className="block text-[10px] font-mono text-amber-400 font-semibold">
-                        (49k • 89k • 149k)
-                      </span>
+                    {discountPercent > 0 && !isDonate ? (
+                      <div>
+                        <span className="text-xs font-mono line-through text-zinc-500 mr-1.5">
+                          {p.price.toLocaleString('vi-VN')}đ
+                        </span>
+                        <span className="text-base font-black font-mono text-amber-400">
+                          {effectivePrice.toLocaleString('vi-VN')}
+                        </span>
+                        <span className="text-xs font-mono text-amber-400 ml-0.5">đ</span>
+                        <span className="block text-[10px] font-mono text-rose-400 font-bold">
+                          🔥 Tiết kiệm {(p.price - effectivePrice).toLocaleString('vi-VN')}đ
+                        </span>
+                      </div>
+                    ) : (
+                      <div>
+                        <span className="text-base font-black font-mono text-emerald-400">
+                          {p.price.toLocaleString('vi-VN')}
+                        </span>
+                        <span className="text-xs font-mono text-emerald-500/80 ml-0.5">đ</span>
+                        {isGDrive && (
+                          <span className="block text-[10px] font-mono text-amber-400 font-semibold">
+                            (49k • 89k • 149k)
+                          </span>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>
@@ -249,7 +328,7 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
                         className="w-full py-2 px-3 rounded-xl font-bold font-mono text-xs flex items-center justify-center gap-1.5 bg-gradient-to-r from-orange-500 to-rose-500 hover:from-orange-400 hover:to-rose-400 text-white shadow-lg shadow-orange-950/40 transition cursor-pointer"
                       >
                         <Flame className="w-3.5 h-3.5" />
-                        <span>🔥 Mua Gói Sấy CV (10.000đ)</span>
+                        <span>🔥 Mua Gói Sấy CV ({effectivePrice.toLocaleString('vi-VN')}đ)</span>
                       </button>
                       <button
                         onClick={() => onOpenRoastCV && onOpenRoastCV('')}
@@ -268,7 +347,7 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
                         className="w-full py-2 px-3 rounded-xl font-bold font-mono text-xs flex items-center justify-center gap-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-lg shadow-purple-950/40 transition cursor-pointer"
                       >
                         <Sparkles className="w-3.5 h-3.5" />
-                        <span>🔮 Bói Quẻ Tarot (10.000đ)</span>
+                        <span>🔮 Bói Quẻ Tarot ({effectivePrice.toLocaleString('vi-VN')}đ)</span>
                       </button>
                       <button
                         onClick={() => onOpenTarot && onOpenTarot('')}
@@ -279,38 +358,18 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
                     </>
                   )}
 
-                  {/* 3. Nếu là File số R2_FILE */}
-                  {isFile && (
-                    <>
-                      <button
-                        onClick={() => onSelectProduct(p)}
-                        className="w-full py-2 px-3 rounded-xl font-bold font-mono text-xs flex items-center justify-center gap-1.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-zinc-950 shadow-lg shadow-emerald-950/40 transition cursor-pointer"
-                      >
-                        <Sparkles className="w-3.5 h-3.5" />
-                        <span>Mua Ngay (QR)</span>
-                      </button>
-                      <a
-                        href={`/api/download?preview=true&key=${p.id === 'GIT-25' ? 'git-cheatsheet-preview.pdf' : (p.r2_file_key || 'chem-12-lo-trinh.pdf')}`}
-                        download
-                        className="block text-center py-1 text-[11px] font-mono text-emerald-400 hover:text-emerald-300 hover:underline"
-                      >
-                        ⚡ Tải bản Preview mẫu (Miễn phí)
-                      </a>
-                    </>
-                  )}
-
-                  {/* 4. Nếu là Donate Pate PATE-05 */}
+                  {/* 3. Nếu là Donate Pate PATE-05 */}
                   {isDonate && (
                     <button
                       onClick={() => onSelectProduct(p)}
                       className="w-full py-2 px-3 rounded-xl font-bold font-mono text-xs flex items-center justify-center gap-1.5 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-400 hover:to-rose-400 text-white shadow-lg shadow-pink-950/40 transition cursor-pointer"
                     >
                       <Heart className="w-3.5 h-3.5 fill-current" />
-                      <span>Nuôi Mèo Ngay (QR)</span>
+                      <span>Nuôi Mèo Ngay (5.000đ)</span>
                     </button>
                   )}
 
-                  {/* 5. Nếu là Gói Đề Hóa GDRIVE_ACCESS (CHEM-PACK) */}
+                  {/* 4. Nếu là Gói Đề Hóa GDRIVE_ACCESS (CHEM-PACK) */}
                   {isGDrive && (
                     <>
                       {isComingSoon ? (
@@ -329,7 +388,7 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
                           className="w-full py-2 px-3 rounded-xl font-bold font-mono text-xs flex items-center justify-center gap-1.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-zinc-950 shadow-lg shadow-emerald-950/40 transition cursor-pointer"
                         >
                           <Sparkles className="w-3.5 h-3.5" />
-                          <span>⚡ Chọn Gói Mua (3 Lựa Chọn)</span>
+                          <span>⚡ Chọn Gói Mua ({discountPercent > 0 ? `Từ ${effectivePrice.toLocaleString('vi-VN')}đ` : '3 Lựa Chọn'})</span>
                         </button>
                       )}
 
@@ -356,25 +415,14 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
                     </>
                   )}
 
-                  {/* 6. Nếu là Kèo Cày Thuê CUSTOM_TASK */}
-                  {p.type === 'CUSTOM_TASK' && (
+                  {/* 5. Nếu là Kèo Cày Thuê CUSTOM_TASK */}
+                  {isCustomTask && (
                     <button
                       onClick={onOpenCustomTask}
                       className="w-full py-2 px-3 rounded-xl font-bold font-mono text-xs flex items-center justify-center gap-1.5 bg-gradient-to-r from-indigo-500 to-emerald-500 hover:from-indigo-400 hover:to-emerald-400 text-zinc-950 shadow-lg shadow-indigo-950/40 transition cursor-pointer"
                     >
                       <Sparkles className="w-3.5 h-3.5" />
-                      <span>⚡ Đặt Kèo Cho Mèo Làm</span>
-                    </button>
-                  )}
-
-                  {/* 7. Nếu là Ebook / Cẩm nang số tự động biên soạn */}
-                  {isEbook && (
-                    <button
-                      onClick={() => onSelectProduct(p)}
-                      className="w-full py-2 px-3 rounded-xl font-bold font-mono text-xs flex items-center justify-center gap-1.5 bg-gradient-to-r from-amber-400 to-emerald-400 hover:from-amber-300 hover:to-emerald-300 text-zinc-950 shadow-lg shadow-emerald-950/40 transition cursor-pointer"
-                    >
-                      <Sparkles className="w-3.5 h-3.5" />
-                      <span>Mua Ebook Ngay (QR)</span>
+                      <span>🚀 Đặt Kèo Cho Mèo Làm ({discountPercent > 0 ? `Sale -${discountPercent}%` : 'Từ 19k - 49k'})</span>
                     </button>
                   )}
                 </div>

@@ -13,6 +13,10 @@ CREATE TABLE IF NOT EXISTS campaign_stats (
   cat_hunger_level INT DEFAULT 85, -- 0 (chết đói) đến 100 (no căng bụng)
   auto_feed_enabled BOOLEAN DEFAULT true,
   last_hunger_reset_at TIMESTAMPTZ DEFAULT NOW(),
+  is_flash_sale BOOLEAN DEFAULT false,
+  flash_sale_discount_percent INT DEFAULT 20,
+  flash_sale_ends_at TIMESTAMPTZ,
+  flash_sale_message TEXT,
   last_order_at TIMESTAMPTZ DEFAULT NOW(),
   start_date TIMESTAMPTZ DEFAULT NOW(),
   end_date TIMESTAMPTZ DEFAULT (NOW() + INTERVAL '60 days')

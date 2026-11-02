@@ -314,6 +314,9 @@ export default function Home() {
           onOpenChemistryQuiz={handleOpenChemistryQuiz}
           onOpenCustomTask={() => setIsCustomTaskOpen(true)}
           onOpenChemistryPreorder={handleOpenChemistryPreorder}
+          isFlashSale={stats?.is_flash_sale}
+          flashSaleDiscount={stats?.flash_sale_discount_percent}
+          flashSaleMessage={stats?.flash_sale_message}
         />
 
         {/* KHU VỰC 4: KHU THỰC THI DỊCH VỤ & TRA CỨU ĐƠN */}
@@ -358,6 +361,8 @@ export default function Home() {
           onOpenChemistryTutor={handleOpenChemistryTutor}
           onOpenEbookReader={handleOpenEbookReader}
           onOpenChemistryPreorder={handleOpenChemistryPreorder}
+          isFlashSale={stats?.is_flash_sale}
+          flashSaleDiscount={stats?.flash_sale_discount_percent}
         />
       )}
 
