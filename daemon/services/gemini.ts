@@ -74,6 +74,13 @@ export async function askGemini(prompt: string, customInstruction?: string, retr
 
     return response.text || '';
   } catch (err) {
+    const isNotFound = String(err).includes('404') || String(err).includes('not found') || String(err).includes('NOT_FOUND');
+    if (isNotFound && DAEMON_CONFIG.geminiModel !== 'gemini-1.5-flash') {
+      console.warn(`⚠️ [GEMINI 404] Model "${DAEMON_CONFIG.geminiModel}" không tồn tại. Tự động chuyển sang model chuẩn: "gemini-1.5-flash"...`);
+      DAEMON_CONFIG.geminiModel = 'gemini-1.5-flash';
+      return askGemini(prompt, customInstruction, retryCount);
+    }
+
     const isRateLimit = String(err).includes('429') || String(err).includes('RESOURCE_EXHAUSTED');
     if (isRateLimit && retryCount < maxRetries) {
       console.warn(`⚠️ [GEMINI 429] Key hiện tại chạm hạn mức quota. Tự động xoay tua sang key tiếp theo (${retryCount + 1}/${maxRetries})...`);

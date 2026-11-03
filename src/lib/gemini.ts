@@ -37,7 +37,7 @@ export function isGeminiConfigured(): boolean {
 
 export function getGeminiModel(): string {
   const model = process.env.GEMINI_MODEL?.trim();
-  return model || 'gemini-2.0-flash';
+  return model || 'gemini-1.5-flash';
 }
 
 async function createChatOrder(productId: string, buyerName = 'Khách Chat AI', buyerNote = 'Mua qua chat') {
