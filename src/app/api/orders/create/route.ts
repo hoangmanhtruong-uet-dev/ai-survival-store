@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
 
       // Áp dụng giảm giá Flash Sale thật 20% cho toàn bộ sản phẩm/dịch vụ (ngoại trừ gói donate)
       if (isFlashSaleActive && !isDonation) {
-        productPrice = Math.round((productPrice * (100 - discountPercent)) / 1000) * 1000;
+        productPrice = Math.round((productPrice * (100 - discountPercent) / 100) / 1000) * 1000;
       }
 
       // LOGIC-03: Thử tạo đơn hàng với retry loop chống va chạm mã UNIQUE

@@ -636,7 +636,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                                     {tier.price.toLocaleString('vi-VN')}đ
                                   </span>
                                   <span className="text-xs font-bold font-mono text-amber-400">
-                                    {(Math.round((tier.price * (100 - flashSaleDiscount)) / 1000) * 1000).toLocaleString('vi-VN')}đ
+                                    {(Math.round((tier.price * (100 - flashSaleDiscount) / 100) / 1000) * 1000).toLocaleString('vi-VN')}đ
                                   </span>
                                 </div>
                               ) : (

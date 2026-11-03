@@ -212,7 +212,7 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
 
           const discountPercent = isFlashSale ? (flashSaleDiscount || 20) : 0;
           const effectivePrice = discountPercent > 0 && !isDonate
-            ? Math.round((p.price * (100 - discountPercent)) / 1000) * 1000
+            ? Math.round((p.price * (100 - discountPercent) / 100) / 1000) * 1000
             : p.price;
 
           return (
