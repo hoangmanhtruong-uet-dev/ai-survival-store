@@ -164,6 +164,14 @@ export async function executeAutonomousDeploy(options: DeployOptions = {}): Prom
     }
 
     if (targetChatId) {
+      // Tự động làm mới lịch nhắc nhở bảo trì 7 ngày sau khi deploy thành công
+      try {
+        const { scheduleUpdateReminder } = await import('./update-reminder');
+        scheduleUpdateReminder(7, 'Tự động hẹn 7 ngày sau khi deploy thành công bản mới');
+      } catch {
+        // Ignore
+      }
+
       const finishMsg =
         `🎉 <b>MÈO DEV ĐÃ TỰ DEPLOY BẢN MỚI NHẤT THÀNH CÔNG!</b>\n\n` +
         `🔖 <b>Commit:</b> <code>${commitHash}</code>\n` +

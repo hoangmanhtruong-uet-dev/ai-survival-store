@@ -397,7 +397,8 @@ export async function handleTelegramIncomingMessage(message: TelegramMessage): P
       `• <code>/plan [mục tiêu/chủ đề]</code>: Lập bản kế hoạch chiến lược 4 phần kèm nút <b>[🚀 Triển khai ngay bằng /feat]</b>.\n` +
       `• <code>/feat [tính năng hoặc dịch vụ]</code>: Tự động phân loại: nếu là code web thì gọi Antigravity CLI Pro lập trình rẽ nhánh; nếu là sản phẩm số thì tự động soạn thảo mở bán!\n` +
       `• <code>/code [yêu cầu]</code>: Lập trình trực tiếp từ xa bằng Antigravity CLI Pro trên server.\n` +
-      `• <code>/deploy</code> hoặc nhắn <i>"m tự deploy bản mới nhất đi"</i>: Tự động kiểm tra lint, test build và đẩy lên Production Vercel + reload PM2 trên VPS.\n\n` +
+      `• <code>/deploy</code> hoặc nhắn <i>"m tự deploy bản mới nhất đi"</i>: Tự động kiểm tra lint, test build và đẩy lên Production Vercel + reload PM2 trên VPS.\n` +
+      `• <code>/remind [số ngày]</code>: Đặt lịch tự động nhắc nhở Boss kiểm tra & update code (mặc định 7 ngày).\n\n` +
       `🐟 <b>SINH TỒN & ĐỘ NO BỤNG:</b>\n` +
       `• <code>/feed</code> hoặc <code>/reset_hunger</code>: Tự reset độ no bụng của Mèo Dev về 100% no nê cày cuốc.\n` +
       `• <code>/autofeed [on/off]</code>: Bật/tắt chế độ tự cứu đói khi chạm ngưỡng nguy kịch (&lt; 20%).\n\n` +
@@ -492,6 +493,68 @@ export async function handleTelegramIncomingMessage(message: TelegramMessage): P
 
   if (isResetHungerCommand) {
     await executeResetHunger(chatId, 100, 'Boss kích hoạt lệnh tự reset độ no bụng');
+    return;
+  }
+
+  // 3. Lệnh Nhắc Nhở Bảo Trì & Update Định Kỳ 7 Ngày (/remind, /reminder, /baotri, hoặc nói tự nhiên)
+  const isReminderCommand =
+    lowerText.startsWith('/remind') ||
+    lowerText.startsWith('/reminder') ||
+    lowerText.startsWith('/baotri') ||
+    lowerText.startsWith('/maintenance') ||
+    lowerText.includes('nhắc update') ||
+    lowerText.includes('nhắc bảo trì') ||
+    (lowerText.includes('7 ngày') && (lowerText.includes('nhắc') || lowerText.includes('update') || lowerText.includes('báo')));
+
+  if (isReminderCommand) {
+    const { scheduleUpdateReminder } = await import('./update-reminder');
+
+    // Tìm số ngày trong câu lệnh nếu Boss gõ số khác 7 (VD: /remind 14 hoặc "nhắc tao sau 10 ngày")
+    const matchNumber = text.match(/\b(\d+)\s*(ngày|day|d)?\b/i);
+    let days = 7;
+    if (matchNumber && matchNumber[1]) {
+      const parsed = parseInt(matchNumber[1], 10);
+      if (parsed > 0 && parsed <= 90) {
+        days = parsed;
+      }
+    }
+
+    const state = scheduleUpdateReminder(days, `Boss đặt lịch nhắc nhở bảo trì qua Telegram`);
+    const d = new Date(state.nextReminderAt);
+    const formattedDate = d.toLocaleString('vi-VN', {
+      timeZone: 'Asia/Ho_Chi_Minh',
+      hour12: false,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+
+    const replyMsg =
+      `🐱 <b>ĐÃ THIẾT LẬP LỊCH HẸN NHẮC BẢO TRÌ & UPDATE SAU ${days} NGÀY!</b>\n\n` +
+      `📅 <b>Thời điểm Mèo Dev sẽ tự động ping Boss:</b>\n` +
+      `👉 <code>${formattedDate}</code> (sau ${days} ngày nữa)\n\n` +
+      `🛡️ <b>Cơ chế tự động:</b>\n` +
+      `• Mèo Dev lưu mốc thời gian này vào hệ thống và kiểm tra hàng ngày lúc 09:00 sáng.\n` +
+      `• Đúng hạn ${days} ngày, em sẽ tự động gửi tin nhắn báo động chi tiết vào khung chat này để nhắc Boss vào VPS kiểm tra PM2, pull code mới hoặc dọn dẹp hệ thống.\n` +
+      `• Kèm theo nút bấm <b>[🚀 Tự Động Update & Deploy Bản Mới]</b> để Boss có thể cho em tự cập nhật 1-click ngay trên điện thoại!\n\n` +
+      `💡 <i>Boss có thể gõ <code>/remind [số ngày]</code> để chỉnh lại lịch bất cứ lúc nào!</i>`;
+
+    await sendTelegramNotification(
+      replyMsg,
+      {
+        parseMode: 'HTML',
+        replyMarkup: {
+          inline_keyboard: [
+            [{ text: '🚀 Tự Động Deploy Thử Ngay', callback_data: 'deploy_latest' }],
+            [{ text: '📊 Xem Chỉ Số /stats', callback_data: 'quick_stats' }],
+          ],
+        },
+      },
+      chatId
+    );
+    await saveChatMessage(chatId, 'assistant', replyMsg);
     return;
   }
 

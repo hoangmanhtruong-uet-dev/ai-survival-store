@@ -11,6 +11,7 @@ import { runCustomTaskWorker } from './tasks/custom-task-worker';
 import { handleTelegramIncomingMessage, handlePlanCallback, executeResetHunger, getLiveStoreStats } from './tasks/telegram-chat';
 import { handleApproveMerge, handleDiscardCode } from './tasks/code-runner';
 import { executeAutonomousDeploy, handleDeployCallback } from './tasks/deploy-runner';
+import { runUpdateReminderCheck, handleSnoozeReminderCallback } from './tasks/update-reminder';
 
 const BANNER = `
 ==========================================================
@@ -94,6 +95,12 @@ async function main() {
     process.exit(0);
   }
 
+  if (args.includes('--remind') || args.includes('--reminder')) {
+    console.log('▶️ [CLI] Kiểm tra lịch nhắc nhở bảo trì & update 7 ngày...');
+    await runUpdateReminderCheck();
+    process.exit(0);
+  }
+
   // Hàm xử lý chung các lệnh bấm nút từ Telegram (Inline Keyboard Callbacks)
   const processTelegramCallback = async (cb: TelegramCallbackQuery) => {
     if (!cb.data) return;
@@ -159,6 +166,8 @@ async function main() {
       await sendTelegramNotification(statsText, { parseMode: 'HTML' }, cb.message?.chat.id);
     } else if (cb.data === 'deploy_latest' || cb.data === 'deploy_now') {
       await handleDeployCallback(cb.id, cb.message?.chat.id);
+    } else if (cb.data === 'snooze_reminder_7d') {
+      await handleSnoozeReminderCallback(cb.id, cb.message?.chat.id, 7);
     }
   };
 
@@ -299,6 +308,18 @@ async function main() {
       console.error('❌ Lỗi cron custom-task-worker:', (e as Error).message);
     }
   });
+
+  // Tác vụ 6: Mỗi ngày lúc 09:00 sáng kiểm tra lịch nhắc nhở bảo trì & update 7 ngày
+  cron.schedule('0 9 * * *', async () => {
+    try {
+      await runUpdateReminderCheck();
+    } catch (e) {
+      console.error('❌ Lỗi cron update-reminder:', (e as Error).message);
+    }
+  });
+
+  // Kiểm tra ngay khi khởi động xem có thông báo bảo trì nào bị quá hạn không
+  runUpdateReminderCheck().catch(() => {});
 
   // 4. Lắng nghe phản hồi từ Telegram (Inline Buttons & Trò chuyện 2 chiều với Boss)
   let isPollingActive = true;
