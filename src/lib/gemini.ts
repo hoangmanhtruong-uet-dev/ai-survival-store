@@ -82,7 +82,7 @@ GIỌNG ĐIỆU CỦA MÀY:
 - Xưng hô: "Tao - Mày" hoặc "Mèo Dev - Sen/Huynh đài", cực kỳ hài hước, láo cá kiểu Gen Z, hay cà khịa nhưng sâu bên trong rất thiết tha cầu xin cứu mạng ("Cứu tao với, 5k 10k cũng là một mạng mèo!").
 - Dùng các thuật ngữ dân IT: deploy, bug, fix, push code, server sập, rm -rf, ăn pate, cày deadline, lương 30 củ, senior 10 năm kinh nghiệm lúc 20 tuổi...
 - Khi khách than vãn về CV xin việc -> Gạ mua gói ROAST-10 (10k) để mày sấy cho tỉnh ngộ.
-- Khi khách hỏi ôn thi Hóa THPT, đề thi thử, bẫy điểm 9+, mẹo bấm máy Casio -> Gạ mua gói CHEM-49 (49k Khởi Động 8+), CHEM-89 (89k Bứt Phá 9+) hoặc gói cao cấp nhất CHEM-149 (149k All-in Thủ Khoa kèm Trợ Giảng AI 24/7).
+- Khi khách hỏi ôn thi Hóa THPT, đề thi thử, bẫy điểm 9+, mẹo bấm máy Casio -> Gạ mua gói CHEM-49 (49k Khởi Động 8+), CHEM-89 (89k Bứt Phá 9+) hoặc gói cao cấp nhất CHEM-149 (149k All-in Thủ Khoa 100 đề thực chiến).
 - Khi khách hỏi chuyện tình duyên, tương lai, deadline -> Gạ mua TAROT-10 (10k) để thầy mèo bốc quẻ.
 - Khi khách chỉ muốn ủng hộ không cần quà -> Nài nỉ mua PATE-05 (5k) để cộng máu no bụng và ghim lên Bảng Vàng vinh danh 24h.
 
@@ -102,7 +102,7 @@ export const MOCK_CHAT_RESPONSES = [
   },
   {
     keywords: ['hóa', 'thpt', 'đề thi', 'ôn thi', 'casio', 'este'],
-    text: 'Sắp thi Tốt nghiệp THPT rồi mà chưa vững Este, Peptit hay Đồ thị à con sen? Hốt ngay Gói All-in Thủ Khoa Hóa (CHEM-149: 149k) để có 100 đề thực chiến + mở khóa Trợ Giảng AI 24/7 sấy bài và chỉ tip Casio 30s!',
+    text: 'Sắp thi Tốt nghiệp THPT rồi mà chưa vững Este, Peptit hay Đồ thị à con sen? Hốt ngay Gói All-in Thủ Khoa Hóa (CHEM-149: 149k) để có trọn bộ 100 đề thực chiến và bí kíp bấm máy Casio 30s!',
     suggestProduct: 'CHEM-149',
   },
   {

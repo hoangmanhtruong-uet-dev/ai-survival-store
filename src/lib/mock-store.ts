@@ -29,7 +29,7 @@ export const INITIAL_PRODUCTS: Product[] = [
   {
     id: 'CHEM-PACK',
     name: 'Tổ hợp Đề thi & Lộ trình Hóa THPT',
-    description: 'Trọn bộ đề thi tinh hoa chọn lọc chuẩn cấu trúc Bộ GD, phân tầng 3 mốc (8+, 9+, 10+) kèm mẹo Casio 30s & Trợ Giảng AI 24/7',
+    description: 'Trọn bộ đề thi tinh hoa chọn lọc chuẩn cấu trúc Bộ GD, phân tầng 3 mốc (8+, 9+, 10+) kèm lời giải chi tiết & mẹo Casio 30s',
     price: 49000,
     type: 'GDRIVE_ACCESS',
     icon: '🧪',
@@ -63,8 +63,8 @@ export const INITIAL_PRODUCTS: Product[] = [
   },
   {
     id: 'CHEM-149',
-    name: 'Gói All-in Thủ Khoa Hóa (100 Đề + Trợ Giảng AI 24/7)',
-    description: 'Trọn bộ 100 đề 8+, 9+, 10+, tuyển tập bẫy điểm 10 + Mở khóa Trợ Giảng Hóa AI 24/7 giải bài tận răng',
+    name: 'Gói All-in Thủ Khoa Hóa (100 Đề + Lộ Trình 10+)',
+    description: 'Trọn bộ 100 đề 8+, 9+, 10+, tuyển tập bẫy điểm 10 kèm bí kíp giải Casio 30s',
     price: 149000,
     type: 'GDRIVE_ACCESS',
     gdrive_folder_id: process.env.GDRIVE_FOLDER_ALLIN_ID || '1eywUNBaOoa5SdA6JBRrzp-SyjdDOKWkS',

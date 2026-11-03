@@ -45,7 +45,7 @@ export async function GET() {
           mappedProducts.push({
             id: 'CHEM-PACK',
             name: 'Tổ hợp Đề thi & Lộ trình Hóa THPT',
-            description: 'Trọn bộ đề thi chuẩn cấu trúc Bộ GD, phân tầng 3 mốc (8+, 9+, 10+) kèm mẹo Casio 30s & Trợ Giảng AI 24/7',
+            description: 'Trọn bộ đề thi tinh hoa chuẩn cấu trúc Bộ GD, phân tầng 3 mốc (8+, 9+, 10+) kèm lời giải chi tiết & mẹo Casio 30s',
             price: 49000,
             type: 'GDRIVE_ACCESS',
             icon: '🧪',

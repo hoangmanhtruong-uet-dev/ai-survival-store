@@ -32,8 +32,6 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
   onSelectProduct,
   onOpenRoastCV,
   onOpenTarot,
-  onOpenChemistryTutor,
-  onOpenChemistryQuiz,
   onOpenCustomTask,
   onOpenChemistryPreorder,
   isFlashSale = false,
@@ -57,7 +55,7 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
       const chemPack: Product = {
         id: 'CHEM-PACK',
         name: 'Tổ hợp Đề thi & Lộ trình Hóa THPT',
-        description: 'Trọn bộ đề thi tinh hoa chuẩn cấu trúc Bộ GD, phân tầng 3 mốc (8+, 9+, 10+) kèm mẹo Casio 30s & Trợ Giảng AI 24/7',
+        description: 'Trọn bộ đề thi tinh hoa chuẩn cấu trúc Bộ GD, phân tầng 3 mốc (8+, 9+, 10+) kèm lời giải chi tiết & mẹo Casio 30s',
         price: 49000,
         type: 'GDRIVE_ACCESS',
         icon: '🧪',
@@ -133,45 +131,6 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
           </div>
         </div>
       )}
-
-      {/* Lead Magnet Banner: Thi thử 10 câu bẫy Hóa THPT */}
-      <div className="bg-gradient-to-r from-emerald-950/60 via-zinc-900 to-amber-950/40 border border-emerald-500/30 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-xl shrink-0">
-            🎯
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-sm font-bold text-white">Phễu Thi Thử 10 Câu Bẫy Điểm 9+ Hóa THPT</h3>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                HOT FREE
-              </span>
-            </div>
-            <p className="text-xs text-zinc-400">
-              Chinh phục bẫy Este, Peptit, Đồ thị CO2 & Nhận phân tích lỗ hổng kiến thức từ Mèo Dev
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 shrink-0">
-          {onOpenChemistryTutor && (
-            <button
-              onClick={() => onOpenChemistryTutor('')}
-              className="px-3.5 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-semibold border border-zinc-700 transition flex items-center gap-1.5 cursor-pointer"
-            >
-              <span>🧪 Trợ Giảng AI</span>
-            </button>
-          )}
-          {onOpenChemistryQuiz && (
-            <button
-              onClick={onOpenChemistryQuiz}
-              className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-zinc-950 font-bold text-xs transition shadow-md shadow-emerald-950/40 flex items-center gap-1.5 cursor-pointer"
-            >
-              <span>🎯 Thi Thử Ngay (5 Phút)</span>
-            </button>
-          )}
-        </div>
-      </div>
 
       {/* Banner 2: Kèo Cày Thuê Tự Do Solopreneur */}
       <div className="bg-gradient-to-r from-indigo-950/60 via-zinc-900 to-emerald-950/60 border border-indigo-500/30 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
@@ -391,27 +350,6 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
                           <span>⚡ Chọn Gói Mua ({discountPercent > 0 ? `Từ ${effectivePrice.toLocaleString('vi-VN')}đ` : '3 Lựa Chọn'})</span>
                         </button>
                       )}
-
-                      <div className="flex items-center justify-between gap-1 pt-0.5">
-                        {onOpenChemistryQuiz && (
-                          <button
-                            type="button"
-                            onClick={onOpenChemistryQuiz}
-                            className="flex-1 py-1 text-[10px] font-mono text-emerald-400 hover:underline transition text-center cursor-pointer"
-                          >
-                            🎯 Thi thử bẫy Free
-                          </button>
-                        )}
-                        {onOpenChemistryTutor && (
-                          <button
-                            type="button"
-                            onClick={() => onOpenChemistryTutor('CHM-DEMO')}
-                            className="flex-1 py-1 text-[10px] font-mono text-amber-400 hover:underline transition text-center cursor-pointer"
-                          >
-                            🧪 Trợ Giảng AI
-                          </button>
-                        )}
-                      </div>
                     </>
                   )}
 

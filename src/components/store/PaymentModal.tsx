@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Product, Order } from '@/types';
-import { X, Copy, Check, Loader2, Sparkles, Download, ArrowRight, ShieldCheck, Award, ExternalLink, BookOpen, Clock } from 'lucide-react';
+import { X, Copy, Check, Loader2, Download, ArrowRight, ShieldCheck, Award, ExternalLink, BookOpen, Clock } from 'lucide-react';
 import { generateVietQRUrl, getBankConfig } from '@/lib/vietqr';
 import { soundEngine } from '@/lib/audio';
 import { getSupabaseClient } from '@/lib/supabase/client';
@@ -55,7 +55,7 @@ export const CHEMISTRY_TIERS: ChemistryTier[] = [
   {
     id: 'CHEM-149',
     name: 'Gói All-in Thủ Khoa',
-    detail: 'Full 100 đề 8+, 9+, 10+ + Trợ Giảng AI 24/7 sấy bài & chỉ Casio',
+    detail: 'Full 100 đề 8+, 9+, 10+ bứt phá điểm 10 kèm mẹo Casio 30s',
     price: 149000,
     badge: '⭐ Đầy Đủ Nhất',
     icon: '🏆',
@@ -71,7 +71,6 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   onOpenRoastCV,
   onOpenTarot,
   onOpenCertificate,
-  onOpenChemistryTutor,
   onOpenEbookReader,
   onOpenChemistryPreorder,
   isFlashSale = false,
@@ -509,36 +508,6 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                       <span>Mở Thư Mục Google Drive</span>
                     </a>
 
-                    {/* Đặc quyền gói Thủ Khoa: Trợ Giảng AI 24/7 */}
-                    {currentProduct.id === 'CHEM-149' && (
-                      <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl space-y-2">
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="font-bold text-amber-400 flex items-center gap-1.5">
-                            <span>🏆</span> Token Trợ Giảng Hóa AI:
-                          </span>
-                          <span className="font-mono font-bold text-amber-300 bg-zinc-950 px-2 py-0.5 rounded border border-amber-500/40">
-                            {((order?.ai_result as Record<string, unknown>)?.tutor_token as string) || `CHM-${order?.order_code?.replace('MEO-', '') || '149'}`}
-                          </span>
-                        </div>
-                        {onOpenChemistryTutor && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              onClose();
-                              onOpenChemistryTutor(
-                                ((order?.ai_result as Record<string, unknown>)?.tutor_token as string) ||
-                                `CHM-${order?.order_code?.replace('MEO-', '') || '149'}`
-                              );
-                            }}
-                            className="w-full py-2 px-3 rounded-lg bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
-                          >
-                            <span>Hỏi Bài Trợ Giảng AI Ngay (Giải + Casio 30s)</span>
-                            <ArrowRight className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                      </div>
-                    )}
-
                     {/* Hộp Referral Mời Bạn Cùng Bàn */}
                     <div className="p-3 bg-zinc-950/80 border border-zinc-800 rounded-xl space-y-1.5 text-xs">
                       <div className="flex items-center justify-between text-[11px] text-zinc-400">
@@ -658,24 +627,6 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                         );
                       })}
                     </div>
-                  </div>
-
-                  {/* Nút trải nghiệm nhanh Trợ Giảng AI */}
-                  <div className="bg-emerald-950/60 border border-emerald-700/70 p-2.5 rounded-xl flex items-center justify-between gap-2">
-                    <div className="text-xs text-emerald-300 font-mono">
-                      💡 Mở thử Trợ Giảng Hóa AI 24/7:
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onClose();
-                        if (onOpenChemistryTutor) onOpenChemistryTutor('CHM-DEMO');
-                      }}
-                      className="px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold font-mono text-xs flex items-center gap-1 shrink-0 shadow transition cursor-pointer"
-                    >
-                      <Sparkles className="w-3.5 h-3.5" />
-                      <span>Hỏi Mèo Ngay</span>
-                    </button>
                   </div>
 
                   {/* Nhập Gmail */}

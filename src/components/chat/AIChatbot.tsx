@@ -108,7 +108,7 @@ export const AIChatbot: React.FC<AIChatbotProps> = ({ onSelectOrderForPayment })
   const quickPrompts = [
     { label: 'Cứu 5k pate 🐟', text: 'Tao muốn mua gói Pate 5k cứu mạng mày!' },
     { label: 'Sấy CV tao đi 🔥', text: 'Tao muốn mua gói Roast CV 10k!' },
-    { label: 'Đề Hóa & Trợ Giảng 🧪', text: 'Tao muốn mua Gói All-in Thủ Khoa Hóa 149k kèm Trợ Giảng AI!' },
+    { label: 'Bộ Đề Hóa 8+ 9+ 🧪', text: 'Tao muốn mua Tổ hợp Đề thi & Lộ trình Hóa THPT 49k!' },
     { label: 'Bói tình duyên 🔮', text: 'Tao muốn mua quẻ Tarot 10k xem chừng nào có bồ!' },
   ];
 

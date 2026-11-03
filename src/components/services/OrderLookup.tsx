@@ -18,7 +18,6 @@ export const OrderLookup: React.FC<OrderLookupProps> = ({
   onOpenPaymentModal,
   onOpenRoastCV,
   onOpenTarot,
-  onOpenChemistryTutor,
   onOpenEbookReader,
 }) => {
   const [orderCode, setOrderCode] = useState('');
@@ -168,20 +167,6 @@ export const OrderLookup: React.FC<OrderLookupProps> = ({
                       <Download className="w-3.5 h-3.5 inline" />
                       <span>Mở Thư Mục Google Drive</span>
                     </a>
-                    {order.product_id === 'CHEM-149' && onOpenChemistryTutor && (
-                      <button
-                        onClick={() =>
-                          onOpenChemistryTutor(
-                            ((order.ai_result as Record<string, unknown>)?.tutor_token as string) ||
-                            `CHM-${order.order_code.replace('MEO-', '')}`
-                          )
-                        }
-                        className="w-full sm:w-auto px-4 py-2 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold rounded-lg transition flex items-center justify-center gap-1.5"
-                      >
-                        <span>Mở Trợ Giảng AI</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </button>
-                    )}
                   </div>
                 )}
 
