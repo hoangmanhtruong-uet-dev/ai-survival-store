@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { solveChemistryProblem } from '@/lib/gemini';
+import { solveChemistryProblem, getGeminiModel } from '@/lib/gemini';
 import { mockStore } from '@/lib/mock-store';
 import { getSupabaseAdminClient, getSupabaseClient } from '@/lib/supabase/client';
 
@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       solution,
-      model: process.env.GEMINI_MODEL || 'gemini-2.0-flash',
+      model: getGeminiModel(),
     });
   } catch (error) {
     console.error('[Chemistry Tutor API Error]', error);
